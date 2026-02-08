@@ -152,7 +152,7 @@ pub use client::ModelClient;
 pub use client::ModelClientSession;
 pub use client_common::Prompt;
 pub use client_common::REVIEW_PROMPT;
-pub use ollama_types::ResponseEvent;  // Export from ollama_types instead of client_common
+pub use rune_protocol::ollama_types::ResponseEvent;  // Export from protocol crate
 pub use client_common::ResponseStream;
 pub use rune_protocol::models::ContentItem;
 pub use rune_protocol::models::LocalShellAction;
