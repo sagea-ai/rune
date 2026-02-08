@@ -10,7 +10,7 @@
 //!
 //! A [`ModelClientSession`] is created per turn and is used to stream one or more Responses API
 //! requests during that turn. It caches a Responses WebSocket connection (opened lazily, or reused
-//! from a session-level preconnect) and stores per-turn state such as the `x-codex-turn-state`
+//! from a session-level preconnect) and stores per-turn state such as the `x-rune-turn-state`
 //! token used for sticky routing.
 //!
 //! Preconnect is intentionally handshake-only: it may warm a socket and capture sticky-routing
@@ -104,8 +104,8 @@ use crate::tools::spec::create_tools_json_for_responses_api;
 
 pub const OPENAI_BETA_HEADER: &str = "OpenAI-Beta";
 pub const OPENAI_BETA_RESPONSES_WEBSOCKETS: &str = "responses_websockets=2026-02-04";
-pub const X_CODEX_TURN_STATE_HEADER: &str = "x-codex-turn-state";
-pub const X_CODEX_TURN_METADATA_HEADER: &str = "x-codex-turn-metadata";
+pub const X_CODEX_TURN_STATE_HEADER: &str = "x-rune-turn-state";
+pub const X_CODEX_TURN_METADATA_HEADER: &str = "x-rune-turn-metadata";
 pub const X_RESPONSESAPI_INCLUDE_TIMING_METRICS_HEADER: &str =
     "x-responsesapi-include-timing-metrics";
 const RESPONSES_WEBSOCKETS_V2_BETA_HEADER_VALUE: &str = "responses_websockets=2026-02-06";
@@ -197,7 +197,7 @@ pub struct ModelClient {
 ///
 /// - The last request's input items, so subsequent calls can use `response.append` when the input
 ///   is an incremental extension of the previous request.
-/// - The `x-codex-turn-state` sticky-routing token, which must be replayed for all requests within
+/// - The `x-rune-turn-state` sticky-routing token, which must be replayed for all requests within
 ///   the same turn.
 ///
 /// When startup preconnect is still running, first use of this session awaits that in-flight task
@@ -215,8 +215,8 @@ pub struct ModelClientSession {
     /// Turn state for sticky routing.
     ///
     /// This is an `OnceLock` that stores the turn state value received from the server
-    /// on turn start via the `x-codex-turn-state` response header. Once set, this value
-    /// should be sent back to the server in the `x-codex-turn-state` request header for
+    /// on turn start via the `x-rune-turn-state` response header. Once set, this value
+    /// should be sent back to the server in the `x-rune-turn-state` request header for
     /// all subsequent requests within the same turn to maintain sticky routing.
     ///
     /// This is a contract between the client and server: we receive it at turn start,
@@ -1106,7 +1106,7 @@ impl ModelClientSession {
     }
 }
 
-/// Adapts the core `Prompt` type into the `codex-api` payload shape.
+/// Adapts the core `Prompt` type into the `rune-api` payload shape.
 fn build_api_prompt(prompt: &Prompt, instructions: String, tools_json: Vec<Value>) -> ApiPrompt {
     ApiPrompt {
         instructions,
@@ -1129,9 +1129,9 @@ fn parse_turn_metadata_header(turn_metadata_header: Option<&str>) -> Option<Head
 ///
 /// These headers implement Codex-specific conventions:
 ///
-/// - `x-codex-beta-features`: comma-separated beta feature keys enabled for the session.
-/// - `x-codex-turn-state`: sticky routing token captured earlier in the turn.
-/// - `x-codex-turn-metadata`: optional per-turn metadata for observability.
+/// - `x-rune-beta-features`: comma-separated beta feature keys enabled for the session.
+/// - `x-rune-turn-state`: sticky routing token captured earlier in the turn.
+/// - `x-rune-turn-metadata`: optional per-turn metadata for observability.
 fn build_responses_headers(
     beta_features_header: Option<&str>,
     turn_state: Option<&Arc<OnceLock<String>>>,
@@ -1142,7 +1142,7 @@ fn build_responses_headers(
         && !value.is_empty()
         && let Ok(header_value) = HeaderValue::from_str(value)
     {
-        headers.insert("x-codex-beta-features", header_value);
+        headers.insert("x-rune-beta-features", header_value);
     }
     if let Some(turn_state) = turn_state
         && let Some(state) = turn_state.get()

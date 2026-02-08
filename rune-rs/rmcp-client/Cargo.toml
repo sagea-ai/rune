@@ -1,5 +1,5 @@
 [package]
-name = "codex-rmcp-client"
+name = "rune-rmcp-client"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -13,10 +13,10 @@ axum = { workspace = true, default-features = false, features = [
     "http1",
     "tokio",
 ] }
-codex-keyring-store = { workspace = true }
-codex-protocol = { workspace = true }
-codex-utils-pty = { workspace = true }
-codex-utils-home-dir = { workspace = true }
+rune-keyring-store = { workspace = true }
+rune-protocol = { workspace = true }
+rune-utils-pty = { workspace = true }
+rune-utils-home-dir = { workspace = true }
 futures = { workspace = true, default-features = false, features = ["std"] }
 keyring = { workspace = true, features = ["crypto-rust"] }
 oauth2 = "5"
@@ -56,7 +56,7 @@ webbrowser = { workspace = true }
 which = { workspace = true }
 
 [dev-dependencies]
-codex-utils-cargo-bin = { workspace = true }
+rune-utils-cargo-bin = { workspace = true }
 pretty_assertions = { workspace = true }
 serial_test = { workspace = true }
 tempfile = { workspace = true }

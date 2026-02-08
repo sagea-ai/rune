@@ -1,11 +1,11 @@
 [package]
-name = "codex-stdio-to-uds"
+name = "rune-stdio-to-uds"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [[bin]]
-name = "codex-stdio-to-uds"
+name = "rune-stdio-to-uds"
 path = "src/main.rs"
 
 [lib]
@@ -23,6 +23,6 @@ uds_windows = { workspace = true }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
-codex-utils-cargo-bin = { workspace = true }
+rune-utils-cargo-bin = { workspace = true }
 pretty_assertions = { workspace = true }
 tempfile = { workspace = true }

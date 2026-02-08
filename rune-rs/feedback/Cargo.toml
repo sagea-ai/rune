@@ -1,12 +1,12 @@
 [package]
-name = "codex-feedback"
+name = "rune-feedback"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-codex-protocol = { workspace = true }
+rune-protocol = { workspace = true }
 sentry = { version = "0.46" }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }

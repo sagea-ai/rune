@@ -9,7 +9,7 @@ use once_cell::sync::Lazy;
 
 pub const HIDE_GPT5_1_MIGRATION_PROMPT_CONFIG: &str = "hide_gpt5_1_migration_prompt";
 pub const HIDE_GPT_5_1_CODEX_MAX_MIGRATION_PROMPT_CONFIG: &str =
-    "hide_gpt-5.1-codex-max_migration_prompt";
+    "hide_gpt-5.1-rune-max_migration_prompt";
 
 static PRESETS: Lazy<Vec<ModelPreset>> = Lazy::new(|| {
     vec![
@@ -45,9 +45,9 @@ static PRESETS: Lazy<Vec<ModelPreset>> = Lazy::new(|| {
             input_modalities: default_input_modalities(),
         },
         ModelPreset {
-            id: "gpt-5.1-codex-max".to_string(),
-            model: "gpt-5.1-codex-max".to_string(),
-            display_name: "gpt-5.1-codex-max".to_string(),
+            id: "gpt-5.1-rune-max".to_string(),
+            model: "gpt-5.1-rune-max".to_string(),
+            display_name: "gpt-5.1-rune-max".to_string(),
             description: "Codex-optimized flagship for deep and fast reasoning.".to_string(),
             default_reasoning_effort: ReasoningEffort::Medium,
             supported_reasoning_efforts: vec![
@@ -76,9 +76,9 @@ static PRESETS: Lazy<Vec<ModelPreset>> = Lazy::new(|| {
             input_modalities: default_input_modalities(),
         },
         ModelPreset {
-            id: "gpt-5.1-codex-mini".to_string(),
-            model: "gpt-5.1-codex-mini".to_string(),
-            display_name: "gpt-5.1-codex-mini".to_string(),
+            id: "gpt-5.1-rune-mini".to_string(),
+            model: "gpt-5.1-rune-mini".to_string(),
+            display_name: "gpt-5.1-rune-mini".to_string(),
             description: "Optimized for codex. Cheaper, faster, but less capable.".to_string(),
             default_reasoning_effort: ReasoningEffort::Medium,
             supported_reasoning_efforts: vec![
@@ -221,9 +221,9 @@ static PRESETS: Lazy<Vec<ModelPreset>> = Lazy::new(|| {
             input_modalities: default_input_modalities(),
         },
         ModelPreset {
-            id: "gpt-5-codex-mini".to_string(),
-            model: "gpt-5-codex-mini".to_string(),
-            display_name: "gpt-5-codex-mini".to_string(),
+            id: "gpt-5-rune-mini".to_string(),
+            model: "gpt-5-rune-mini".to_string(),
+            display_name: "gpt-5-rune-mini".to_string(),
             description: "Optimized for codex. Cheaper, faster, but less capable.".to_string(),
             default_reasoning_effort: ReasoningEffort::Medium,
             supported_reasoning_efforts: vec![

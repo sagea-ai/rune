@@ -26,7 +26,7 @@ use std::sync::RwLock;
 pub static USER_AGENT_SUFFIX: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| Mutex::new(None));
 pub const DEFAULT_ORIGINATOR: &str = "codex_cli_rs";
 pub const CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR: &str = "CODEX_INTERNAL_ORIGINATOR_OVERRIDE";
-pub const RESIDENCY_HEADER_NAME: &str = "x-openai-internal-codex-residency";
+pub const RESIDENCY_HEADER_NAME: &str = "x-openai-internal-rune-residency";
 
 #[derive(Debug, Clone)]
 pub struct Originator {

@@ -46,7 +46,7 @@ async fn thread_resume_rejects_unmaterialized_thread() -> Result<()> {
     // Start a thread.
     let start_id = mcp
         .send_thread_start_request(ThreadStartParams {
-            model: Some("gpt-5.1-codex-max".to_string()),
+            model: Some("gpt-5.1-rune-max".to_string()),
             ..Default::default()
         })
         .await?;
@@ -313,7 +313,7 @@ async fn thread_resume_prefers_path_over_thread_id() -> Result<()> {
 
     let start_id = mcp
         .send_thread_start_request(ThreadStartParams {
-            model: Some("gpt-5.1-codex-max".to_string()),
+            model: Some("gpt-5.1-rune-max".to_string()),
             ..Default::default()
         })
         .await?;
@@ -380,7 +380,7 @@ async fn thread_resume_supports_history_and_overrides() -> Result<()> {
     // Start a thread.
     let start_id = mcp
         .send_thread_start_request(ThreadStartParams {
-            model: Some("gpt-5.1-codex-max".to_string()),
+            model: Some("gpt-5.1-rune-max".to_string()),
             ..Default::default()
         })
         .await?;
@@ -598,7 +598,7 @@ request_max_retries = 0
 stream_max_retries = 0
 
 [mcp_servers.required_broken]
-command = "codex-definitely-not-a-real-binary"
+command = "rune-definitely-not-a-real-binary"
 required = true
 "#
         ),

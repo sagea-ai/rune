@@ -212,7 +212,7 @@ impl CodexLogSnapshot {
 
     pub fn save_to_temp_file(&self) -> io::Result<PathBuf> {
         let dir = std::env::temp_dir();
-        let filename = format!("codex-feedback-{}.log", self.thread_id);
+        let filename = format!("rune-feedback-{}.log", self.thread_id);
         let path = dir.join(filename);
         fs::write(&path, self.as_bytes())?;
         Ok(path)
@@ -311,7 +311,7 @@ impl CodexLogSnapshot {
         if include_logs {
             envelope.add_item(EnvelopeItem::Attachment(Attachment {
                 buffer: self.bytes.clone(),
-                filename: String::from("codex-logs.log"),
+                filename: String::from("rune-logs.log"),
                 content_type: Some("text/plain".to_string()),
                 ty: None,
             }));

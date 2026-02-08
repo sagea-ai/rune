@@ -234,7 +234,7 @@ request_max_retries = 0
 stream_max_retries = 0
 
 [mcp_servers.required_broken]
-command = "codex-definitely-not-a-real-binary"
+command = "rune-definitely-not-a-real-binary"
 required = true
 "#
         ),

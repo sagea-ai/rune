@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 // Ensures OtelManager attaches metadata tags when forwarding metrics.
 #[test]
 fn manager_attaches_metadata_tags_to_metrics() -> Result<()> {
-    let (metrics, exporter) = build_metrics_with_defaults(&[("service", "codex-cli")])?;
+    let (metrics, exporter) = build_metrics_with_defaults(&[("service", "rune-cli")])?;
     let manager = OtelManager::new(
         ThreadId::new(),
         "gpt-5.1",
@@ -58,7 +58,7 @@ fn manager_attaches_metadata_tags_to_metrics() -> Result<()> {
             TelemetryAuthMode::ApiKey.to_string(),
         ),
         ("model".to_string(), "gpt-5.1".to_string()),
-        ("service".to_string(), "codex-cli".to_string()),
+        ("service".to_string(), "rune-cli".to_string()),
         ("session_source".to_string(), "cli".to_string()),
         ("source".to_string(), "tui".to_string()),
     ]);

@@ -164,7 +164,7 @@ fn otlp_http_exporter_sends_metrics_to_collector() -> Result<()> {
 
     let metrics = MetricsClient::new(MetricsConfig::otlp(
         "test",
-        "codex-cli",
+        "rune-cli",
         env!("CARGO_PKG_VERSION"),
         OtelExporter::OtlpHttp {
             endpoint: format!("http://{addr}/v1/metrics"),

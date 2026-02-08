@@ -258,7 +258,7 @@ mod tests {
     fn resume_parses_prompt_after_global_flags() {
         const PROMPT: &str = "echo resume-with-global-flags-after-subcommand";
         let cli = Cli::parse_from([
-            "codex-exec",
+            "rune-exec",
             "resume",
             "--last",
             "--json",

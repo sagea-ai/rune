@@ -95,7 +95,7 @@ async fn prompt_tools_are_consistent_across_requests() -> anyhow::Result<()> {
     } = test_codex()
         .with_config(|config| {
             config.user_instructions = Some("be consistent and helpful".to_string());
-            config.model = Some("gpt-5.1-codex-max".to_string());
+            config.model = Some("gpt-5.1-rune-max".to_string());
             // Keep tool expectations stable when the default web_search mode changes.
             config
                 .web_search_mode
@@ -200,7 +200,7 @@ async fn codex_mini_latest_tools() -> anyhow::Result<()> {
             config.user_instructions = Some("be consistent and helpful".to_string());
             config.features.disable(Feature::ApplyPatchFreeform);
             config.features.enable(Feature::CollaborationModes);
-            config.model = Some("codex-mini-latest".to_string());
+            config.model = Some("rune-mini-latest".to_string());
         })
         .build(&server)
         .await?;

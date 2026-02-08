@@ -33,8 +33,8 @@ pub async fn create_transport<P>(
 where
     P: AsRef<Path>,
 {
-    let mcp_executable = codex_utils_cargo_bin::cargo_bin("codex-exec-mcp-server")?;
-    let execve_wrapper = codex_utils_cargo_bin::cargo_bin("codex-execve-wrapper")?;
+    let mcp_executable = codex_utils_cargo_bin::cargo_bin("rune-exec-mcp-server")?;
+    let execve_wrapper = codex_utils_cargo_bin::cargo_bin("rune-execve-wrapper")?;
 
     // `bash` is a test resource rather than a binary target, so we must use
     // `find_resource!` to locate it instead of `cargo_bin()`.

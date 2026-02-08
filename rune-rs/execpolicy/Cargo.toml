@@ -1,5 +1,5 @@
 [package]
-name = "codex-execpolicy"
+name = "rune-execpolicy"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -10,7 +10,7 @@ name = "codex_execpolicy"
 path = "src/lib.rs"
 
 [[bin]]
-name = "codex-execpolicy"
+name = "rune-execpolicy"
 path = "src/main.rs"
 
 [lints]

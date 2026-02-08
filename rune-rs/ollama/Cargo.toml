@@ -1,5 +1,5 @@
 [package]
-name = "codex-ollama"
+name = "rune-ollama"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -14,7 +14,7 @@ workspace = true
 [dependencies]
 async-stream = { workspace = true }
 bytes = { workspace = true }
-codex-core = { workspace = true }
+rune-core = { workspace = true }
 futures = { workspace = true }
 reqwest = { workspace = true, features = ["json", "stream"] }
 semver = { workspace = true }

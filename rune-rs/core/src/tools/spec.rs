@@ -1934,7 +1934,7 @@ mod tests {
         let mut features = Features::with_defaults();
         features.enable(Feature::CollaborationModes);
         assert_default_model_tools(
-            "codex-mini-latest",
+            "rune-mini-latest",
             &features,
             Some(WebSearchMode::Cached),
             "local_shell",
@@ -1955,7 +1955,7 @@ mod tests {
         let mut features = Features::with_defaults();
         features.enable(Feature::CollaborationModes);
         assert_default_model_tools(
-            "gpt-5.1-codex-mini",
+            "gpt-5.1-rune-mini",
             &features,
             Some(WebSearchMode::Cached),
             "shell_command",
@@ -2044,7 +2044,7 @@ mod tests {
         features.enable(Feature::UnifiedExec);
         features.enable(Feature::CollaborationModes);
         assert_model_tools(
-            "codex-mini-latest",
+            "rune-mini-latest",
             &features,
             Some(WebSearchMode::Live),
             &[

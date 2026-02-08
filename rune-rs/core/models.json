@@ -101,8 +101,8 @@
       "supports_parallel_tool_calls": false,
       "context_window": 272000,
       "reasoning_summary_format": "experimental",
-      "slug": "gpt-5.1-codex-max",
-      "display_name": "gpt-5.1-codex-max",
+      "slug": "gpt-5.1-rune-max",
+      "display_name": "gpt-5.1-rune-max",
       "description": "Codex-optimized flagship for deep and fast reasoning.",
       "default_reasoning_level": "medium",
       "supported_reasoning_levels": [
@@ -189,8 +189,8 @@
       "supports_parallel_tool_calls": false,
       "context_window": 272000,
       "reasoning_summary_format": "experimental",
-      "slug": "gpt-5.1-codex-mini",
-      "display_name": "gpt-5.1-codex-mini",
+      "slug": "gpt-5.1-rune-mini",
+      "display_name": "gpt-5.1-rune-mini",
       "description": "Optimized for codex. Cheaper, faster, but less capable.",
       "default_reasoning_level": "medium",
       "supported_reasoning_levels": [
@@ -357,8 +357,8 @@
       "supports_parallel_tool_calls": false,
       "context_window": 272000,
       "reasoning_summary_format": "experimental",
-      "slug": "gpt-5-codex-mini",
-      "display_name": "gpt-5-codex-mini",
+      "slug": "gpt-5-rune-mini",
+      "display_name": "gpt-5-rune-mini",
       "description": "Optimized for codex. Cheaper, faster, but less capable.",
       "default_reasoning_level": "medium",
       "supported_reasoning_levels": [

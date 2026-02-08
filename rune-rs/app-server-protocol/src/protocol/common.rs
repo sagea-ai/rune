@@ -766,7 +766,7 @@ mod tests {
         let request = ClientRequest::NewConversation {
             request_id: RequestId::Integer(42),
             params: v1::NewConversationParams {
-                model: Some("gpt-5.1-codex-max".to_string()),
+                model: Some("gpt-5.1-rune-max".to_string()),
                 model_provider: None,
                 profile: None,
                 cwd: None,
@@ -784,7 +784,7 @@ mod tests {
                 "method": "newConversation",
                 "id": 42,
                 "params": {
-                    "model": "gpt-5.1-codex-max",
+                    "model": "gpt-5.1-rune-max",
                     "modelProvider": null,
                     "profile": null,
                     "cwd": null,

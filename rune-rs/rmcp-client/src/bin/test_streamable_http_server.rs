@@ -100,7 +100,7 @@ impl TestToolServer {
     fn memo_template() -> ResourceTemplate {
         let raw = RawResourceTemplate {
             uri_template: "memo://codex/{slug}".to_string(),
-            name: "codex-memo".to_string(),
+            name: "rune-memo".to_string(),
             title: Some("Codex Memo".to_string()),
             description: Some(
                 "Template for memo://codex/{slug} resources used in tests.".to_string(),

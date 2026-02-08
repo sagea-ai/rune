@@ -15,14 +15,14 @@ struct TestCodexAliasesGuard {
 const CODEX_HOME_ENV_VAR: &str = "CODEX_HOME";
 
 // This code runs before any other tests are run.
-// It allows the test binary to behave like codex and dispatch to apply_patch and codex-linux-sandbox
+// It allows the test binary to behave like codex and dispatch to apply_patch and rune-linux-sandbox
 // based on the arg0.
 // NOTE: this doesn't work on ARM
 #[ctor]
 pub static CODEX_ALIASES_TEMP_DIR: TestCodexAliasesGuard = unsafe {
     #[allow(clippy::unwrap_used)]
     let codex_home = tempfile::Builder::new()
-        .prefix("codex-core-tests")
+        .prefix("rune-core-tests")
         .tempdir()
         .unwrap();
     let previous_codex_home = std::env::var_os(CODEX_HOME_ENV_VAR);

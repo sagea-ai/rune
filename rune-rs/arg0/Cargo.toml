@@ -1,5 +1,5 @@
 [package]
-name = "codex-arg0"
+name = "rune-arg0"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -13,9 +13,9 @@ workspace = true
 
 [dependencies]
 anyhow = { workspace = true }
-codex-apply-patch = { workspace = true }
-codex-core = { workspace = true }
-codex-linux-sandbox = { workspace = true }
+rune-apply-patch = { workspace = true }
+rune-core = { workspace = true }
+rune-linux-sandbox = { workspace = true }
 dotenvy = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread"] }

@@ -11,14 +11,14 @@ use dirs::home_dir;
 use owo_colors::OwoColorize;
 
 #[derive(Debug, Parser)]
-#[command(name = "codex-state-logs")]
+#[command(name = "rune-state-logs")]
 #[command(about = "Tail Codex logs from the state SQLite DB with simple filters")]
 struct Args {
     /// Path to CODEX_HOME. Defaults to $CODEX_HOME or ~/.codex.
     #[arg(long, env = "CODEX_HOME")]
     codex_home: Option<PathBuf>,
 
-    /// Direct path to the SQLite database. Overrides --codex-home.
+    /// Direct path to the SQLite database. Overrides --rune-home.
     #[arg(long)]
     db: Option<PathBuf>,
 

@@ -167,7 +167,7 @@ impl CodexToolCallParam {
             compact_prompt,
         } = self;
 
-        // Build the `ConfigOverrides` recognized by codex-core.
+        // Build the `ConfigOverrides` recognized by rune-core.
         let overrides = ConfigOverrides {
             model,
             config_profile: profile,
@@ -227,7 +227,7 @@ impl CodexToolCallReplyParam {
     }
 }
 
-/// Builds a `Tool` definition for the `codex-reply` tool-call.
+/// Builds a `Tool` definition for the `rune-reply` tool-call.
 pub(crate) fn create_tool_for_codex_tool_call_reply_param() -> Tool {
     let schema = SchemaSettings::draft2019_09()
         .with(|s| {
@@ -240,7 +240,7 @@ pub(crate) fn create_tool_for_codex_tool_call_reply_param() -> Tool {
     let input_schema = create_tool_input_schema(schema, "Codex reply tool schema should serialize");
 
     Tool {
-        name: "codex-reply".into(),
+        name: "rune-reply".into(),
         title: Some("Codex Reply".to_string()),
         input_schema,
         output_schema: Some(codex_tool_output_schema()),
@@ -406,7 +406,7 @@ mod tests {
             ],
             "type": "object",
           },
-          "name": "codex-reply",
+          "name": "rune-reply",
           "outputSchema": {
             "properties": {
               "content": {

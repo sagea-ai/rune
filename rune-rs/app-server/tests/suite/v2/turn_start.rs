@@ -439,7 +439,7 @@ async fn turn_start_accepts_personality_override_v2() -> Result<()> {
 
     let thread_req = mcp
         .send_thread_start_request(ThreadStartParams {
-            model: Some("exp-codex-personality".to_string()),
+            model: Some("exp-rune-personality".to_string()),
             ..Default::default()
         })
         .await?;
@@ -520,7 +520,7 @@ async fn turn_start_change_personality_mid_thread_v2() -> Result<()> {
 
     let thread_req = mcp
         .send_thread_start_request(ThreadStartParams {
-            model: Some("exp-codex-personality".to_string()),
+            model: Some("exp-rune-personality".to_string()),
             ..Default::default()
         })
         .await?;

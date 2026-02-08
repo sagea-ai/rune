@@ -53,7 +53,7 @@ use tokio::time::timeout;
 use wiremock::BodyPrintLimit;
 use wiremock::MockServer;
 
-const REMOTE_MODEL_SLUG: &str = "codex-test";
+const REMOTE_MODEL_SLUG: &str = "rune-test";
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn remote_models_remote_model_uses_unified_exec() -> Result<()> {
@@ -209,7 +209,7 @@ async fn remote_models_truncation_policy_without_override_preserves_remote() -> 
         .start()
         .await;
 
-    let slug = "codex-test-truncation-policy";
+    let slug = "rune-test-truncation-policy";
     let remote_model = test_remote_model_with_policy(
         slug,
         ModelVisibility::List,
@@ -254,7 +254,7 @@ async fn remote_models_truncation_policy_with_tool_output_override() -> Result<(
         .start()
         .await;
 
-    let slug = "codex-test-truncation-override";
+    let slug = "rune-test-truncation-override";
     let remote_model = test_remote_model_with_policy(
         slug,
         ModelVisibility::List,
@@ -461,7 +461,7 @@ async fn remote_models_preserve_builtin_presets() -> Result<()> {
     assert!(
         available
             .iter()
-            .any(|model| model.model == "gpt-5.1-codex-max"),
+            .any(|model| model.model == "gpt-5.1-rune-max"),
         "builtin presets should remain available after refresh"
     );
     assert_eq!(
@@ -689,7 +689,7 @@ async fn remote_models_hide_picker_only_models() -> Result<()> {
     skip_if_sandbox!(Ok(()));
 
     let server = MockServer::start().await;
-    let remote_model = test_remote_model("codex-auto-balanced", ModelVisibility::Hide, 0);
+    let remote_model = test_remote_model("rune-auto-balanced", ModelVisibility::Hide, 0);
     mount_models_once(
         &server,
         ModelsResponse {
@@ -723,7 +723,7 @@ async fn remote_models_hide_picker_only_models() -> Result<()> {
         .await;
     let hidden = available
         .iter()
-        .find(|model| model.model == "codex-auto-balanced")
+        .find(|model| model.model == "rune-auto-balanced")
         .expect("hidden remote model should be listed");
     assert!(!hidden.show_in_picker, "hidden models should remain hidden");
 

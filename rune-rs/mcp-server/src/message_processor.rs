@@ -190,7 +190,7 @@ impl MessageProcessor {
         }
 
         let server_info = Implementation {
-            name: "codex-mcp-server".to_string(),
+            name: "rune-mcp-server".to_string(),
             title: Some("Codex".to_string()),
             version: env!("CARGO_PKG_VERSION").to_string(),
             icons: None,
@@ -308,7 +308,7 @@ impl MessageProcessor {
 
         match name.as_ref() {
             "codex" => self.handle_tool_call_codex(id, arguments).await,
-            "codex-reply" => {
+            "rune-reply" => {
                 self.handle_tool_call_codex_session_reply(id, arguments)
                     .await
             }
@@ -426,11 +426,11 @@ impl MessageProcessor {
             },
             None => {
                 tracing::error!(
-                    "Missing arguments for codex-reply tool-call; the `thread_id` and `prompt` fields are required."
+                    "Missing arguments for rune-reply tool-call; the `thread_id` and `prompt` fields are required."
                 );
                 let result = CallToolResult {
                     content: vec![rmcp::model::Content::text(
-                        "Missing arguments for codex-reply tool-call; the `thread_id` and `prompt` fields are required.",
+                        "Missing arguments for rune-reply tool-call; the `thread_id` and `prompt` fields are required.",
                     )],
                     structured_content: None,
                     is_error: Some(true),

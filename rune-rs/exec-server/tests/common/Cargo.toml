@@ -9,8 +9,8 @@ path = "lib.rs"
 
 [dependencies]
 anyhow = { workspace = true }
-codex-core = { workspace = true }
-codex-utils-cargo-bin = { workspace = true }
+rune-core = { workspace = true }
+rune-utils-cargo-bin = { workspace = true }
 rmcp = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

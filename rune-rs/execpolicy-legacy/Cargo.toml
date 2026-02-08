@@ -1,12 +1,12 @@
 [package]
-name = "codex-execpolicy-legacy"
+name = "rune-execpolicy-legacy"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 description = "Legacy exec policy engine for validating proposed exec calls."
 
 [[bin]]
-name = "codex-execpolicy-legacy"
+name = "rune-execpolicy-legacy"
 path = "src/main.rs"
 
 [lib]

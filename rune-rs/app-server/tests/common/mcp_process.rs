@@ -78,7 +78,7 @@ pub struct McpProcess {
     pending_messages: VecDeque<JSONRPCMessage>,
 }
 
-pub const DEFAULT_CLIENT_NAME: &str = "codex-app-server-tests";
+pub const DEFAULT_CLIENT_NAME: &str = "rune-app-server-tests";
 
 impl McpProcess {
     pub async fn new(codex_home: &Path) -> anyhow::Result<Self> {
@@ -94,8 +94,8 @@ impl McpProcess {
         codex_home: &Path,
         env_overrides: &[(&str, Option<&str>)],
     ) -> anyhow::Result<Self> {
-        let program = codex_utils_cargo_bin::cargo_bin("codex-app-server")
-            .context("should find binary for codex-app-server")?;
+        let program = codex_utils_cargo_bin::cargo_bin("rune-app-server")
+            .context("should find binary for rune-app-server")?;
         let mut cmd = Command::new(program);
 
         cmd.stdin(Stdio::piped());
@@ -119,7 +119,7 @@ impl McpProcess {
         let mut process = cmd
             .kill_on_drop(true)
             .spawn()
-            .context("codex-mcp-server proc should start")?;
+            .context("rune-mcp-server proc should start")?;
         let stdin = process
             .stdin
             .take()

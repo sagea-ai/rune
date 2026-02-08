@@ -78,7 +78,7 @@ prefix_rule(
     // `shell` tool calls.
     let linux_sandbox_exe_folder = TempDir::new()?;
     let codex_linux_sandbox_exe = if cfg!(target_os = "linux") {
-        let codex_linux_sandbox_exe = linux_sandbox_exe_folder.path().join("codex-linux-sandbox");
+        let codex_linux_sandbox_exe = linux_sandbox_exe_folder.path().join("rune-linux-sandbox");
         let codex_cli = ensure_codex_cli()?;
         symlink(&codex_cli, &codex_linux_sandbox_exe)?;
         Some(codex_linux_sandbox_exe)
@@ -154,14 +154,14 @@ fn ensure_codex_cli() -> Result<PathBuf> {
     })?;
     ensure!(
         metadata.is_file(),
-        "expected codex binary at {} to be a file; run `cargo build -p codex-cli --bin codex` before this test",
+        "expected codex binary at {} to be a file; run `cargo build -p rune-cli --bin codex` before this test",
         codex_cli.display()
     );
 
     let mode = metadata.permissions().mode();
     ensure!(
         mode & 0o111 != 0,
-        "codex binary at {} is not executable (mode {mode:o}); run `cargo build -p codex-cli --bin codex` before this test",
+        "codex binary at {} is not executable (mode {mode:o}); run `cargo build -p rune-cli --bin codex` before this test",
         codex_cli.display()
     );
 

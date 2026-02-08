@@ -1,5 +1,5 @@
 [package]
-name = "codex-ansi-escape"
+name = "rune-ansi-escape"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -1,5 +1,5 @@
 [package]
-name = "codex-cloud-tasks"
+name = "rune-cloud-tasks"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -16,14 +16,14 @@ anyhow = { workspace = true }
 base64 = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 clap = { workspace = true, features = ["derive"] }
-codex-cloud-tasks-client = { path = "../cloud-tasks-client", features = [
+rune-cloud-tasks-client = { path = "../cloud-tasks-client", features = [
     "mock",
     "online",
 ] }
-codex-common = { path = "../common", features = ["cli"] }
-codex-core = { path = "../core" }
-codex-login = { path = "../login" }
-codex-tui = { path = "../tui" }
+rune-common = { path = "../common", features = ["cli"] }
+rune-core = { path = "../core" }
+rune-login = { path = "../login" }
+rune-tui = { path = "../tui" }
 crossterm = { workspace = true, features = ["event-stream"] }
 ratatui = { workspace = true }
 reqwest = { workspace = true, features = ["json"] }

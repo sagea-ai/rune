@@ -3,7 +3,7 @@
 This document describes Codex’s experimental MCP server interface: a JSON‑RPC API that runs over the Model Context Protocol (MCP) transport to control a local Codex engine.
 
 - Status: experimental and subject to change without notice
-- Server binary: `codex mcp-server` (or `codex-mcp-server`)
+- Server binary: `codex mcp-server` (or `rune-mcp-server`)
 - Transport: standard MCP over stdio (JSON‑RPC 2.0, line‑delimited)
 
 ## Overview
@@ -125,7 +125,7 @@ Clients should render events and, when present, surface approval requests (see n
 
 ## Tool responses
 
-The `codex` and `codex-reply` tools return standard MCP `CallToolResult` payloads. For
+The `codex` and `rune-reply` tools return standard MCP `CallToolResult` payloads. For
 compatibility with MCP clients that prefer `structuredContent`, Codex mirrors the
 content blocks inside `structuredContent` alongside the `threadId`.
 

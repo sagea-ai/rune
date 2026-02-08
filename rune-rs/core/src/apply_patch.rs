@@ -9,7 +9,7 @@ use codex_apply_patch::ApplyPatchFileChange;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-pub const CODEX_APPLY_PATCH_ARG1: &str = "--codex-run-as-apply-patch";
+pub const CODEX_APPLY_PATCH_ARG1: &str = "--rune-run-as-apply-patch";
 
 pub(crate) enum InternalApplyPatchInvocation {
     /// The `apply_patch` call was handled programmatically, without any sort

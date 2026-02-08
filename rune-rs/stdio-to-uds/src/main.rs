@@ -5,7 +5,7 @@ use std::process;
 fn main() -> anyhow::Result<()> {
     let mut args = env::args_os().skip(1);
     let Some(socket_path) = args.next() else {
-        eprintln!("Usage: codex-stdio-to-uds <socket-path>");
+        eprintln!("Usage: rune-stdio-to-uds <socket-path>");
         process::exit(1);
     };
 

@@ -2621,7 +2621,7 @@ async fn unified_exec_wait_after_final_agent_message_snapshot() {
         }),
     });
 
-    begin_unified_exec_startup(&mut chat, "call-wait", "proc-1", "cargo test -p codex-core");
+    begin_unified_exec_startup(&mut chat, "call-wait", "proc-1", "cargo test -p rune-core");
     terminal_interaction(&mut chat, "call-wait-stdin", "proc-1", "");
 
     chat.handle_codex_event(Event {
@@ -2660,7 +2660,7 @@ async fn unified_exec_wait_before_streamed_agent_message_snapshot() {
         &mut chat,
         "call-wait-stream",
         "proc-1",
-        "cargo test -p codex-core",
+        "cargo test -p rune-core",
     );
     terminal_interaction(&mut chat, "call-wait-stream-stdin", "proc-1", "");
 
@@ -3090,9 +3090,9 @@ async fn set_model_updates_active_collaboration_mask() {
             .expect("expected plan collaboration mask");
     chat.set_collaboration_mask(plan_mask);
 
-    chat.set_model("gpt-5.1-codex-mini");
+    chat.set_model("gpt-5.1-rune-mini");
 
-    assert_eq!(chat.current_model(), "gpt-5.1-codex-mini");
+    assert_eq!(chat.current_model(), "gpt-5.1-rune-mini");
     assert_eq!(chat.active_collaboration_mode_kind(), ModeKind::Plan);
 }
 
@@ -3236,7 +3236,7 @@ async fn slash_fork_requests_current_fork() {
 #[tokio::test]
 async fn slash_rollout_displays_current_path() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
-    let rollout_path = PathBuf::from("/tmp/codex-test-rollout.jsonl");
+    let rollout_path = PathBuf::from("/tmp/rune-test-rollout.jsonl");
     chat.current_rollout_path = Some(rollout_path.clone());
 
     chat.dispatch_command(SlashCommand::Rollout);
@@ -3944,12 +3944,12 @@ async fn startup_prompts_for_windows_sandbox_when_agent_requested() {
 
 #[tokio::test]
 async fn model_reasoning_selection_popup_snapshot() {
-    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.1-codex-max")).await;
+    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.1-rune-max")).await;
 
     set_chatgpt_auth(&mut chat);
     chat.set_reasoning_effort(Some(ReasoningEffortConfig::High));
 
-    let preset = get_available_model(&chat, "gpt-5.1-codex-max");
+    let preset = get_available_model(&chat, "gpt-5.1-rune-max");
     chat.open_reasoning_popup(preset);
 
     let popup = render_bottom_popup(&chat, 80);
@@ -3958,12 +3958,12 @@ async fn model_reasoning_selection_popup_snapshot() {
 
 #[tokio::test]
 async fn model_reasoning_selection_popup_extra_high_warning_snapshot() {
-    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.1-codex-max")).await;
+    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.1-rune-max")).await;
 
     set_chatgpt_auth(&mut chat);
     chat.set_reasoning_effort(Some(ReasoningEffortConfig::XHigh));
 
-    let preset = get_available_model(&chat, "gpt-5.1-codex-max");
+    let preset = get_available_model(&chat, "gpt-5.1-rune-max");
     chat.open_reasoning_popup(preset);
 
     let popup = render_bottom_popup(&chat, 80);
@@ -3972,11 +3972,11 @@ async fn model_reasoning_selection_popup_extra_high_warning_snapshot() {
 
 #[tokio::test]
 async fn reasoning_popup_shows_extra_high_with_space() {
-    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.1-codex-max")).await;
+    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.1-rune-max")).await;
 
     set_chatgpt_auth(&mut chat);
 
-    let preset = get_available_model(&chat, "gpt-5.1-codex-max");
+    let preset = get_available_model(&chat, "gpt-5.1-rune-max");
     chat.open_reasoning_popup(preset);
 
     let popup = render_bottom_popup(&chat, 120);
@@ -4057,11 +4057,11 @@ async fn feedback_upload_consent_popup_snapshot() {
 
 #[tokio::test]
 async fn reasoning_popup_escape_returns_to_model_popup() {
-    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.1-codex-max")).await;
+    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5.1-rune-max")).await;
     chat.thread_id = Some(ThreadId::new());
     chat.open_model_popup();
 
-    let preset = get_available_model(&chat, "gpt-5.1-codex-max");
+    let preset = get_available_model(&chat, "gpt-5.1-rune-max");
     chat.open_reasoning_popup(preset);
 
     let before_escape = render_bottom_popup(&chat, 80);

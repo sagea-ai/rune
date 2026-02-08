@@ -1,4 +1,4 @@
-# codex-app-server
+# rune-app-server
 
 `codex app-server` is the interface Codex uses to power rich interfaces such as the [Codex VS Code extension](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt).
 
@@ -938,5 +938,5 @@ At runtime, clients must send `initialize` with `capabilities.experimentalApi = 
 5. Verify the protocol crate:
 
    ```bash
-   cargo test -p codex-app-server-protocol
+   cargo test -p rune-app-server-protocol
    ```

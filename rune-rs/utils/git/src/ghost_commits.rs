@@ -333,7 +333,7 @@ pub fn create_ghost_commit_with_report(
             file_count: dir.file_count,
         })
         .collect::<Vec<_>>();
-    let index_tempdir = Builder::new().prefix("codex-git-index-").tempdir()?;
+    let index_tempdir = Builder::new().prefix("rune-git-index-").tempdir()?;
     let index_path = index_tempdir.path().join("index");
     let base_env = vec![(
         OsString::from("GIT_INDEX_FILE"),
@@ -1530,7 +1530,7 @@ mod tests {
         assert_eq!(root_after, "root after\n");
         let nested_after = std::fs::read_to_string(workspace.join("nested.txt"))?;
         assert_eq!(nested_after, "nested modified\n");
-        assert!(!workspace.join("codex-rs").exists());
+        assert!(!workspace.join("rune-rs").exists());
 
         Ok(())
     }
@@ -1542,7 +1542,7 @@ mod tests {
         let repo = temp.path();
         init_test_repo(repo);
 
-        let workspace = repo.join("codex-rs");
+        let workspace = repo.join("rune-rs");
         std::fs::create_dir_all(&workspace)?;
         std::fs::write(repo.join(".gitignore"), ".vscode/\n")?;
         std::fs::write(workspace.join("tracked.txt"), "snapshot version\n")?;

@@ -697,7 +697,7 @@ pub(crate) struct SessionSettingsUpdate {
 }
 
 impl Session {
-    /// Builds the `x-codex-beta-features` header value for this session.
+    /// Builds the `x-rune-beta-features` header value for this session.
     ///
     /// `ModelClient` is session-scoped and intentionally does not depend on the full `Config`, so
     /// we precompute the comma-separated list of enabled experimental feature keys at session
@@ -5044,7 +5044,7 @@ mod tests {
                 expects_apply_patch_instructions: false,
             },
             InstructionsTestCase {
-                slug: "codex-mini-latest",
+                slug: "rune-mini-latest",
                 expects_apply_patch_instructions: true,
             },
             InstructionsTestCase {
@@ -5056,7 +5056,7 @@ mod tests {
                 expects_apply_patch_instructions: false,
             },
             InstructionsTestCase {
-                slug: "gpt-5.1-codex-max",
+                slug: "gpt-5.1-rune-max",
                 expects_apply_patch_instructions: false,
             },
         ];

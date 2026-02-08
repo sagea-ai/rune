@@ -1,5 +1,5 @@
 [package]
-name = "codex-otel"
+name = "rune-otel"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -21,10 +21,10 @@ disable-default-metrics-exporter = []
 
 [dependencies]
 chrono = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
-codex-utils-string = { workspace = true }
-codex-api = { workspace = true }
-codex-protocol = { workspace = true }
+rune-utils-absolute-path = { workspace = true }
+rune-utils-string = { workspace = true }
+rune-api = { workspace = true }
+rune-protocol = { workspace = true }
 eventsource-stream = { workspace = true }
 opentelemetry = { workspace = true, features = ["logs", "metrics", "trace"] }
 opentelemetry-appender-tracing = { workspace = true }

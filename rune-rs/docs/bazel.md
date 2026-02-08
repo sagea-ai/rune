@@ -1,6 +1,6 @@
-# Bazel in codex-rs
+# Bazel in rune-rs
 
-This repository uses Bazel to build the Rust workspace under `codex-rs`.
+This repository uses Bazel to build the Rust workspace under `rune-rs`.
 Cargo remains the source of truth for crates and features, while Bazel
 provides hermetic builds, toolchains, and cross-platform artifacts.
 
@@ -9,14 +9,14 @@ As of 1/9/2026, this setup is still experimental as we stabilize it.
 ## High-level layout
 
 - `../MODULE.bazel` defines Bazel dependencies and Rust toolchains.
-- `rules_rs` imports third-party crates from `codex-rs/Cargo.toml` and
-  `codex-rs/Cargo.lock` via `crate.from_cargo(...)` and exposes them under
+- `rules_rs` imports third-party crates from `rune-rs/Cargo.toml` and
+  `rune-rs/Cargo.lock` via `crate.from_cargo(...)` and exposes them under
   `@crates`.
 - `../defs.bzl` provides `codex_rust_crate`, which wraps `rust_library`,
   `rust_binary`, and `rust_test` so Bazel targets line up with Cargo conventions.
   It provides a sane set of defaults that work for most first-party crates, but may
   need tweaks in some cases.
-- Each crate in `codex-rs/*/BUILD.bazel` typically uses `codex_rust_crate` and
+- Each crate in `rune-rs/*/BUILD.bazel` typically uses `codex_rust_crate` and
   makes some adjustments if the crate needs additional compile-time or runtime data,
   or other customizations.
 

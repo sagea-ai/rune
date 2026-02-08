@@ -4,7 +4,7 @@ use codex_execpolicy::execpolicycheck::ExecPolicyCheckCommand;
 
 /// CLI for evaluating exec policies
 #[derive(Parser)]
-#[command(name = "codex-execpolicy")]
+#[command(name = "rune-execpolicy")]
 enum Cli {
     /// Evaluate a command against a policy.
     Check(ExecPolicyCheckCommand),

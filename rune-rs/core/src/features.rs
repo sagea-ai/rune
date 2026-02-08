@@ -109,7 +109,7 @@ pub enum Feature {
     ChildAgentsMd,
     /// Enforce UTF8 output in Powershell.
     PowershellUtf8,
-    /// Compress request bodies (zstd) when sending streaming requests to codex-backend.
+    /// Compress request bodies (zstd) when sending streaming requests to rune-backend.
     EnableRequestCompression,
     /// Enable collab tools.
     Collab,

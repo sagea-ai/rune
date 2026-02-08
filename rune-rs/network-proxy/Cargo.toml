@@ -1,11 +1,11 @@
 [package]
-name = "codex-network-proxy"
+name = "rune-network-proxy"
 edition = "2024"
 version = { workspace = true }
 license.workspace = true
 
 [[bin]]
-name = "codex-network-proxy"
+name = "rune-network-proxy"
 path = "src/main.rs"
 
 [lib]
@@ -19,9 +19,9 @@ workspace = true
 anyhow = { workspace = true }
 async-trait = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
-codex-app-server-protocol = { workspace = true }
-codex-core = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
+rune-app-server-protocol = { workspace = true }
+rune-core = { workspace = true }
+rune-utils-absolute-path = { workspace = true }
 globset = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }

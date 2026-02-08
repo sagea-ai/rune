@@ -17,7 +17,7 @@ use core_test_support::skip_if_no_network;
 use core_test_support::test_codex::test_codex;
 use pretty_assertions::assert_eq;
 
-const TURN_STATE_HEADER: &str = "x-codex-turn-state";
+const TURN_STATE_HEADER: &str = "x-rune-turn-state";
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn responses_turn_state_persists_within_turn_and_resets_after() -> Result<()> {

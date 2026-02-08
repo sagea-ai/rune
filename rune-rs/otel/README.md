@@ -1,6 +1,6 @@
-# codex-otel
+# rune-otel
 
-`codex-otel` is the OpenTelemetry integration crate for Codex. It provides:
+`rune-otel` is the OpenTelemetry integration crate for Codex. It provides:
 
 - Trace/log/metrics exporters and tracing subscriber layers (`codex_otel::otel_provider`).
 - A structured event helper (`codex_otel::OtelManager`).
@@ -22,7 +22,7 @@ use tracing_subscriber::prelude::*;
 
 let settings = OtelSettings {
     environment: "dev".to_string(),
-    service_name: "codex-cli".to_string(),
+    service_name: "rune-cli".to_string(),
     service_version: env!("CARGO_PKG_VERSION").to_string(),
     codex_home: std::path::PathBuf::from("/tmp"),
     exporter: OtelExporter::OtlpHttp {
@@ -78,7 +78,7 @@ Modes:
 - OTLP: exports metrics via the OpenTelemetry OTLP exporter (HTTP or gRPC).
 - In-memory: records via `opentelemetry_sdk::metrics::InMemoryMetricExporter` for tests/assertions; call `shutdown()` to flush.
 
-`codex-otel` also provides `OtelExporter::Statsig`, a shorthand for exporting OTLP/HTTP JSON metrics
+`rune-otel` also provides `OtelExporter::Statsig`, a shorthand for exporting OTLP/HTTP JSON metrics
 to Statsig using Codex-internal defaults.
 
 Statsig ingestion (OTLP/HTTP JSON) example:
@@ -88,7 +88,7 @@ use codex_otel::config::{OtelExporter, OtelHttpProtocol};
 
 let metrics = MetricsClient::new(MetricsConfig::otlp(
     "dev",
-    "codex-cli",
+    "rune-cli",
     env!("CARGO_PKG_VERSION"),
     OtelExporter::OtlpHttp {
         endpoint: "https://api.statsig.com/otlp".to_string(),
@@ -111,7 +111,7 @@ In-memory (tests):
 let exporter = InMemoryMetricExporter::default();
 let metrics = MetricsClient::new(MetricsConfig::in_memory(
     "test",
-    "codex-cli",
+    "rune-cli",
     env!("CARGO_PKG_VERSION"),
     exporter.clone(),
 ))?;

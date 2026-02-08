@@ -1,14 +1,14 @@
-//! Entry-point for the `codex-exec` binary.
+//! Entry-point for the `rune-exec` binary.
 //!
-//! When this CLI is invoked normally, it parses the standard `codex-exec` CLI
+//! When this CLI is invoked normally, it parses the standard `rune-exec` CLI
 //! options and launches the non-interactive Codex agent. However, if it is
-//! invoked with arg0 as `codex-linux-sandbox`, we instead treat the invocation
-//! as a request to run the logic for the standalone `codex-linux-sandbox`
+//! invoked with arg0 as `rune-linux-sandbox`, we instead treat the invocation
+//! as a request to run the logic for the standalone `rune-linux-sandbox`
 //! executable (i.e., parse any -s args and then run a *sandboxed* command under
 //! Landlock + seccomp.
 //!
 //! This allows us to ship a completely separate set of functionality as part
-//! of the `codex-exec` binary.
+//! of the `rune-exec` binary.
 use clap::Parser;
 use codex_arg0::arg0_dispatch_or_else;
 use codex_common::CliConfigOverrides;
@@ -48,7 +48,7 @@ mod tests {
     fn top_cli_parses_resume_prompt_after_config_flag() {
         const PROMPT: &str = "echo resume-with-global-flags-after-subcommand";
         let cli = TopCli::parse_from([
-            "codex-exec",
+            "rune-exec",
             "resume",
             "--last",
             "--json",

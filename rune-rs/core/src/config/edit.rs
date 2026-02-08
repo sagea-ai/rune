@@ -1323,7 +1323,7 @@ existing = "value"
             codex_home,
             None,
             &[ConfigEdit::SetNoticeHideModelMigrationPrompt(
-                "hide_gpt-5.1-codex-max_migration_prompt".to_string(),
+                "hide_gpt-5.1-rune-max_migration_prompt".to_string(),
                 true,
             )],
         )
@@ -1333,7 +1333,7 @@ existing = "value"
             std::fs::read_to_string(codex_home.join(CONFIG_TOML_FILE)).expect("read config");
         let expected = r#"[notice]
 existing = "value"
-"hide_gpt-5.1-codex-max_migration_prompt" = true
+"hide_gpt-5.1-rune-max_migration_prompt" = true
 "#;
         assert_eq!(contents, expected);
     }

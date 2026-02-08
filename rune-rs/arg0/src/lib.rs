@@ -8,7 +8,7 @@ use codex_core::CODEX_APPLY_PATCH_ARG1;
 use std::os::unix::fs::symlink;
 use tempfile::TempDir;
 
-const LINUX_SANDBOX_ARG0: &str = "codex-linux-sandbox";
+const LINUX_SANDBOX_ARG0: &str = "rune-linux-sandbox";
 const APPLY_PATCH_ARG0: &str = "apply_patch";
 const MISSPELLED_APPLY_PATCH_ARG0: &str = "applypatch";
 const LOCK_FILENAME: &str = ".lock";
@@ -86,7 +86,7 @@ pub fn arg0_dispatch() -> Option<Arg0PathEntryGuard> {
 /// Linux (but not Windows).
 ///
 /// When the current executable is invoked through the hard-link or alias named
-/// `codex-linux-sandbox` we *directly* execute
+/// `rune-linux-sandbox` we *directly* execute
 /// [`codex_linux_sandbox::run_main`] (which never returns). Otherwise we:
 ///
 /// 1.  Load `.env` values from `~/.codex/.env` before creating any threads.
@@ -156,7 +156,7 @@ where
 ///
 /// - UNIX: `apply_patch` symlink to the current executable
 /// - WINDOWS: `apply_patch.bat` batch script to invoke the current executable
-///   with the "secret" --codex-run-as-apply-patch flag.
+///   with the "secret" --rune-run-as-apply-patch flag.
 ///
 /// This temporary directory is prepended to the PATH environment variable so
 /// that `apply_patch` can be on the PATH without requiring the user to
@@ -200,7 +200,7 @@ pub fn prepend_path_entry_for_codex_aliases() -> std::io::Result<Arg0PathEntryGu
     }
 
     let temp_dir = tempfile::Builder::new()
-        .prefix("codex-arg0")
+        .prefix("rune-arg0")
         .tempdir_in(&temp_root)?;
     let path = temp_dir.path();
 

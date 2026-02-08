@@ -89,7 +89,7 @@ fn try_build_vendored_bwrap() -> Result<(), String> {
 ///
 /// Priority:
 /// 1. `CODEX_BWRAP_SOURCE_DIR` points at an existing bubblewrap checkout.
-/// 2. The vendored bubblewrap tree under `codex-rs/vendor/bubblewrap`.
+/// 2. The vendored bubblewrap tree under `rune-rs/vendor/bubblewrap`.
 fn resolve_bwrap_source_dir(manifest_dir: &Path) -> Result<PathBuf, String> {
     if let Ok(path) = env::var("CODEX_BWRAP_SOURCE_DIR") {
         let src_dir = PathBuf::from(path);
@@ -109,7 +109,7 @@ fn resolve_bwrap_source_dir(manifest_dir: &Path) -> Result<PathBuf, String> {
 
     Err(format!(
         "expected vendored bubblewrap at {}, but it was not found.\n\
-Set CODEX_BWRAP_SOURCE_DIR to an existing checkout or vendor bubblewrap under codex-rs/vendor.",
+Set CODEX_BWRAP_SOURCE_DIR to an existing checkout or vendor bubblewrap under rune-rs/vendor.",
         vendor_dir.display()
     ))
 }

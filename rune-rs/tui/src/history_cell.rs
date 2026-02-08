@@ -1480,7 +1480,7 @@ pub(crate) fn new_web_search_call(
 /// exists” affordance separate from the main MCP tool call cell.
 ///
 /// Manual testing tip:
-/// - Run the rmcp stdio test server (`codex-rs/rmcp-client/src/bin/test_stdio_server.rs`) and
+/// - Run the rmcp stdio test server (`rune-rs/rmcp-client/src/bin/test_stdio_server.rs`) and
 ///   register it as an MCP server via `codex mcp add`.
 /// - Use its `image_scenario` tool with cases like `text_then_image`,
 ///   `invalid_base64_then_image`, or `invalid_image_bytes_then_image` to ensure this path triggers

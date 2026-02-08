@@ -129,8 +129,8 @@ sequenceDiagram
     participant agent as Model
     end
     user->>codex: Op::ConfigureSession
-    codex-->>session: create session
-    codex->>user: Event::SessionConfigured
+    rune-->>session: create session
+    rune->>user: Event::SessionConfigured
     user->>session: Op::UserTurn
     session-->>+task: start task
     task->>user: Event::TurnStarted

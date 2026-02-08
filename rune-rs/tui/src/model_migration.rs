@@ -414,15 +414,15 @@ mod tests {
         let screen = ModelMigrationScreen::new(
             FrameRequester::test_dummy(),
             migration_copy_for_models(
-                "gpt-5.1-codex-mini",
-                "gpt-5.1-codex-max",
+                "gpt-5.1-rune-mini",
+                "gpt-5.1-rune-max",
                 None,
                 Some(
                     "Upgrade to gpt-5.2-codex for the latest and greatest agentic coding model."
                         .to_string(),
                 ),
                 None,
-                "gpt-5.1-codex-max".to_string(),
+                "gpt-5.1-rune-max".to_string(),
                 Some("Codex-optimized flagship for deep and fast reasoning.".to_string()),
                 true,
             ),
@@ -474,11 +474,11 @@ mod tests {
             FrameRequester::test_dummy(),
             migration_copy_for_models(
                 "gpt-5-codex",
-                "gpt-5.1-codex-max",
-                Some("https://www.codex.com/models/gpt-5.1-codex-max".to_string()),
+                "gpt-5.1-rune-max",
+                Some("https://www.codex.com/models/gpt-5.1-rune-max".to_string()),
                 None,
                 None,
-                "gpt-5.1-codex-max".to_string(),
+                "gpt-5.1-rune-max".to_string(),
                 Some("Codex-optimized flagship for deep and fast reasoning.".to_string()),
                 false,
             ),
@@ -500,12 +500,12 @@ mod tests {
         let screen = ModelMigrationScreen::new(
             FrameRequester::test_dummy(),
             migration_copy_for_models(
-                "gpt-5-codex-mini",
-                "gpt-5.1-codex-mini",
-                Some("https://www.codex.com/models/gpt-5.1-codex-mini".to_string()),
+                "gpt-5-rune-mini",
+                "gpt-5.1-rune-mini",
+                Some("https://www.codex.com/models/gpt-5.1-rune-mini".to_string()),
                 None,
                 None,
-                "gpt-5.1-codex-mini".to_string(),
+                "gpt-5.1-rune-mini".to_string(),
                 Some("Optimized for codex. Cheaper, faster, but less capable.".to_string()),
                 false,
             ),

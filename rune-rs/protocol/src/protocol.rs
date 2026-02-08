@@ -284,7 +284,7 @@ pub enum Op {
     Compact,
 
     /// Set a user-facing thread name in the persisted rollout metadata.
-    /// This is a local-only operation handled by codex-core; it does not
+    /// This is a local-only operation handled by rune-core; it does not
     /// involve the model.
     SetThreadName { name: String },
 
@@ -2684,7 +2684,7 @@ mod tests {
                 session_id: conversation_id,
                 forked_from_id: None,
                 thread_name: None,
-                model: "codex-mini-latest".to_string(),
+                model: "rune-mini-latest".to_string(),
                 model_provider_id: "openai".to_string(),
                 approval_policy: AskForApproval::Never,
                 sandbox_policy: SandboxPolicy::ReadOnly,
@@ -2702,7 +2702,7 @@ mod tests {
             "msg": {
                 "type": "session_configured",
                 "session_id": "67e55044-10b1-426f-9247-bb680e5fe0c8",
-                "model": "codex-mini-latest",
+                "model": "rune-mini-latest",
                 "model_provider_id": "openai",
                 "approval_policy": "never",
                 "sandbox_policy": {

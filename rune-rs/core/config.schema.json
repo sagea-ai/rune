@@ -514,8 +514,8 @@
           "description": "Tracks whether the user has acknowledged the full access warning prompt.",
           "type": "boolean"
         },
-        "hide_gpt-5.1-codex-max_migration_prompt": {
-          "description": "Tracks whether the user has seen the gpt-5.1-codex-max migration prompt",
+        "hide_gpt-5.1-rune-max_migration_prompt": {
+          "description": "Tracks whether the user has seen the gpt-5.1-rune-max migration prompt",
           "type": "boolean"
         },
         "hide_gpt5_1_migration_prompt": {
@@ -1389,7 +1389,7 @@
           "$ref": "#/definitions/AbsolutePathBuf"
         }
       ],
-      "description": "Directory where Codex writes log files, for example `codex-tui.log`. Defaults to `$CODEX_HOME/log`."
+      "description": "Directory where Codex writes log files, for example `rune-tui.log`. Defaults to `$CODEX_HOME/log`."
     },
     "mcp_oauth_callback_port": {
       "description": "Optional fixed port for the local HTTP callback server used during MCP OAuth login. When unset, Codex will bind to an ephemeral port chosen by the OS.",
@@ -1404,7 +1404,7 @@
         }
       ],
       "default": null,
-      "description": "Preferred backend for storing MCP OAuth credentials. keyring: Use an OS-specific keyring service. https://github.com/openai/codex/blob/main/codex-rs/rmcp-client/src/oauth.rs#L2 file: Use a file in the Codex home directory. auto (default): Use the OS-specific keyring service if available, otherwise use a file."
+      "description": "Preferred backend for storing MCP OAuth credentials. keyring: Use an OS-specific keyring service. https://github.com/openai/codex/blob/main/rune-rs/rmcp-client/src/oauth.rs#L2 file: Use a file in the Codex home directory. auto (default): Use the OS-specific keyring service if available, otherwise use a file."
     },
     "mcp_servers": {
       "additionalProperties": {

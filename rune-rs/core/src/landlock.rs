@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use tokio::process::Child;
 
 /// Spawn a shell tool command under the Linux sandbox helper
-/// (codex-linux-sandbox), which currently uses bubblewrap for filesystem
+/// (rune-linux-sandbox), which currently uses bubblewrap for filesystem
 /// isolation plus seccomp for network restrictions.
 ///
 /// Unlike macOS Seatbelt where we directly embed the policy text, the Linux
@@ -34,7 +34,7 @@ where
         sandbox_policy_cwd,
         use_bwrap_sandbox,
     );
-    let arg0 = Some("codex-linux-sandbox");
+    let arg0 = Some("rune-linux-sandbox");
     spawn_child_async(
         codex_linux_sandbox_exe.as_ref().to_path_buf(),
         args,
@@ -47,7 +47,7 @@ where
     .await
 }
 
-/// Converts the sandbox policy into the CLI invocation for `codex-linux-sandbox`.
+/// Converts the sandbox policy into the CLI invocation for `rune-linux-sandbox`.
 ///
 /// The helper performs the actual sandboxing (bubblewrap + seccomp) after
 /// parsing these arguments. See `docs/linux_sandbox.md` for the Linux semantics.

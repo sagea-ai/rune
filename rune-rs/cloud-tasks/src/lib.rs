@@ -59,7 +59,7 @@ async fn init_backend(user_agent_suffix: &str) -> anyhow::Result<BackendContext>
     let style = if base_url.contains("/backend-api") {
         "wham"
     } else {
-        "codex-api"
+        "rune-api"
     };
     append_error_log(format!("startup: base_url={base_url} path_style={style}"));
 

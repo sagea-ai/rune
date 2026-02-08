@@ -309,7 +309,7 @@ fn is_standard_tool_call(parsed_cmd: &[ParsedCommand]) -> bool {
 }
 
 const RATE_LIMIT_WARNING_THRESHOLDS: [f64; 3] = [75.0, 90.0, 95.0];
-const NUDGE_MODEL_SLUG: &str = "gpt-5.1-codex-mini";
+const NUDGE_MODEL_SLUG: &str = "gpt-5.1-rune-mini";
 const RATE_LIMIT_SWITCH_PROMPT_THRESHOLD: f64 = 90.0;
 
 #[derive(Default)]
@@ -476,7 +476,7 @@ pub(crate) enum ExternalEditorState {
 /// intent (`Op` submissions and `AppEvent` requests).
 ///
 /// It is not responsible for running the agent itself; it reflects progress by updating UI state
-/// and by sending requests back to codex-core.
+/// and by sending requests back to rune-core.
 ///
 /// Quit/interrupt behavior intentionally spans layers: the bottom pane owns local input routing
 /// (which view gets Ctrl+C), while `ChatWidget` owns process-level decisions such as interrupting
@@ -527,7 +527,7 @@ pub(crate) struct ChatWidget {
     unified_exec_wait_streak: Option<UnifiedExecWaitStreak>,
     task_complete_pending: bool,
     unified_exec_processes: Vec<UnifiedExecProcessSummary>,
-    /// Tracks whether codex-core currently considers an agent turn to be in progress.
+    /// Tracks whether rune-core currently considers an agent turn to be in progress.
     ///
     /// This is kept separate from `mcp_startup_status` so that MCP startup progress (or completion)
     /// can update the status header without accidentally clearing the spinner for an active turn.
@@ -1044,7 +1044,7 @@ impl ChatWidget {
         if let Some(messages) = initial_messages {
             self.replay_initial_messages(messages);
         }
-        // Ask codex-core to enumerate custom prompts for this session.
+        // Ask rune-core to enumerate custom prompts for this session.
         self.submit_op(Op::ListCustomPrompts);
         self.submit_op(Op::ListSkills {
             cwds: Vec::new(),
@@ -4849,14 +4849,14 @@ impl ChatWidget {
     }
 
     fn is_auto_model(model: &str) -> bool {
-        model.starts_with("codex-auto-")
+        model.starts_with("rune-auto-")
     }
 
     fn auto_model_order(model: &str) -> usize {
         match model {
-            "codex-auto-fast" => 0,
-            "codex-auto-balanced" => 1,
-            "codex-auto-thorough" => 2,
+            "rune-auto-fast" => 0,
+            "rune-auto-balanced" => 1,
+            "rune-auto-thorough" => 2,
             _ => 3,
         }
     }
@@ -5007,7 +5007,7 @@ impl ChatWidget {
             format!("⚠ {effort_label} reasoning effort can quickly consume Plus plan rate limits.")
         });
         let warn_for_model = preset.model.starts_with("gpt-5.1-codex")
-            || preset.model.starts_with("gpt-5.1-codex-max")
+            || preset.model.starts_with("gpt-5.1-rune-max")
             || preset.model.starts_with("gpt-5.2");
 
         struct EffortChoice {

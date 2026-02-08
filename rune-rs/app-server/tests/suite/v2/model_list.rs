@@ -79,10 +79,10 @@ async fn list_models_returns_all_models_with_large_limit() -> Result<()> {
             is_default: true,
         },
         Model {
-            id: "gpt-5.1-codex-max".to_string(),
-            model: "gpt-5.1-codex-max".to_string(),
+            id: "gpt-5.1-rune-max".to_string(),
+            model: "gpt-5.1-rune-max".to_string(),
             upgrade: Some("gpt-5.2-codex".to_string()),
-            display_name: "gpt-5.1-codex-max".to_string(),
+            display_name: "gpt-5.1-rune-max".to_string(),
             description: "Codex-optimized flagship for deep and fast reasoning.".to_string(),
             supported_reasoning_efforts: vec![
                 ReasoningEffortOption {
@@ -109,10 +109,10 @@ async fn list_models_returns_all_models_with_large_limit() -> Result<()> {
             is_default: false,
         },
         Model {
-            id: "gpt-5.1-codex-mini".to_string(),
-            model: "gpt-5.1-codex-mini".to_string(),
+            id: "gpt-5.1-rune-mini".to_string(),
+            model: "gpt-5.1-rune-mini".to_string(),
             upgrade: Some("gpt-5.2-codex".to_string()),
-            display_name: "gpt-5.1-codex-mini".to_string(),
+            display_name: "gpt-5.1-rune-mini".to_string(),
             description: "Optimized for codex. Cheaper, faster, but less capable.".to_string(),
             supported_reasoning_efforts: vec![
                 ReasoningEffortOption {
@@ -222,7 +222,7 @@ async fn list_models_pagination_works() -> Result<()> {
     } = to_response::<ModelListResponse>(second_response)?;
 
     assert_eq!(second_items.len(), 1);
-    assert_eq!(second_items[0].id, "gpt-5.1-codex-max");
+    assert_eq!(second_items[0].id, "gpt-5.1-rune-max");
     let third_cursor = second_cursor.ok_or_else(|| anyhow!("cursor for third page"))?;
 
     let third_request = mcp
@@ -244,7 +244,7 @@ async fn list_models_pagination_works() -> Result<()> {
     } = to_response::<ModelListResponse>(third_response)?;
 
     assert_eq!(third_items.len(), 1);
-    assert_eq!(third_items[0].id, "gpt-5.1-codex-mini");
+    assert_eq!(third_items[0].id, "gpt-5.1-rune-mini");
     let fourth_cursor = third_cursor.ok_or_else(|| anyhow!("cursor for fourth page"))?;
 
     let fourth_request = mcp

@@ -79,7 +79,7 @@ async fn websocket_transport_routes_per_connection_handshake_and_responses() -> 
 }
 
 async fn spawn_websocket_server(codex_home: &Path, bind_addr: SocketAddr) -> Result<Child> {
-    let program = codex_utils_cargo_bin::cargo_bin("codex-app-server")
+    let program = codex_utils_cargo_bin::cargo_bin("rune-app-server")
         .context("should find app-server binary")?;
     let mut cmd = Command::new(program);
     cmd.arg("--listen")

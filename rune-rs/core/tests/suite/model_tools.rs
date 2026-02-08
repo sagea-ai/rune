@@ -68,7 +68,7 @@ async fn model_selects_expected_tools() {
     skip_if_no_network!();
     use pretty_assertions::assert_eq;
 
-    let codex_tools = collect_tool_identifiers_for_model("codex-mini-latest").await;
+    let codex_tools = collect_tool_identifiers_for_model("rune-mini-latest").await;
     assert_eq!(
         codex_tools,
         expected_default_tools(
@@ -83,7 +83,7 @@ async fn model_selects_expected_tools() {
                 "view_image",
             ],
         ),
-        "codex-mini-latest should expose the local shell tool",
+        "rune-mini-latest should expose the local shell tool",
     );
 
     let gpt5_codex_tools = collect_tool_identifiers_for_model("gpt-5-codex").await;

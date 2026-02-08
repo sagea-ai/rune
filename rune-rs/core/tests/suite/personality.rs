@@ -287,7 +287,7 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
     )
     .await;
     let mut builder = test_codex()
-        .with_model("exp-codex-personality")
+        .with_model("exp-rune-personality")
         .with_config(|config| {
             config.features.disable(Feature::RemoteModels);
             config.features.enable(Feature::Personality);
@@ -383,7 +383,7 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
     )
     .await;
     let mut builder = test_codex()
-        .with_model("exp-codex-personality")
+        .with_model("exp-rune-personality")
         .with_config(|config| {
             config.features.disable(Feature::RemoteModels);
             config.features.enable(Feature::Personality);
@@ -490,7 +490,7 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
     )
     .await;
     let mut builder = test_codex()
-        .with_model("exp-codex-personality")
+        .with_model("exp-rune-personality")
         .with_config(|config| {
             config.features.disable(Feature::RemoteModels);
             config.features.disable(Feature::Personality);
@@ -692,7 +692,7 @@ async fn remote_model_friendly_personality_instructions_with_feature() -> anyhow
         .start()
         .await;
 
-    let remote_slug = "codex-remote-default-personality";
+    let remote_slug = "rune-remote-default-personality";
     let default_personality_message = "Default from remote template";
     let friendly_personality_message = "Friendly variant";
     let remote_model = ModelInfo {
@@ -803,7 +803,7 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
         .start()
         .await;
 
-    let remote_slug = "codex-remote-personality";
+    let remote_slug = "rune-remote-personality";
     let remote_friendly_message = "Friendly from remote template";
     let remote_pragmatic_message = "Pragmatic from remote template";
     let remote_model = ModelInfo {

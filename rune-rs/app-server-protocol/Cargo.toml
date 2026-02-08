@@ -1,5 +1,5 @@
 [package]
-name = "codex-app-server-protocol"
+name = "rune-app-server-protocol"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -14,9 +14,9 @@ workspace = true
 [dependencies]
 anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
-codex-protocol = { workspace = true }
-codex-experimental-api-macros = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
+rune-protocol = { workspace = true }
+rune-experimental-api-macros = { workspace = true }
+rune-utils-absolute-path = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
@@ -28,7 +28,7 @@ uuid = { workspace = true, features = ["serde", "v7"] }
 
 [dev-dependencies]
 anyhow = { workspace = true }
-codex-utils-cargo-bin = { workspace = true }
+rune-utils-cargo-bin = { workspace = true }
 pretty_assertions = { workspace = true }
 similar = { workspace = true }
 tempfile = { workspace = true }

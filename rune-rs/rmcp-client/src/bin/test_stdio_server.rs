@@ -99,7 +99,7 @@ impl TestToolServer {
     /// that aren't the first item (or includes invalid image blocks before a valid image).
     ///
     /// Manual testing approach (Codex TUI):
-    /// - Build this binary: `cargo build -p codex-rmcp-client --bin test_stdio_server`
+    /// - Build this binary: `cargo build -p rune-rmcp-client --bin test_stdio_server`
     /// - Register it:
     ///   - `codex mcp add mcpimg -- /abs/path/to/test_stdio_server`
     /// - Then in Codex TUI, ask it to call:
@@ -165,7 +165,7 @@ impl TestToolServer {
     fn memo_template() -> ResourceTemplate {
         let raw = RawResourceTemplate {
             uri_template: "memo://codex/{slug}".to_string(),
-            name: "codex-memo".to_string(),
+            name: "rune-memo".to_string(),
             title: Some("Codex Memo".to_string()),
             description: Some(
                 "Template for memo://codex/{slug} resources used in tests.".to_string(),

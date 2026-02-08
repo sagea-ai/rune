@@ -2392,7 +2392,7 @@ impl App {
         model: &str,
         reasoning_effort: Option<ReasoningEffortConfig>,
     ) -> Option<&'static str> {
-        (!model.starts_with("codex-auto-")).then(|| Self::reasoning_label(reasoning_effort))
+        (!model.starts_with("rune-auto-")).then(|| Self::reasoning_label(reasoning_effort))
     }
 
     pub(crate) fn token_usage(&self) -> codex_core::protocol::TokenUsage {
@@ -2849,14 +2849,14 @@ mod tests {
             &all_model_presets()
         ));
         assert!(should_show_model_migration_prompt(
-            "gpt-5-codex-mini",
-            "gpt-5.1-codex-mini",
+            "gpt-5-rune-mini",
+            "gpt-5.1-rune-mini",
             &seen,
             &all_model_presets()
         ));
         assert!(should_show_model_migration_prompt(
             "gpt-5.1-codex",
-            "gpt-5.1-codex-max",
+            "gpt-5.1-rune-max",
             &seen,
             &all_model_presets()
         ));

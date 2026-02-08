@@ -72,7 +72,7 @@ pub enum SandboxPreference {
 
 #[derive(Debug, thiserror::Error)]
 pub(crate) enum SandboxTransformError {
-    #[error("missing codex-linux-sandbox executable path")]
+    #[error("missing rune-linux-sandbox executable path")]
     MissingLinuxSandboxExecutable,
     #[cfg(not(target_os = "macos"))]
     #[error("seatbelt sandbox is only available on macOS")]
@@ -170,11 +170,11 @@ impl SandboxManager {
                 (
                     full_command,
                     HashMap::new(),
-                    Some("codex-linux-sandbox".to_string()),
+                    Some("rune-linux-sandbox".to_string()),
                 )
             }
             // On Windows, the restricted token sandbox executes in-process via the
-            // codex-windows-sandbox crate. We leave the command unchanged here and
+            // rune-windows-sandbox crate. We leave the command unchanged here and
             // branch during execution based on the sandbox type.
             #[cfg(target_os = "windows")]
             SandboxType::WindowsRestrictedToken => (command, HashMap::new(), None),

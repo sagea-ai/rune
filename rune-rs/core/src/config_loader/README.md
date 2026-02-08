@@ -1,4 +1,4 @@
-# `codex-core` config loader
+# `rune-core` config loader
 
 This module is the canonical place to **load and describe Codex configuration layers** (user config, CLI/session overrides, managed config, and MDM-managed preferences) and to produce:
 

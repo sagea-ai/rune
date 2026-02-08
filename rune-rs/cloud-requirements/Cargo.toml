@@ -1,5 +1,5 @@
 [package]
-name = "codex-cloud-requirements"
+name = "rune-cloud-requirements"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,10 +9,10 @@ workspace = true
 
 [dependencies]
 async-trait = { workspace = true }
-codex-backend-client = { workspace = true }
-codex-core = { workspace = true }
-codex-otel = { workspace = true }
-codex-protocol = { workspace = true }
+rune-backend-client = { workspace = true }
+rune-core = { workspace = true }
+rune-otel = { workspace = true }
+rune-protocol = { workspace = true }
 tokio = { workspace = true, features = ["sync", "time"] }
 toml = { workspace = true }
 tracing = { workspace = true }

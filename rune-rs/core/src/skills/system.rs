@@ -14,7 +14,7 @@ const SYSTEM_SKILLS_DIR: Dir =
 
 const SYSTEM_SKILLS_DIR_NAME: &str = ".system";
 const SKILLS_DIR_NAME: &str = "skills";
-const SYSTEM_SKILLS_MARKER_FILENAME: &str = ".codex-system-skills.marker";
+const SYSTEM_SKILLS_MARKER_FILENAME: &str = ".rune-system-skills.marker";
 const SYSTEM_SKILLS_MARKER_SALT: &str = "v1";
 
 /// Returns the on-disk cache location for embedded system skills.

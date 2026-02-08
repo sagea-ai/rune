@@ -1,5 +1,5 @@
 // Forbid accidental stdout/stderr writes in the *library* portion of the TUI.
-// The standalone `codex-tui` binary prints a short help message before the
+// The standalone `rune-tui` binary prints a short help message before the
 // alternate‑screen mode starts; that file opts‑out locally via `allow`.
 #![deny(clippy::print_stdout, clippy::print_stderr)]
 #![deny(clippy::disallowed_methods)]
@@ -316,7 +316,7 @@ pub async fn run_main(
         log_file_opts.mode(0o600);
     }
 
-    let log_file = log_file_opts.open(log_dir.join("codex-tui.log"))?;
+    let log_file = log_file_opts.open(log_dir.join("rune-tui.log"))?;
 
     // Wrap file in non‑blocking writer.
     let (non_blocking, _guard) = non_blocking(log_file);

@@ -1,4 +1,4 @@
-//! Root of the `codex-core` library.
+//! Root of the `rune-core` library.
 
 // Prevent accidental direct writes to stdout/stderr in library code. All
 // user-visible output must go through the appropriate abstraction (e.g.,
@@ -141,7 +141,7 @@ pub use file_watcher::FileWatcherEvent;
 pub use safety::get_platform_sandbox;
 pub use tools::spec::parse_tool_input_schema;
 pub use turn_metadata::build_turn_metadata_header;
-// Re-export the protocol types from the standalone `codex-protocol` crate so existing
+// Re-export the protocol types from the standalone `rune-protocol` crate so existing
 // `codex_core::protocol::...` references continue to work across the workspace.
 pub use codex_protocol::protocol;
 // Re-export protocol config enums to ensure call sites can use the same types

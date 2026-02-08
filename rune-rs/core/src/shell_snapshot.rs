@@ -577,7 +577,7 @@ mod tests {
             .env("BASH_ENV", "/dev/null")
             .env("VALID_NAME", "ok")
             .env("PWD", "/tmp/stale")
-            .env("NEXTEST_BIN_EXE_codex-write-config-schema", "/path/to/bin")
+            .env("NEXTEST_BIN_EXE_rune-write-config-schema", "/path/to/bin")
             .env("BAD-NAME", "broken")
             .output()?;
 
@@ -586,7 +586,7 @@ mod tests {
         let stdout = String::from_utf8_lossy(&output.stdout);
         assert!(stdout.contains("VALID_NAME"));
         assert!(!stdout.contains("PWD=/tmp/stale"));
-        assert!(!stdout.contains("NEXTEST_BIN_EXE_codex-write-config-schema"));
+        assert!(!stdout.contains("NEXTEST_BIN_EXE_rune-write-config-schema"));
         assert!(!stdout.contains("BAD-NAME"));
 
         Ok(())

@@ -2,7 +2,7 @@
 //!
 //! Assumes `apply_patch` verification/approval happened upstream. Reuses that
 //! decision to avoid re-prompting, builds the self-invocation command for
-//! `codex --codex-run-as-apply-patch`, and runs under the current
+//! `codex --rune-run-as-apply-patch`, and runs under the current
 //! `SandboxAttempt` with a minimal environment.
 use crate::CODEX_APPLY_PATCH_ARG1;
 use crate::exec::ExecToolCallOutput;

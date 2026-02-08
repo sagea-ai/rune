@@ -89,7 +89,7 @@ fn session_configured_produces_thread_started_event() {
             session_id,
             forked_from_id: None,
             thread_name: None,
-            model: "codex-mini-latest".to_string(),
+            model: "rune-mini-latest".to_string(),
             model_provider_id: "test-provider".to_string(),
             approval_policy: AskForApproval::Never,
             sandbox_policy: SandboxPolicy::ReadOnly,

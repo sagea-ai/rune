@@ -115,8 +115,8 @@ pub(crate) fn map_api_error(err: ApiError) -> CodexErr {
     }
 }
 
-const MODEL_CAP_MODEL_HEADER: &str = "x-codex-model-cap-model";
-const MODEL_CAP_RESET_AFTER_HEADER: &str = "x-codex-model-cap-reset-after-seconds";
+const MODEL_CAP_MODEL_HEADER: &str = "x-rune-model-cap-model";
+const MODEL_CAP_RESET_AFTER_HEADER: &str = "x-rune-model-cap-reset-after-seconds";
 const REQUEST_ID_HEADER: &str = "x-request-id";
 const OAI_REQUEST_ID_HEADER: &str = "x-oai-request-id";
 const CF_RAY_HEADER: &str = "cf-ray";

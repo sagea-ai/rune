@@ -19,23 +19,23 @@ workspace = true
 anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 clap_complete = { workspace = true }
-codex-app-server = { workspace = true }
-codex-app-server-protocol = { workspace = true }
-codex-app-server-test-client = { workspace = true }
-codex-arg0 = { workspace = true }
-codex-chatgpt = { workspace = true }
-codex-cloud-tasks = { path = "../cloud-tasks" }
-codex-common = { workspace = true, features = ["cli"] }
-codex-core = { workspace = true }
-codex-exec = { workspace = true }
-codex-execpolicy = { workspace = true }
-codex-login = { workspace = true }
-codex-mcp-server = { workspace = true }
-codex-protocol = { workspace = true }
-codex-responses-api-proxy = { workspace = true }
-codex-rmcp-client = { workspace = true }
-codex-stdio-to-uds = { workspace = true }
-codex-tui = { workspace = true }
+rune-app-server = { workspace = true }
+rune-app-server-protocol = { workspace = true }
+rune-app-server-test-client = { workspace = true }
+rune-arg0 = { workspace = true }
+rune-chatgpt = { workspace = true }
+rune-cloud-tasks = { path = "../cloud-tasks" }
+rune-common = { workspace = true, features = ["cli"] }
+rune-core = { workspace = true }
+rune-exec = { workspace = true }
+rune-execpolicy = { workspace = true }
+rune-login = { workspace = true }
+rune-mcp-server = { workspace = true }
+rune-protocol = { workspace = true }
+rune-responses-api-proxy = { workspace = true }
+rune-rmcp-client = { workspace = true }
+rune-stdio-to-uds = { workspace = true }
+rune-tui = { workspace = true }
 libc = { workspace = true }
 owo-colors = { workspace = true }
 regex-lite = { workspace = true }
@@ -53,11 +53,11 @@ toml = { workspace = true }
 tracing = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-codex_windows_sandbox = { package = "codex-windows-sandbox", path = "../windows-sandbox-rs" }
+codex_windows_sandbox = { package = "rune-windows-sandbox", path = "../windows-sandbox-rs" }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }
 assert_matches = { workspace = true }
-codex-utils-cargo-bin = { workspace = true }
+rune-utils-cargo-bin = { workspace = true }
 predicates = { workspace = true }
 pretty_assertions = { workspace = true }

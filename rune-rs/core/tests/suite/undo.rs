@@ -66,7 +66,7 @@ fn init_git_repo(path: &Path) -> Result<()> {
     git(path, &["init", "--initial-branch=main"])?;
     git(path, &["config", "core.autocrlf", "false"])?;
     git(path, &["config", "user.name", "Codex Tests"])?;
-    git(path, &["config", "user.email", "codex-tests@example.com"])?;
+    git(path, &["config", "user.email", "rune-tests@example.com"])?;
 
     // Create README.txt
     let readme_path = path.join("README.txt");

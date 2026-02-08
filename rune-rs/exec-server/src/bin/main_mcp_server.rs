@@ -1,6 +1,6 @@
 #[cfg(not(unix))]
 fn main() {
-    eprintln!("codex-exec-mcp-server is only implemented for UNIX");
+    eprintln!("rune-exec-mcp-server is only implemented for UNIX");
     std::process::exit(1);
 }
 

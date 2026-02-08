@@ -369,7 +369,7 @@ async fn responses_stream_includes_turn_metadata_header_for_git_workspace_e2e() 
     assert_eq!(
         first_request
             .single_request()
-            .header("x-codex-turn-metadata"),
+            .header("x-rune-turn-metadata"),
         None
     );
 
@@ -425,10 +425,10 @@ async fn responses_stream_includes_turn_metadata_header_for_git_workspace_e2e() 
 
         let maybe_header = request_recorder
             .single_request()
-            .header("x-codex-turn-metadata");
+            .header("x-rune-turn-metadata");
         if let Some(header_value) = maybe_header {
             let parsed: serde_json::Value = serde_json::from_str(&header_value)
-                .expect("x-codex-turn-metadata should be valid JSON");
+                .expect("x-rune-turn-metadata should be valid JSON");
             let workspaces = parsed
                 .get("workspaces")
                 .and_then(serde_json::Value::as_object)
@@ -461,5 +461,5 @@ async fn responses_stream_includes_turn_metadata_header_for_git_workspace_e2e() 
         tokio::time::sleep(std::time::Duration::from_millis(25)).await;
     }
 
-    panic!("x-codex-turn-metadata was never observed within 5s after git setup");
+    panic!("x-rune-turn-metadata was never observed within 5s after git setup");
 }

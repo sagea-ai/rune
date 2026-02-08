@@ -862,7 +862,7 @@ mod api {
     fn summarize_patch_for_logging(patch: &str) -> String {
         let trimmed = patch.trim_start();
         let kind = if trimmed.starts_with("*** Begin Patch") {
-            "codex-patch"
+            "rune-patch"
         } else if trimmed.starts_with("diff --git ") || trimmed.contains("\n*** End Patch\n") {
             "git-diff"
         } else if trimmed.starts_with("@@ ") || trimmed.contains("\n@@ ") {

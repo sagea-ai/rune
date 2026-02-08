@@ -231,7 +231,7 @@ async fn run_command_under_sandbox(
             #[expect(clippy::expect_used)]
             let codex_linux_sandbox_exe = config
                 .codex_linux_sandbox_exe
-                .expect("codex-linux-sandbox executable not found");
+                .expect("rune-linux-sandbox executable not found");
             let use_bwrap_sandbox = config.features.enabled(Feature::UseLinuxSandboxBwrap);
             spawn_command_under_linux_sandbox(
                 codex_linux_sandbox_exe,

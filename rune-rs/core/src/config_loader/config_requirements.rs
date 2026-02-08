@@ -1079,7 +1079,7 @@ mod tests {
     fn deserialize_mcp_server_requirements() -> Result<()> {
         let toml_str = r#"
             [mcp_servers.docs.identity]
-            command = "codex-mcp"
+            command = "rune-mcp"
 
             [mcp_servers.remote.identity]
             url = "https://example.com/mcp"
@@ -1095,7 +1095,7 @@ mod tests {
                         "docs".to_string(),
                         McpServerRequirement {
                             identity: McpServerIdentity::Command {
-                                command: "codex-mcp".to_string(),
+                                command: "rune-mcp".to_string(),
                             },
                         },
                     ),

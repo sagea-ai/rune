@@ -106,9 +106,9 @@ fn gpt_52_codex() -> ModelPreset {
 
 fn gpt_5_1_codex_max() -> ModelPreset {
     ModelPreset {
-        id: "gpt-5.1-codex-max".to_string(),
-        model: "gpt-5.1-codex-max".to_string(),
-        display_name: "gpt-5.1-codex-max".to_string(),
+        id: "gpt-5.1-rune-max".to_string(),
+        model: "gpt-5.1-rune-max".to_string(),
+        display_name: "gpt-5.1-rune-max".to_string(),
         description: "Codex-optimized flagship for deep and fast reasoning.".to_string(),
         default_reasoning_effort: ReasoningEffort::Medium,
         supported_reasoning_efforts: vec![
@@ -132,7 +132,7 @@ fn gpt_5_1_codex_max() -> ModelPreset {
         supports_personality: false,
         is_default: false,
         upgrade: Some(gpt52_codex_upgrade(
-            "gpt-5.1-codex-max",
+            "gpt-5.1-rune-max",
             HashMap::from([
                 (ReasoningEffort::Low, ReasoningEffort::Low),
                 (ReasoningEffort::None, ReasoningEffort::Low),
@@ -150,9 +150,9 @@ fn gpt_5_1_codex_max() -> ModelPreset {
 
 fn gpt_5_1_codex_mini() -> ModelPreset {
     ModelPreset {
-        id: "gpt-5.1-codex-mini".to_string(),
-        model: "gpt-5.1-codex-mini".to_string(),
-        display_name: "gpt-5.1-codex-mini".to_string(),
+        id: "gpt-5.1-rune-mini".to_string(),
+        model: "gpt-5.1-rune-mini".to_string(),
+        display_name: "gpt-5.1-rune-mini".to_string(),
         description: "Optimized for codex. Cheaper, faster, but less capable.".to_string(),
         default_reasoning_effort: ReasoningEffort::Medium,
         supported_reasoning_efforts: vec![
@@ -168,7 +168,7 @@ fn gpt_5_1_codex_mini() -> ModelPreset {
         supports_personality: false,
         is_default: false,
         upgrade: Some(gpt52_codex_upgrade(
-            "gpt-5.1-codex-mini",
+            "gpt-5.1-rune-mini",
             HashMap::from([
                 (ReasoningEffort::High, ReasoningEffort::High),
                 (ReasoningEffort::XHigh, ReasoningEffort::High),
@@ -340,9 +340,9 @@ fn gpt_5_codex() -> ModelPreset {
 
 fn gpt_5_codex_mini() -> ModelPreset {
     ModelPreset {
-        id: "gpt-5-codex-mini".to_string(),
-        model: "gpt-5-codex-mini".to_string(),
-        display_name: "gpt-5-codex-mini".to_string(),
+        id: "gpt-5-rune-mini".to_string(),
+        model: "gpt-5-rune-mini".to_string(),
+        display_name: "gpt-5-rune-mini".to_string(),
         description: "Optimized for codex. Cheaper, faster, but less capable.".to_string(),
         default_reasoning_effort: ReasoningEffort::Medium,
         supported_reasoning_efforts: vec![
@@ -358,7 +358,7 @@ fn gpt_5_codex_mini() -> ModelPreset {
         supports_personality: false,
         is_default: false,
         upgrade: Some(gpt52_codex_upgrade(
-            "gpt-5-codex-mini",
+            "gpt-5-rune-mini",
             HashMap::from([
                 (ReasoningEffort::None, ReasoningEffort::Medium),
                 (ReasoningEffort::XHigh, ReasoningEffort::High),

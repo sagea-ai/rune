@@ -1,6 +1,6 @@
-# codex-network-proxy
+# rune-network-proxy
 
-`codex-network-proxy` is Codex's local network policy enforcement proxy. It runs:
+`rune-network-proxy` is Codex's local network policy enforcement proxy. It runs:
 
 - an HTTP proxy (default `127.0.0.1:3128`)
 - an optional SOCKS5 proxy (default `127.0.0.1:8081`, disabled by default)
@@ -12,7 +12,7 @@ It enforces an allow/deny policy and a "limited" mode intended for read-only net
 
 ### 1) Configure
 
-`codex-network-proxy` reads from Codex's merged `config.toml` (via `codex-core` config loading).
+`rune-network-proxy` reads from Codex's merged `config.toml` (via `rune-core` config loading).
 
 Example config:
 
@@ -52,7 +52,7 @@ allow_unix_sockets = ["/tmp/example.sock"]
 ### 2) Run the proxy
 
 ```bash
-cargo run -p codex-network-proxy --
+cargo run -p rune-network-proxy --
 ```
 
 ### 3) Point a client at it
@@ -85,7 +85,7 @@ blocked because they would bypass method enforcement.
 
 ## Library API
 
-`codex-network-proxy` can be embedded as a library with a thin API:
+`rune-network-proxy` can be embedded as a library with a thin API:
 
 ```rust
 use codex_network_proxy::{NetworkProxy, NetworkDecision, NetworkPolicyRequest};
@@ -152,7 +152,7 @@ curl -sS -X POST http://127.0.0.1:8080/reload
 
 ## Security notes (important)
 
-This section documents the protections implemented by `codex-network-proxy`, and the boundaries of
+This section documents the protections implemented by `rune-network-proxy`, and the boundaries of
 what it can reasonably guarantee.
 
 - Allowlist-first policy: if `allowed_domains` is empty, requests are blocked until an allowlist is configured.

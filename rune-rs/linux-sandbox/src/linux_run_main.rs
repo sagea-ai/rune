@@ -123,7 +123,7 @@ fn run_bwrap_with_proc_fallback(
     let mut mount_proc = mount_proc;
 
     if mount_proc && !preflight_proc_mount_support(sandbox_policy_cwd, sandbox_policy) {
-        eprintln!("codex-linux-sandbox: bwrap could not mount /proc; retrying with --no-proc");
+        eprintln!("rune-linux-sandbox: bwrap could not mount /proc; retrying with --no-proc");
         mount_proc = false;
     }
 
@@ -147,7 +147,7 @@ fn build_bwrap_argv(
         .unwrap_or_else(|| panic!("bubblewrap argv is missing command separator '--'"));
     args.splice(
         command_separator_index..command_separator_index,
-        ["--argv0".to_string(), "codex-linux-sandbox".to_string()],
+        ["--argv0".to_string(), "rune-linux-sandbox".to_string()],
     );
 
     let mut argv = vec!["bwrap".to_string()];
@@ -360,7 +360,7 @@ mod tests {
                 "--proc".to_string(),
                 "/proc".to_string(),
                 "--argv0".to_string(),
-                "codex-linux-sandbox".to_string(),
+                "rune-linux-sandbox".to_string(),
                 "--".to_string(),
                 "/bin/true".to_string(),
             ]

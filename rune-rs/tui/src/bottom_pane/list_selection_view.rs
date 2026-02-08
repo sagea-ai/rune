@@ -920,7 +920,7 @@ mod tests {
                 ..Default::default()
             },
             SelectionItem {
-                name: "gpt-5.1-codex-mini".to_string(),
+                name: "gpt-5.1-rune-mini".to_string(),
                 description: Some(
                     "Optimized for Codex. Cheaper, faster, but less capable.".to_string(),
                 ),
@@ -1002,7 +1002,7 @@ mod tests {
                 ..Default::default()
             },
             SelectionItem {
-                name: "gpt-5.1-codex-mini".to_string(),
+                name: "gpt-5.1-rune-mini".to_string(),
                 description: Some(
                     "Optimized for Codex. Cheaper, faster, but less capable.".to_string(),
                 ),

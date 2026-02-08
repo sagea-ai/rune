@@ -36,10 +36,10 @@ use wiremock::MockServer;
 
 const ETAG: &str = "\"models-etag-ttl\"";
 const CACHE_FILE: &str = "models_cache.json";
-const REMOTE_MODEL: &str = "codex-test-ttl";
-const VERSIONED_MODEL: &str = "codex-test-versioned";
-const MISSING_VERSION_MODEL: &str = "codex-test-missing-version";
-const DIFFERENT_VERSION_MODEL: &str = "codex-test-different-version";
+const REMOTE_MODEL: &str = "rune-test-ttl";
+const VERSIONED_MODEL: &str = "rune-test-versioned";
+const MISSING_VERSION_MODEL: &str = "rune-test-missing-version";
+const DIFFERENT_VERSION_MODEL: &str = "rune-test-different-version";
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn renews_cache_ttl_on_matching_models_etag() -> Result<()> {

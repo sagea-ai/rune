@@ -1,11 +1,11 @@
 [package]
-name = "codex-linux-sandbox"
+name = "rune-linux-sandbox"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [[bin]]
-name = "codex-linux-sandbox"
+name = "rune-linux-sandbox"
 path = "src/main.rs"
 
 [lib]
@@ -17,8 +17,8 @@ workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
 clap = { workspace = true, features = ["derive"] }
-codex-core = { workspace = true }
-codex-utils-absolute-path = { workspace = true }
+rune-core = { workspace = true }
+rune-utils-absolute-path = { workspace = true }
 landlock = { workspace = true }
 libc = { workspace = true }
 seccompiler = { workspace = true }

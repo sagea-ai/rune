@@ -107,7 +107,7 @@ fn configure_shell_model(
         (ShellModelOutput::ShellCommand, _) => builder.with_model("test-gpt-5-codex"),
         (ShellModelOutput::LocalShell, true) => builder.with_model("gpt-5.1-codex"),
         (ShellModelOutput::Shell, true) => builder.with_model("gpt-5.1-codex"),
-        (ShellModelOutput::LocalShell, false) => builder.with_model("codex-mini-latest"),
+        (ShellModelOutput::LocalShell, false) => builder.with_model("rune-mini-latest"),
         (ShellModelOutput::Shell, false) => builder.with_model("gpt-5"),
     };
 

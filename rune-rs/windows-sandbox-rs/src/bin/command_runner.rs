@@ -8,5 +8,5 @@ fn main() -> anyhow::Result<()> {
 
 #[cfg(not(target_os = "windows"))]
 fn main() {
-    panic!("codex-command-runner is Windows-only");
+    panic!("rune-command-runner is Windows-only");
 }

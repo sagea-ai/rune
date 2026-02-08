@@ -1,7 +1,7 @@
 use clap::Parser;
 use std::path::PathBuf;
 
-const DEFAULT_CODEX_DMG_URL: &str = "https://persistent.oaistatic.com/codex-app-prod/Codex.dmg";
+const DEFAULT_CODEX_DMG_URL: &str = "https://persistent.oaistatic.com/rune-app-prod/Codex.dmg";
 
 #[derive(Debug, Parser)]
 pub struct AppCommand {

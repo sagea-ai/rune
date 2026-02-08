@@ -30,7 +30,7 @@ use super::textarea::TextAreaState;
 const BASE_BUG_ISSUE_URL: &str =
     "https://github.com/openai/codex/issues/new?template=2-bug-report.yml";
 /// Internal routing link for employee feedback follow-ups. This must not be shown to external users.
-const CODEX_FEEDBACK_INTERNAL_URL: &str = "http://go/codex-feedback-internal";
+const CODEX_FEEDBACK_INTERNAL_URL: &str = "http://go/rune-feedback-internal";
 
 /// The target audience for feedback follow-up instructions.
 ///
@@ -115,7 +115,7 @@ impl FeedbackNoteView {
                     issue_url_for_category(self.category, &thread_id, self.feedback_audience);
                 let mut lines = vec![Line::from(match issue_url.as_ref() {
                     Some(_) if self.feedback_audience == FeedbackAudience::OpenAiEmployee => {
-                        format!("{prefix} Please report this in #codex-feedback:")
+                        format!("{prefix} Please report this in #rune-feedback:")
                     }
                     Some(_) => format!("{prefix} Please open an issue using the following URL:"),
                     None => format!("{prefix} Thanks for the feedback!"),
@@ -129,7 +129,7 @@ impl FeedbackNoteView {
                             Line::from("  Share this and add some info about your problem:"),
                             Line::from(vec![
                                 "    ".into(),
-                                format!("go/codex-feedback/{thread_id}").bold(),
+                                format!("go/rune-feedback/{thread_id}").bold(),
                             ]),
                         ]);
                     }
@@ -501,7 +501,7 @@ pub(crate) fn feedback_upload_consent_params(
         Line::from("Upload logs?".bold()).into(),
         Line::from("").into(),
         Line::from("The following files will be sent:".dim()).into(),
-        Line::from(vec!["  • ".into(), "codex-logs.log".into()]).into(),
+        Line::from(vec!["  • ".into(), "rune-logs.log".into()]).into(),
     ];
     if let Some(path) = rollout_path.as_deref()
         && let Some(name) = path.file_name().map(|s| s.to_string_lossy().to_string())
@@ -622,7 +622,7 @@ mod tests {
             "thread-1",
             FeedbackAudience::OpenAiEmployee,
         );
-        let expected_slack_url = "http://go/codex-feedback-internal".to_string();
+        let expected_slack_url = "http://go/rune-feedback-internal".to_string();
         assert_eq!(bug_url.as_deref(), Some(expected_slack_url.as_str()));
 
         let bad_result_url = issue_url_for_category(

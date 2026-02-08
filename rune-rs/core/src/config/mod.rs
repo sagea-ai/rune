@@ -249,7 +249,7 @@ pub struct Config {
     /// Preferred store for MCP OAuth credentials.
     /// keyring: Use an OS-specific keyring service.
     ///          Credentials stored in the keyring will only be readable by Codex unless the user explicitly grants access via OS-level keyring access.
-    ///          https://github.com/openai/codex/blob/main/codex-rs/rmcp-client/src/oauth.rs#L2
+    ///          https://github.com/openai/codex/blob/main/rune-rs/rmcp-client/src/oauth.rs#L2
     /// file: CODEX_HOME/.credentials.json
     ///       This file will be readable to Codex and other applications running as the same user.
     /// auto (default): keyring if available, otherwise file.
@@ -292,12 +292,12 @@ pub struct Config {
     /// output will be hyperlinked using the specified URI scheme.
     pub file_opener: UriBasedFileOpener,
 
-    /// Path to the `codex-linux-sandbox` executable. This must be set if
+    /// Path to the `rune-linux-sandbox` executable. This must be set if
     /// [`crate::exec::SandboxType::LinuxSeccomp`] is used. Note that this
     /// cannot be set in the config file: it must be set in code via
     /// [`ConfigOverrides`].
     ///
-    /// When this program is invoked, arg0 will be set to `codex-linux-sandbox`.
+    /// When this program is invoked, arg0 will be set to `rune-linux-sandbox`.
     pub codex_linux_sandbox_exe: Option<PathBuf>,
 
     /// Value to use for `reasoning.effort` when making a request using the
@@ -908,7 +908,7 @@ pub struct ConfigToml {
 
     /// Preferred backend for storing MCP OAuth credentials.
     /// keyring: Use an OS-specific keyring service.
-    ///          https://github.com/openai/codex/blob/main/codex-rs/rmcp-client/src/oauth.rs#L2
+    ///          https://github.com/openai/codex/blob/main/rune-rs/rmcp-client/src/oauth.rs#L2
     /// file: Use a file in the Codex home directory.
     /// auto (default): Use the OS-specific keyring service if available, otherwise use a file.
     #[serde(default)]
@@ -942,7 +942,7 @@ pub struct ConfigToml {
     #[serde(default)]
     pub history: Option<History>,
 
-    /// Directory where Codex writes log files, for example `codex-tui.log`.
+    /// Directory where Codex writes log files, for example `rune-tui.log`.
     /// Defaults to `$CODEX_HOME/log`.
     pub log_dir: Option<AbsolutePathBuf>,
 
@@ -3131,7 +3131,7 @@ ZIG_VAR = "3"
     async fn replace_mcp_servers_serializes_cwd() -> anyhow::Result<()> {
         let codex_home = TempDir::new()?;
 
-        let cwd_path = PathBuf::from("/tmp/codex-mcp");
+        let cwd_path = PathBuf::from("/tmp/rune-mcp");
         let servers = BTreeMap::from([(
             "docs".to_string(),
             McpServerConfig {
@@ -3162,7 +3162,7 @@ ZIG_VAR = "3"
         let config_path = codex_home.path().join(CONFIG_TOML_FILE);
         let serialized = std::fs::read_to_string(&config_path)?;
         assert!(
-            serialized.contains(r#"cwd = "/tmp/codex-mcp""#),
+            serialized.contains(r#"cwd = "/tmp/rune-mcp""#),
             "serialized config missing cwd field:\n{serialized}"
         );
 
@@ -3170,7 +3170,7 @@ ZIG_VAR = "3"
         let docs = loaded.get("docs").expect("docs entry");
         match &docs.transport {
             McpServerTransportConfig::Stdio { cwd, .. } => {
-                assert_eq!(cwd.as_deref(), Some(Path::new("/tmp/codex-mcp")));
+                assert_eq!(cwd.as_deref(), Some(Path::new("/tmp/rune-mcp")));
             }
             other => panic!("unexpected transport {other:?}"),
         }
