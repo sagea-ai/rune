@@ -3418,3 +3418,35 @@ mod tests {
         );
     }
 }
+
+// Stub implementations for ExperimentalApi trait since experimental macros were removed
+// These return None to indicate all features are considered stable for Ollama-only mode
+impl crate::experimental_api::ExperimentalApi for LoginAccountParams {
+    fn experimental_reason(&self) -> Option<&'static str> {
+        None  // All variants considered stable
+    }
+}
+
+impl crate::experimental_api::ExperimentalApi for ThreadStartParams {
+    fn experimental_reason(&self) -> Option<&'static str> {
+        None  // All fields considered stable
+    }
+}
+
+impl crate::experimental_api::ExperimentalApi for ThreadResumeParams {
+    fn experimental_reason(&self) -> Option<&'static str> {
+        None  // All fields considered stable
+    }
+}
+
+impl crate::experimental_api::ExperimentalApi for ThreadForkParams {
+    fn experimental_reason(&self) -> Option<&'static str> {
+        None  // All fields considered stable
+    }
+}
+
+impl crate::experimental_api::ExperimentalApi for TurnStartParams {
+    fn experimental_reason(&self) -> Option<&'static str> {
+        None  // All fields considered stable
+    }
+}
