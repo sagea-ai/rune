@@ -3,7 +3,7 @@
 // This module provides minimal type definitions needed by core for Ollama integration,
 // replacing the previously used rune-api crate types.
 
-use rune_protocol::models::ResponseItem;
+use crate::models::ResponseItem;  // Use local crate reference
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
