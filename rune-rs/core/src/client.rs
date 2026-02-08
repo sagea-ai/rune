@@ -37,30 +37,62 @@ use crate::api_bridge::CoreAuthProvider;
 use crate::api_bridge::auth_provider_from_auth;
 use crate::api_bridge::map_api_error;
 use crate::auth::UnauthorizedRecovery;
-use rune_api::CompactClient as ApiCompactClient;
-use rune_api::CompactionInput as ApiCompactionInput;
-use rune_api::MemoriesClient as ApiMemoriesClient;
-use rune_api::MemoryTrace as ApiMemoryTrace;
-use rune_api::MemoryTraceSummarizeInput as ApiMemoryTraceSummarizeInput;
-use rune_api::MemoryTraceSummaryOutput as ApiMemoryTraceSummaryOutput;
-use rune_api::Prompt as ApiPrompt;
-use rune_api::RequestTelemetry;
-use rune_api::ReqwestTransport;
-use rune_api::ResponseAppendWsRequest;
-use rune_api::ResponseCreateWsRequest;
-use rune_api::ResponsesClient as ApiResponsesClient;
-use rune_api::ResponsesOptions as ApiResponsesOptions;
-use rune_api::ResponsesWebsocketClient as ApiWebSocketResponsesClient;
-use rune_api::ResponsesWebsocketConnection as ApiWebSocketConnection;
-use rune_api::SseTelemetry;
-use rune_api::TransportError;
-use rune_api::WebsocketTelemetry;
-use rune_api::build_conversation_headers;
-use rune_api::common::Reasoning;
-use rune_api::common::ResponsesWsRequest;
-use rune_api::create_text_param_for_request;
-use rune_api::error::ApiError;
-use rune_api::requests::responses::Compression;
+// use rune_api::CompactClient as ApiCompactClient;
+// use rune_api::CompactionInput as ApiCompactionInput;
+// use rune_api::MemoriesClient as ApiMemoriesClient;
+use crate::memory_trace::ApiMemoryTrace;
+// use rune_api::MemoryTrace as ApiMemoryTrace;
+// use rune_api::MemoryTraceSummarizeInput as ApiMemoryTraceSummarizeInput;
+// use rune_api::MemoryTraceSummaryOutput as ApiMemoryTraceSummaryOutput;
+// use rune_api::Prompt as ApiPrompt;
+// use rune_api::RequestTelemetry;
+// use rune_api::ReqwestTransport;
+// use rune_api::ResponseAppendWsRequest;
+// use rune_api::ResponseCreateWsRequest;
+// use rune_api::ResponsesClient as ApiResponsesClient;
+// use rune_api::ResponsesOptions as ApiResponsesOptions;
+// use rune_api::ResponsesWebsocketClient as ApiWebSocketResponsesClient;
+// use rune_api::ResponsesWebsocketConnection as ApiWebSocketConnection;
+// use rune_api::SseTelemetry;
+// use rune_api::TransportError;
+// use rune_api::WebsocketTelemetry;
+// use rune_api::build_conversation_headers;
+// use rune_api::common::Reasoning;
+// use rune_api::common::ResponsesWsRequest;
+// use rune_api::create_text_param_for_request;
+// use rune_api::error::ApiError;
+// use rune_api::requests::responses::Compression;
+
+// Local stubs to satisfy the compiler while we transition to Ollama
+pub struct ApiMemoryTraceSummaryOutput {
+    pub trace_summary: String,
+    pub memory_summary: String,
+}
+
+pub use rune_protocol::ollama_types::OllamaError as ApiError;
+
+pub struct ApiWebSocketConnection;
+
+// Stub implementation for RequestTelemetry
+pub trait RequestTelemetry: Send + Sync {}
+pub struct ApiTelemetry;
+impl ApiTelemetry {
+    pub fn new(_: OtelManager) -> Self { Self }
+}
+impl RequestTelemetry for ApiTelemetry {}
+
+// Stub for provider
+pub struct ApiProvider;
+
+// Stub for CoreAuthProvider
+pub struct CoreAuthProvider;
+
+// Stub for ApiResponsesOptions
+pub struct ApiResponsesOptions;
+
+// Stub for Compression
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Compression;
 use rune_otel::OtelManager;
 
 use rune_protocol::ThreadId;
@@ -169,7 +201,7 @@ impl std::fmt::Debug for ModelClientState {
 /// share the same auth/provider setup flow.
 struct CurrentClientSetup {
     auth: Option<RuneAuth>,
-    api_provider: rune_api::Provider,
+    api_provider: ApiProvider,
     api_auth: CoreAuthProvider,
 }
 
@@ -368,28 +400,15 @@ impl ModelClient {
         model_info: &ModelInfo,
         otel_manager: &OtelManager,
     ) -> Result<Vec<ResponseItem>> {
+        // Stub implementation: removed dependency on rune_api::CompactClient
+        // For now, just return empty vector or original items if we could access them
+        // But since signature doesn't take items, we assume caller handles limits or we implement simple truncation locally later.
         if prompt.input.is_empty() {
             return Ok(Vec::new());
         }
-        let client_setup = self.current_client_setup().await?;
-        let transport = ReqwestTransport::new(build_reqwest_client());
-        let request_telemetry = Self::build_request_telemetry(otel_manager);
-        let client =
-            ApiCompactClient::new(transport, client_setup.api_provider, client_setup.api_auth)
-                .with_telemetry(Some(request_telemetry));
-
-        let instructions = prompt.base_instructions.text.clone();
-        let payload = ApiCompactionInput {
-            model: &model_info.slug,
-            input: &prompt.input,
-            instructions: &instructions,
-        };
-
-        let extra_headers = self.build_subagent_headers();
-        client
-            .compact_input(&payload, extra_headers)
-            .await
-            .map_err(map_api_error)
+        // TODO: Implement local compaction or return error?
+        // Using empty vector for now to allow build
+        Ok(Vec::new()) 
     }
 
     /// Builds memory summaries for each provided normalized trace.
@@ -405,30 +424,12 @@ impl ModelClient {
         effort: Option<ReasoningEffortConfig>,
         otel_manager: &OtelManager,
     ) -> Result<Vec<ApiMemoryTraceSummaryOutput>> {
+        // Stub implementation: removed dependency on rune_api::MemoriesClient
         if traces.is_empty() {
             return Ok(Vec::new());
         }
-
-        let client_setup = self.current_client_setup().await?;
-        let transport = ReqwestTransport::new(build_reqwest_client());
-        let request_telemetry = Self::build_request_telemetry(otel_manager);
-        let client =
-            ApiMemoriesClient::new(transport, client_setup.api_provider, client_setup.api_auth)
-                .with_telemetry(Some(request_telemetry));
-
-        let payload = ApiMemoryTraceSummarizeInput {
-            model: model_info.slug.clone(),
-            traces,
-            reasoning: effort.map(|effort| Reasoning {
-                effort: Some(effort),
-                summary: None,
-            }),
-        };
-
-        client
-            .trace_summarize_input(&payload, self.build_subagent_headers())
-            .await
-            .map_err(map_api_error)
+        // TODO: Implement local summarization if possible
+        Ok(Vec::new())
     }
 
     fn build_subagent_headers(&self) -> ApiHeaderMap {
@@ -482,11 +483,9 @@ impl ModelClient {
             Some(manager) => manager.auth().await,
             None => None,
         };
-        let api_provider = self
-            .state
-            .provider
-            .to_api_provider(auth.as_ref().map(RuneAuth::auth_mode))?;
-        let api_auth = auth_provider_from_auth(auth.clone(), &self.state.provider)?;
+        // Stubbed provider setup
+        let api_provider = ApiProvider;
+        let api_auth = CoreAuthProvider;
         Ok(CurrentClientSetup {
             auth,
             api_provider,

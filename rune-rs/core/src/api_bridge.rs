@@ -1,10 +1,12 @@
 use chrono::DateTime;
 use chrono::Utc;
-use rune_api::AuthProvider as ApiAuthProvider;
-use rune_api::TransportError;
-use rune_api::error::ApiError;
-use rune_api::rate_limits::parse_promo_message;
-use rune_api::rate_limits::parse_rate_limit;
+use chrono::DateTime;
+use chrono::Utc;
+// use rune_api::AuthProvider as ApiAuthProvider;
+// use rune_api::TransportError;
+use rune_protocol::ollama_types::OllamaError as ApiError;
+// use rune_api::rate_limits::parse_promo_message;
+// use rune_api::rate_limits::parse_rate_limit;
 use http::HeaderMap;
 use serde::Deserialize;
 
@@ -19,99 +21,14 @@ use crate::token_data::PlanType;
 
 pub(crate) fn map_api_error(err: ApiError) -> RuneErr {
     match err {
-        ApiError::ContextWindowExceeded => RuneErr::ContextWindowExceeded,
-        ApiError::QuotaExceeded => RuneErr::QuotaExceeded,
-        ApiError::UsageNotIncluded => RuneErr::UsageNotIncluded,
-        ApiError::Retryable { message, delay } => RuneErr::Stream(message, delay),
-        ApiError::Stream(msg) => RuneErr::Stream(msg, None),
-        ApiError::Api { status, message } => RuneErr::UnexpectedStatus(UnexpectedResponseError {
-            status,
-            body: message,
-            url: None,
-            cf_ray: None,
-            request_id: None,
-        }),
-        ApiError::InvalidRequest { message } => RuneErr::InvalidRequest(message),
-        ApiError::Transport(transport) => match transport {
-            TransportError::Http {
-                status,
-                url,
-                headers,
-                body,
-            } => {
-                let body_text = body.unwrap_or_default();
-
-                if status == http::StatusCode::BAD_REQUEST {
-                    if body_text
-                        .contains("The image data you provided does not represent a valid image")
-                    {
-                        RuneErr::InvalidImageRequest()
-                    } else {
-                        RuneErr::InvalidRequest(body_text)
-                    }
-                } else if status == http::StatusCode::INTERNAL_SERVER_ERROR {
-                    RuneErr::InternalServerError
-                } else if status == http::StatusCode::TOO_MANY_REQUESTS {
-                    if let Some(model) = headers
-                        .as_ref()
-                        .and_then(|map| map.get(MODEL_CAP_MODEL_HEADER))
-                        .and_then(|value| value.to_str().ok())
-                        .map(str::to_string)
-                    {
-                        let reset_after_seconds = headers
-                            .as_ref()
-                            .and_then(|map| map.get(MODEL_CAP_RESET_AFTER_HEADER))
-                            .and_then(|value| value.to_str().ok())
-                            .and_then(|value| value.parse::<u64>().ok());
-                        return RuneErr::ModelCap(ModelCapError {
-                            model,
-                            reset_after_seconds,
-                        });
-                    }
-
-                    if let Ok(err) = serde_json::from_str::<UsageErrorResponse>(&body_text) {
-                        if err.error.error_type.as_deref() == Some("usage_limit_reached") {
-                            let rate_limits = headers.as_ref().and_then(parse_rate_limit);
-                            let promo_message = headers.as_ref().and_then(parse_promo_message);
-                            let resets_at = err
-                                .error
-                                .resets_at
-                                .and_then(|seconds| DateTime::<Utc>::from_timestamp(seconds, 0));
-                            return RuneErr::UsageLimitReached(UsageLimitReachedError {
-                                plan_type: err.error.plan_type,
-                                resets_at,
-                                rate_limits,
-                                promo_message,
-                            });
-                        } else if err.error.error_type.as_deref() == Some("usage_not_included") {
-                            return RuneErr::UsageNotIncluded;
-                        }
-                    }
-
-                    RuneErr::RetryLimit(RetryLimitReachedError {
-                        status,
-                        request_id: extract_request_tracking_id(headers.as_ref()),
-                    })
-                } else {
-                    RuneErr::UnexpectedStatus(UnexpectedResponseError {
-                        status,
-                        body: body_text,
-                        url,
-                        cf_ray: extract_header(headers.as_ref(), CF_RAY_HEADER),
-                        request_id: extract_request_id(headers.as_ref()),
-                    })
-                }
-            }
-            TransportError::RetryLimit => RuneErr::RetryLimit(RetryLimitReachedError {
-                status: http::StatusCode::INTERNAL_SERVER_ERROR,
-                request_id: None,
-            }),
-            TransportError::Timeout => RuneErr::Timeout,
-            TransportError::Network(msg) | TransportError::Build(msg) => {
-                RuneErr::Stream(msg, None)
-            }
-        },
-        ApiError::RateLimit(msg) => RuneErr::Stream(msg, None),
+        ApiError::ConnectionFailed { message, .. } => RuneErr::Stream(message, None),
+        ApiError::ServerError { message, .. } => RuneErr::InvalidRequest(message),
+        ApiError::BadRequest(msg) => RuneErr::InvalidRequest(msg),
+        ApiError::ModelNotFound(msg) => RuneErr::InvalidRequest(format!("Model not found: {}", msg)),
+        ApiError::Timeout => RuneErr::Timeout,
+        ApiError::StreamDisconnected => RuneErr::Stream("Stream disconnected".to_string(), None),
+        ApiError::ParseError(msg) => RuneErr::InvalidRequest(format!("Parse error: {}", msg)),
+        ApiError::Other(msg) => RuneErr::InternalServerError, // simplified
     }
 }
 
@@ -120,39 +37,6 @@ const MODEL_CAP_RESET_AFTER_HEADER: &str = "x-rune-model-cap-reset-after-seconds
 const REQUEST_ID_HEADER: &str = "x-request-id";
 const OAI_REQUEST_ID_HEADER: &str = "x-oai-request-id";
 const CF_RAY_HEADER: &str = "cf-ray";
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rune_api::TransportError;
-    use http::HeaderMap;
-    use http::StatusCode;
-
-    #[test]
-    fn map_api_error_maps_model_cap_headers() {
-        let mut headers = HeaderMap::new();
-        headers.insert(
-            MODEL_CAP_MODEL_HEADER,
-            http::HeaderValue::from_static("boomslang"),
-        );
-        headers.insert(
-            MODEL_CAP_RESET_AFTER_HEADER,
-            http::HeaderValue::from_static("120"),
-        );
-        let err = map_api_error(ApiError::Transport(TransportError::Http {
-            status: StatusCode::TOO_MANY_REQUESTS,
-            url: Some("http://example.com/v1/responses".to_string()),
-            headers: Some(headers),
-            body: Some(String::new()),
-        }));
-
-        let RuneErr::ModelCap(model_cap) = err else {
-            panic!("expected RuneErr::ModelCap, got {err:?}");
-        };
-        assert_eq!(model_cap.model, "boomslang");
-        assert_eq!(model_cap.reset_after_seconds, Some(120));
-    }
-}
 
 fn extract_request_tracking_id(headers: Option<&HeaderMap>) -> Option<String> {
     extract_request_id(headers).or_else(|| extract_header(headers, CF_RAY_HEADER))
@@ -222,6 +106,7 @@ pub(crate) struct CoreAuthProvider {
     account_id: Option<String>,
 }
 
+/*
 impl ApiAuthProvider for CoreAuthProvider {
     fn bearer_token(&self) -> Option<String> {
         self.token.clone()
@@ -231,3 +116,4 @@ impl ApiAuthProvider for CoreAuthProvider {
         self.account_id.clone()
     }
 }
+*/
