@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::protocol::common::AuthMode;
-use rune_experimental_api_macros::ExperimentalApi;
+// NOTE: Experimental API functionality disabled - rune_experimental_api_macros was removed
+// use rune_experimental_api_macros::ExperimentalApi;
 use rune_protocol::account::PlanType;
 use rune_protocol::approvals::ExecPolicyAmendment as CoreExecPolicyAmendment;
 use rune_protocol::config_types::CollaborationMode;
@@ -430,7 +431,7 @@ pub struct Config {
     pub model_reasoning_summary: Option<ReasoningSummary>,
     pub model_verbosity: Option<Verbosity>,
     pub analytics: Option<AnalyticsConfig>,
-    #[experimental("config/read.apps")]
+    // #[experimental("config/read.apps")]  // Disabled - experimental macro removed
     #[serde(default)]
     pub apps: Option<AppsConfig>,
     #[serde(default, flatten)]
@@ -535,7 +536,7 @@ pub struct ConfigRequirements {
     pub allowed_sandbox_modes: Option<Vec<SandboxMode>>,
     pub allowed_web_search_modes: Option<Vec<WebSearchMode>>,
     pub enforce_residency: Option<ResidencyRequirement>,
-    #[experimental("configRequirements/read.network")]
+    // #[experimental("configRequirements/read.network")]  // Disabled - experimental macro removed
     pub network: Option<NetworkRequirements>,
 }
 
@@ -904,7 +905,7 @@ pub enum LoginAccountParams {
     Chatgpt,
     /// [UNSTABLE] FOR OPENAI INTERNAL USE ONLY - DO NOT USE.
     /// The access token must contain the same scopes that Rune-managed ChatGPT auth tokens have.
-    #[experimental("account/login/start.chatgptAuthTokens")]
+    // #[experimental("account/login/start.chatgptAuthTokens")]  // Disabled - experimental macro removed
     #[serde(rename = "chatgptAuthTokens")]
     #[ts(rename = "chatgptAuthTokens")]
     ChatgptAuthTokens {
@@ -1327,17 +1328,17 @@ pub struct ThreadStartParams {
     pub personality: Option<Personality>,
     #[ts(optional = nullable)]
     pub ephemeral: Option<bool>,
-    #[experimental("thread/start.dynamicTools")]
+    // #[experimental("thread/start.dynamicTools")]  // Disabled - experimental macro removed
     #[ts(optional = nullable)]
     pub dynamic_tools: Option<Vec<DynamicToolSpec>>,
     /// Test-only experimental field used to validate experimental gating and
     /// schema filtering behavior in a stable way.
-    #[experimental("thread/start.mockExperimentalField")]
+    // #[experimental("thread/start.mockExperimentalField")]  // Disabled - experimental macro removed
     #[ts(optional = nullable)]
     pub mock_experimental_field: Option<String>,
     /// If true, opt into emitting raw Responses API items on the event stream.
     /// This is for internal use only (e.g. Rune Cloud).
-    #[experimental("thread/start.experimentalRawEvents")]
+    // #[experimental("thread/start.experimentalRawEvents")]  // Disabled - experimental macro removed
     #[serde(default)]
     pub experimental_raw_events: bool,
 }
@@ -1392,13 +1393,13 @@ pub struct ThreadResumeParams {
     /// [UNSTABLE] FOR RUNE CLOUD - DO NOT USE.
     /// If specified, the thread will be resumed with the provided history
     /// instead of loaded from disk.
-    #[experimental("thread/resume.history")]
+    // #[experimental("thread/resume.history")]  // Disabled - experimental macro removed
     #[ts(optional = nullable)]
     pub history: Option<Vec<ResponseItem>>,
 
     /// [UNSTABLE] Specify the rollout path to resume from.
     /// If specified, the thread_id param will be ignored.
-    #[experimental("thread/resume.path")]
+    // #[experimental("thread/resume.path")]  // Disabled - experimental macro removed
     #[ts(optional = nullable)]
     pub path: Option<PathBuf>,
 
@@ -1453,7 +1454,7 @@ pub struct ThreadForkParams {
 
     /// [UNSTABLE] Specify the rollout path to fork from.
     /// If specified, the thread_id param will be ignored.
-    #[experimental("thread/fork.path")]
+    // #[experimental("thread/fork.path")]  // Disabled - experimental macro removed
     #[ts(optional = nullable)]
     pub path: Option<PathBuf>,
 
@@ -2092,7 +2093,7 @@ pub struct TurnStartParams {
     ///
     /// For `collaboration_mode.settings.developer_instructions`, `null` means
     /// "use the built-in instructions for the selected mode".
-    #[experimental("turn/start.collaborationMode")]
+    // #[experimental("turn/start.collaborationMode")]  // Disabled - experimental macro removed
     #[ts(optional = nullable)]
     pub collaboration_mode: Option<CollaborationMode>,
 }

@@ -10,6 +10,7 @@ pub mod mcp;
 pub mod message_history;
 pub mod models;
 pub mod num_format;
+pub mod ollama_types;  // Ollama-specific types for model provider
 pub mod openai_models;
 pub mod parse_command;
 pub mod plan_tool;

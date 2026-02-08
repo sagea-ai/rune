@@ -18,8 +18,7 @@ use crate::metrics::names::WEBSOCKET_REQUEST_DURATION_METRIC;
 use crate::otel_provider::traceparent_context_from_env;
 use chrono::SecondsFormat;
 use chrono::Utc;
-use rune_api::ApiError;
-use rune_api::ResponseEvent;
+use rune_core::ollama_types::{OllamaError, ResponseEvent};
 use rune_protocol::ThreadId;
 use rune_protocol::config_types::ReasoningSummary;
 use rune_protocol::models::ResponseItem;
@@ -254,7 +253,7 @@ impl OtelManager {
                     tokio_tungstenite::tungstenite::Error,
                 >,
             >,
-            ApiError,
+            OllamaError,
         >,
         duration: Duration,
     ) {

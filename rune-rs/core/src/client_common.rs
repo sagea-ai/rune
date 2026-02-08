@@ -1,7 +1,7 @@
 use crate::client_common::tools::ToolSpec;
 use crate::config::types::Personality;
 use crate::error::Result;
-pub use rune_api::common::ResponseEvent;
+pub use rune_protocol::ollama_types::ResponseEvent;
 use rune_protocol::models::BaseInstructions;
 use rune_protocol::models::FunctionCallOutputBody;
 use rune_protocol::models::ResponseItem;

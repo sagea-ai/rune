@@ -24,6 +24,7 @@ chrono = { workspace = true }
 rune-utils-absolute-path = { workspace = true }
 rune-utils-string = { workspace = true }
 rune-protocol = { workspace = true }
+rune-core = { workspace = true }  # For ollama_types
 eventsource-stream = { workspace = true }
 opentelemetry = { workspace = true, features = ["logs", "metrics", "trace"] }
 opentelemetry-appender-tracing = { workspace = true }
