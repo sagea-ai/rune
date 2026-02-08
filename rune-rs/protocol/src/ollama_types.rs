@@ -3,7 +3,7 @@
 // This module provides minimal type definitions needed by core for Ollama integration,
 // replacing the previously used rune-api crate types.
 
-use crate::models::ResponseItem;  // Use local crate reference
+use crate::models::{RateLimitSnapshot, ResponseItem, TokenUsage};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -25,10 +25,8 @@ pub enum ResponseEvent {
     
     /// Response completed with token usage information
     Completed {
-        input_tokens: i64,
-        output_tokens: i64,
-        cached_tokens: Option<i64>,
-        reasoning_tokens: Option<i64>,
+        response_id: String,
+        token_usage: Option<TokenUsage>,
     },
     
     /// Reasoning summary delta (for models that support reasoning)
@@ -50,7 +48,7 @@ pub enum ResponseEvent {
     ServerReasoningIncluded(bool),
     
     /// Rate limit information (stubbed for Ollama compatibility)
-    RateLimits(()),
+    RateLimits(RateLimitSnapshot),
     
     /// Models etag (stubbed for Ollama compatibility)
     ModelsEtag(String),
