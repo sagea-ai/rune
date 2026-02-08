@@ -202,7 +202,7 @@ async fn send_track_skill_invocations(auth_manager: &AuthManager, job: TrackEven
     let url = format!("{base_url}/rune/analytics-events/events");
     let payload = TrackEventsRequest { events };
 
-    let response = create_client()
+    let response: Result<reqwest::Response, reqwest::Error> = create_client()
         .post(&url)
         .timeout(ANALYTICS_EVENTS_TIMEOUT)
         .bearer_auth(&access_token)

@@ -618,17 +618,20 @@ async fn try_refresh_token(
     let endpoint = refresh_token_endpoint();
 
     // Use shared client factory to include standard headers
-    let response = client
+    // Use shared client factory to include standard headers
+    let builder = client
         .post(endpoint.as_str())
         .header("Content-Type", "application/json")
-        .json(&refresh_request)
+        .json(&refresh_request);
+
+    let response = builder
         .send()
         .await
         .map_err(|err| RefreshTokenError::Transient(std::io::Error::other(err)))?;
 
     let status = response.status();
     if status.is_success() {
-        let refresh_response = response
+        let refresh_response: RefreshResponse = response
             .json::<RefreshResponse>()
             .await
             .map_err(|err| RefreshTokenError::Transient(std::io::Error::other(err)))?;

@@ -32,17 +32,19 @@ pub enum ResponseEvent {
     
     /// Reasoning summary delta (for models that support reasoning)
     ReasoningSummaryDelta {
+        summary_index: i64,
         delta: String,
     },
     
     /// Reasoning content delta
     ReasoningContentDelta {
+        content_index: i64,
         delta: String,
     },
     
     /// Reasoning summary part added
     ReasoningSummaryPartAdded {
-        part: String,
+        summary_index: i64,
     },
     
     /// Server-provided reasoning included

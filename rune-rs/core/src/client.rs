@@ -247,4 +247,8 @@ impl ModelClientSession {
     ) {
         // Stub
     }
+
+    pub fn try_switch_fallback_transport(&mut self, _otel_manager: &OtelManager) -> bool {
+        false
+    }
 }
