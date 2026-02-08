@@ -2,16 +2,16 @@ use anyhow::Result;
 use app_test_support::McpProcess;
 use app_test_support::create_mock_responses_server_repeating_assistant;
 use app_test_support::to_response;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::ThreadStartedNotification;
-use codex_core::config::set_project_trust_level;
-use codex_protocol::config_types::TrustLevel;
-use codex_protocol::openai_models::ReasoningEffort;
+use rune_app_server_protocol::JSONRPCError;
+use rune_app_server_protocol::JSONRPCNotification;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::ThreadStartParams;
+use rune_app_server_protocol::ThreadStartResponse;
+use rune_app_server_protocol::ThreadStartedNotification;
+use rune_core::config::set_project_trust_level;
+use rune_protocol::config_types::TrustLevel;
+use rune_protocol::openai_models::ReasoningEffort;
 use std::path::Path;
 use tempfile::TempDir;
 use tokio::time::timeout;
@@ -23,11 +23,11 @@ async fn thread_start_creates_thread_and_emits_started() -> Result<()> {
     // Provide a mock server and config so model wiring is valid.
     let server = create_mock_responses_server_repeating_assistant("Done").await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
     // Start server and initialize.
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // Start a v2 thread with an explicit model override.
@@ -83,11 +83,11 @@ async fn thread_start_creates_thread_and_emits_started() -> Result<()> {
 async fn thread_start_respects_project_config_from_cwd() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
     let workspace = TempDir::new()?;
-    let project_config_dir = workspace.path().join(".codex");
+    let project_config_dir = workspace.path().join(".rune");
     std::fs::create_dir_all(&project_config_dir)?;
     std::fs::write(
         project_config_dir.join("config.toml"),
@@ -95,9 +95,9 @@ async fn thread_start_respects_project_config_from_cwd() -> Result<()> {
 model_reasoning_effort = "high"
 "#,
     )?;
-    set_project_trust_level(codex_home.path(), workspace.path(), TrustLevel::Trusted)?;
+    set_project_trust_level(rune_home.path(), workspace.path(), TrustLevel::Trusted)?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let req_id = mcp
@@ -123,10 +123,10 @@ model_reasoning_effort = "high"
 #[tokio::test]
 async fn thread_start_ephemeral_remains_pathless() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let req_id = mcp
@@ -155,10 +155,10 @@ async fn thread_start_ephemeral_remains_pathless() -> Result<()> {
 async fn thread_start_fails_when_required_mcp_server_fails_to_initialize() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml_with_required_broken_mcp(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml_with_required_broken_mcp(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let req_id = mcp
@@ -188,8 +188,8 @@ async fn thread_start_fails_when_required_mcp_server_fails_to_initialize() -> Re
 }
 
 // Helper to create a config.toml pointing at the mock model server.
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(
@@ -212,10 +212,10 @@ stream_max_retries = 0
 }
 
 fn create_config_toml_with_required_broken_mcp(
-    codex_home: &Path,
+    rune_home: &Path,
     server_uri: &str,
 ) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

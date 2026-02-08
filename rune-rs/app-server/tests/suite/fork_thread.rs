@@ -2,15 +2,15 @@ use anyhow::Result;
 use app_test_support::McpProcess;
 use app_test_support::create_fake_rollout;
 use app_test_support::to_response;
-use codex_app_server_protocol::ForkConversationParams;
-use codex_app_server_protocol::ForkConversationResponse;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::NewConversationParams; // reused for overrides shape
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::SessionConfiguredNotification;
-use codex_core::protocol::EventMsg;
+use rune_app_server_protocol::ForkConversationParams;
+use rune_app_server_protocol::ForkConversationResponse;
+use rune_app_server_protocol::JSONRPCNotification;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::NewConversationParams; // reused for overrides shape
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::ServerNotification;
+use rune_app_server_protocol::SessionConfiguredNotification;
+use rune_core::protocol::EventMsg;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 use tokio::time::timeout;
@@ -19,11 +19,11 @@ const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn fork_conversation_creates_new_rollout() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
 
     let preview = "Hello A";
     let conversation_id = create_fake_rollout(
-        codex_home.path(),
+        rune_home.path(),
         "2025-01-02T12-00-00",
         "2025-01-02T12:00:00Z",
         preview,
@@ -31,7 +31,7 @@ async fn fork_conversation_creates_new_rollout() -> Result<()> {
         None,
     )?;
 
-    let original_path = codex_home
+    let original_path = rune_home
         .path()
         .join("sessions")
         .join("2025")
@@ -47,7 +47,7 @@ async fn fork_conversation_creates_new_rollout() -> Result<()> {
     );
     let original_contents = std::fs::read_to_string(&original_path)?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let fork_req_id = mcp

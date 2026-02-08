@@ -11,12 +11,12 @@ use crate::tools::handlers::collab::MAX_WAIT_TIMEOUT_MS;
 use crate::tools::handlers::collab::MIN_WAIT_TIMEOUT_MS;
 use crate::tools::handlers::request_user_input_tool_description;
 use crate::tools::registry::ToolRegistryBuilder;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::dynamic_tools::DynamicToolSpec;
-use codex_protocol::models::VIEW_IMAGE_TOOL_NAME;
-use codex_protocol::openai_models::ApplyPatchToolType;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::ModelInfo;
+use rune_protocol::config_types::WebSearchMode;
+use rune_protocol::dynamic_tools::DynamicToolSpec;
+use rune_protocol::models::VIEW_IMAGE_TOOL_NAME;
+use rune_protocol::openai_models::ApplyPatchToolType;
+use rune_protocol::openai_models::ConfigShellToolType;
+use rune_protocol::openai_models::ModelInfo;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value as JsonValue;
@@ -59,7 +59,7 @@ impl ToolsConfig {
             ConfigShellToolType::Disabled
         } else if features.enabled(Feature::UnifiedExec) {
             // If ConPTY not supported (for old Windows versions), fallback on ShellCommand.
-            if codex_utils_pty::conpty_supported() {
+            if rune_utils_pty::conpty_supported() {
                 ConfigShellToolType::UnifiedExec
             } else {
                 ConfigShellToolType::ShellCommand
@@ -761,7 +761,7 @@ fn create_test_sync_tool() -> ToolSpec {
 
     ToolSpec::Function(ResponsesApiTool {
         name: "test_sync_tool".to_string(),
-        description: "Internal synchronization helper used by Codex integration tests.".to_string(),
+        description: "Internal synchronization helper used by Rune integration tests.".to_string(),
         strict: false,
         parameters: JsonSchema::Object {
             properties,
@@ -1617,9 +1617,9 @@ mod tests {
     }
 
     #[test]
-    fn test_full_toolset_specs_for_gpt5_codex_unified_exec_web_search() {
+    fn test_full_toolset_specs_for_gpt5_rune_unified_exec_web_search() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let mut features = Features::with_defaults();
         features.enable(Feature::UnifiedExec);
         features.enable(Feature::CollaborationModes);
@@ -1683,7 +1683,7 @@ mod tests {
     #[test]
     fn test_build_specs_collab_tools_enabled() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let mut features = Features::with_defaults();
         features.enable(Feature::Collab);
         features.enable(Feature::CollaborationModes);
@@ -1708,7 +1708,7 @@ mod tests {
     #[test]
     fn request_user_input_requires_collaboration_modes_feature() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let mut features = Features::with_defaults();
         features.disable(Feature::CollaborationModes);
         let tools_config = ToolsConfig::new(&ToolsConfigParams {
@@ -1735,7 +1735,7 @@ mod tests {
     #[test]
     fn get_memory_requires_memory_tool_feature() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let mut features = Features::with_defaults();
         features.disable(Feature::MemoryTool);
         let tools_config = ToolsConfig::new(&ToolsConfigParams {
@@ -1796,7 +1796,7 @@ mod tests {
     #[test]
     fn web_search_mode_cached_sets_external_web_access_false() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let features = Features::with_defaults();
 
         let tools_config = ToolsConfig::new(&ToolsConfigParams {
@@ -1818,7 +1818,7 @@ mod tests {
     #[test]
     fn web_search_mode_live_sets_external_web_access_true() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let features = Features::with_defaults();
 
         let tools_config = ToolsConfig::new(&ToolsConfigParams {
@@ -1838,11 +1838,11 @@ mod tests {
     }
 
     #[test]
-    fn test_build_specs_gpt5_codex_default() {
+    fn test_build_specs_gpt5_rune_default() {
         let mut features = Features::with_defaults();
         features.enable(Feature::CollaborationModes);
         assert_default_model_tools(
-            "gpt-5-codex",
+            "gpt-5-rune",
             &features,
             Some(WebSearchMode::Cached),
             "shell_command",
@@ -1860,11 +1860,11 @@ mod tests {
     }
 
     #[test]
-    fn test_build_specs_gpt51_codex_default() {
+    fn test_build_specs_gpt51_rune_default() {
         let mut features = Features::with_defaults();
         features.enable(Feature::CollaborationModes);
         assert_default_model_tools(
-            "gpt-5.1-codex",
+            "gpt-5.1-rune",
             &features,
             Some(WebSearchMode::Cached),
             "shell_command",
@@ -1882,12 +1882,12 @@ mod tests {
     }
 
     #[test]
-    fn test_build_specs_gpt5_codex_unified_exec_web_search() {
+    fn test_build_specs_gpt5_rune_unified_exec_web_search() {
         let mut features = Features::with_defaults();
         features.enable(Feature::UnifiedExec);
         features.enable(Feature::CollaborationModes);
         assert_model_tools(
-            "gpt-5-codex",
+            "gpt-5-rune",
             &features,
             Some(WebSearchMode::Live),
             &[
@@ -1906,12 +1906,12 @@ mod tests {
     }
 
     #[test]
-    fn test_build_specs_gpt51_codex_unified_exec_web_search() {
+    fn test_build_specs_gpt51_rune_unified_exec_web_search() {
         let mut features = Features::with_defaults();
         features.enable(Feature::UnifiedExec);
         features.enable(Feature::CollaborationModes);
         assert_model_tools(
-            "gpt-5.1-codex",
+            "gpt-5.1-rune",
             &features,
             Some(WebSearchMode::Live),
             &[
@@ -1930,7 +1930,7 @@ mod tests {
     }
 
     #[test]
-    fn test_codex_mini_defaults() {
+    fn test_rune_mini_defaults() {
         let mut features = Features::with_defaults();
         features.enable(Feature::CollaborationModes);
         assert_default_model_tools(
@@ -1951,7 +1951,7 @@ mod tests {
     }
 
     #[test]
-    fn test_codex_5_1_mini_defaults() {
+    fn test_rune_5_1_mini_defaults() {
         let mut features = Features::with_defaults();
         features.enable(Feature::CollaborationModes);
         assert_default_model_tools(
@@ -2039,7 +2039,7 @@ mod tests {
     }
 
     #[test]
-    fn test_codex_mini_unified_exec_web_search() {
+    fn test_rune_mini_unified_exec_web_search() {
         let mut features = Features::with_defaults();
         features.enable(Feature::UnifiedExec);
         features.enable(Feature::CollaborationModes);
@@ -2086,7 +2086,7 @@ mod tests {
     #[ignore]
     fn test_parallel_support_flags() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let mut features = Features::with_defaults();
         features.enable(Feature::UnifiedExec);
         let tools_config = ToolsConfig::new(&ToolsConfigParams {
@@ -2106,7 +2106,7 @@ mod tests {
     #[test]
     fn test_test_model_info_includes_sync_tool() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("test-gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("test-gpt-5-rune", &config);
         let features = Features::with_defaults();
         let tools_config = ToolsConfig::new(&ToolsConfigParams {
             model_info: &model_info,
@@ -2265,7 +2265,7 @@ mod tests {
     #[test]
     fn test_mcp_tool_property_missing_type_defaults_to_string() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let mut features = Features::with_defaults();
         features.enable(Feature::UnifiedExec);
         let tools_config = ToolsConfig::new(&ToolsConfigParams {
@@ -2317,7 +2317,7 @@ mod tests {
     #[test]
     fn test_mcp_tool_integer_normalized_to_number() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let mut features = Features::with_defaults();
         features.enable(Feature::UnifiedExec);
         let tools_config = ToolsConfig::new(&ToolsConfigParams {
@@ -2365,7 +2365,7 @@ mod tests {
     #[test]
     fn test_mcp_tool_array_without_items_gets_default_string_items() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let mut features = Features::with_defaults();
         features.enable(Feature::UnifiedExec);
         features.enable(Feature::ApplyPatchFreeform);
@@ -2417,7 +2417,7 @@ mod tests {
     #[test]
     fn test_mcp_tool_anyof_defaults_to_string() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let mut features = Features::with_defaults();
         features.enable(Feature::UnifiedExec);
         let tools_config = ToolsConfig::new(&ToolsConfigParams {
@@ -2526,7 +2526,7 @@ Examples of valid command strings:
     #[test]
     fn test_get_openai_tools_mcp_tools_with_additional_properties_schema() {
         let config = test_config();
-        let model_info = ModelsManager::construct_model_info_offline("gpt-5-codex", &config);
+        let model_info = ModelsManager::construct_model_info_offline("gpt-5-rune", &config);
         let mut features = Features::with_defaults();
         features.enable(Feature::UnifiedExec);
         let tools_config = ToolsConfig::new(&ToolsConfigParams {

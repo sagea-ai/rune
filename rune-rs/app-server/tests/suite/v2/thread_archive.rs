@@ -2,18 +2,18 @@ use anyhow::Result;
 use app_test_support::McpProcess;
 use app_test_support::create_mock_responses_server_repeating_assistant;
 use app_test_support::to_response;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadArchiveParams;
-use codex_app_server_protocol::ThreadArchiveResponse;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::UserInput;
-use codex_core::ARCHIVED_SESSIONS_SUBDIR;
-use codex_core::find_thread_path_by_id_str;
+use rune_app_server_protocol::JSONRPCError;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::ThreadArchiveParams;
+use rune_app_server_protocol::ThreadArchiveResponse;
+use rune_app_server_protocol::ThreadStartParams;
+use rune_app_server_protocol::ThreadStartResponse;
+use rune_app_server_protocol::TurnStartParams;
+use rune_app_server_protocol::TurnStartResponse;
+use rune_app_server_protocol::UserInput;
+use rune_core::ARCHIVED_SESSIONS_SUBDIR;
+use rune_core::find_thread_path_by_id_str;
 use std::path::Path;
 use tempfile::TempDir;
 use tokio::time::timeout;
@@ -23,10 +23,10 @@ const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs
 #[tokio::test]
 async fn thread_archive_requires_materialized_rollout() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // Start a thread.
@@ -51,7 +51,7 @@ async fn thread_archive_requires_materialized_rollout() -> Result<()> {
         rollout_path.display()
     );
     assert!(
-        find_thread_path_by_id_str(codex_home.path(), &thread.id)
+        find_thread_path_by_id_str(rune_home.path(), &thread.id)
             .await?
             .is_none(),
         "thread id should not be discoverable before rollout materialization"
@@ -106,7 +106,7 @@ async fn thread_archive_requires_materialized_rollout() -> Result<()> {
         rollout_path.display()
     );
 
-    let discovered_path = find_thread_path_by_id_str(codex_home.path(), &thread.id)
+    let discovered_path = find_thread_path_by_id_str(rune_home.path(), &thread.id)
         .await?
         .expect("expected rollout path for thread id to exist after materialization");
     assert_paths_match_on_disk(&discovered_path, &rollout_path)?;
@@ -124,7 +124,7 @@ async fn thread_archive_requires_materialized_rollout() -> Result<()> {
     let _: ThreadArchiveResponse = to_response::<ThreadArchiveResponse>(archive_resp)?;
 
     // Verify file moved.
-    let archived_directory = codex_home.path().join(ARCHIVED_SESSIONS_SUBDIR);
+    let archived_directory = rune_home.path().join(ARCHIVED_SESSIONS_SUBDIR);
     // The archived file keeps the original filename (rollout-...-<id>.jsonl).
     let archived_rollout_path =
         archived_directory.join(rollout_path.file_name().expect("rollout file name"));
@@ -142,8 +142,8 @@ async fn thread_archive_requires_materialized_rollout() -> Result<()> {
     Ok(())
 }
 
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(config_toml, config_contents(server_uri))
 }
 

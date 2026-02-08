@@ -76,7 +76,7 @@ mod tests {
 
     use super::*;
     use anyhow::Result;
-    use codex_protocol::ThreadId;
+    use rune_protocol::ThreadId;
     use pretty_assertions::assert_eq;
     use serde_json::Value;
     use serde_json::json;

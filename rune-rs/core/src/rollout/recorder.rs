@@ -1,4 +1,4 @@
-//! Persist Codex session rollouts (.jsonl) so sessions can be replayed or inspected later.
+//! Persist Rune session rollouts (.jsonl) so sessions can be replayed or inspected later.
 
 use std::fs::File;
 use std::fs::{self};
@@ -7,9 +7,9 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use chrono::SecondsFormat;
-use codex_protocol::ThreadId;
-use codex_protocol::dynamic_tools::DynamicToolSpec;
-use codex_protocol::models::BaseInstructions;
+use rune_protocol::ThreadId;
+use rune_protocol::dynamic_tools::DynamicToolSpec;
+use rune_protocol::models::BaseInstructions;
 use serde_json::Value;
 use time::OffsetDateTime;
 use time::format_description::FormatItem;
@@ -40,15 +40,15 @@ use crate::git_info::collect_git_info;
 use crate::path_utils;
 use crate::state_db;
 use crate::state_db::StateDbHandle;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::ResumedHistory;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::SessionMeta;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::SessionSource;
-use codex_state::StateRuntime;
-use codex_state::ThreadMetadataBuilder;
+use rune_protocol::protocol::InitialHistory;
+use rune_protocol::protocol::ResumedHistory;
+use rune_protocol::protocol::RolloutItem;
+use rune_protocol::protocol::RolloutLine;
+use rune_protocol::protocol::SessionMeta;
+use rune_protocol::protocol::SessionMetaLine;
+use rune_protocol::protocol::SessionSource;
+use rune_state::StateRuntime;
+use rune_state::ThreadMetadataBuilder;
 
 /// Records all [`ResponseItem`]s for a session and flushes them to disk after
 /// every update.
@@ -56,8 +56,8 @@ use codex_state::ThreadMetadataBuilder;
 /// Rollouts are recorded as JSONL and can be inspected with tools such as:
 ///
 /// ```ignore
-/// $ jq -C . ~/.codex/sessions/rollout-2025-05-07T17-24-21-5973b6c0-94b8-487b-a530-2aeb6098ae0e.jsonl
-/// $ fx ~/.codex/sessions/rollout-2025-05-07T17-24-21-5973b6c0-94b8-487b-a530-2aeb6098ae0e.jsonl
+/// $ jq -C . ~/.rune/sessions/rollout-2025-05-07T17-24-21-5973b6c0-94b8-487b-a530-2aeb6098ae0e.jsonl
+/// $ fx ~/.rune/sessions/rollout-2025-05-07T17-24-21-5973b6c0-94b8-487b-a530-2aeb6098ae0e.jsonl
 /// ```
 #[derive(Clone)]
 pub struct RolloutRecorder {
@@ -117,9 +117,9 @@ impl RolloutRecorderParams {
 }
 
 impl RolloutRecorder {
-    /// List threads (rollout files) under the provided Codex home directory.
+    /// List threads (rollout files) under the provided Rune home directory.
     pub async fn list_threads(
-        codex_home: &Path,
+        rune_home: &Path,
         page_size: usize,
         cursor: Option<&Cursor>,
         sort_key: ThreadSortKey,
@@ -128,7 +128,7 @@ impl RolloutRecorder {
         default_provider: &str,
     ) -> std::io::Result<ThreadsPage> {
         Self::list_threads_with_db_fallback(
-            codex_home,
+            rune_home,
             page_size,
             cursor,
             sort_key,
@@ -142,7 +142,7 @@ impl RolloutRecorder {
 
     /// List archived threads (rollout files) under the archived sessions directory.
     pub async fn list_archived_threads(
-        codex_home: &Path,
+        rune_home: &Path,
         page_size: usize,
         cursor: Option<&Cursor>,
         sort_key: ThreadSortKey,
@@ -151,7 +151,7 @@ impl RolloutRecorder {
         default_provider: &str,
     ) -> std::io::Result<ThreadsPage> {
         Self::list_threads_with_db_fallback(
-            codex_home,
+            rune_home,
             page_size,
             cursor,
             sort_key,
@@ -165,7 +165,7 @@ impl RolloutRecorder {
 
     #[allow(clippy::too_many_arguments)]
     async fn list_threads_with_db_fallback(
-        codex_home: &Path,
+        rune_home: &Path,
         page_size: usize,
         cursor: Option<&Cursor>,
         sort_key: ThreadSortKey,
@@ -174,10 +174,10 @@ impl RolloutRecorder {
         default_provider: &str,
         archived: bool,
     ) -> std::io::Result<ThreadsPage> {
-        let state_db_ctx = state_db::open_if_present(codex_home, default_provider).await;
+        let state_db_ctx = state_db::open_if_present(rune_home, default_provider).await;
         if let Some(db_page) = state_db::list_threads_db(
             state_db_ctx.as_deref(),
-            codex_home,
+            rune_home,
             page_size,
             cursor,
             sort_key,
@@ -193,7 +193,7 @@ impl RolloutRecorder {
         state_db::record_discrepancy("list_threads_with_db_fallback", "falling_back");
 
         if archived {
-            let root = codex_home.join(ARCHIVED_SESSIONS_SUBDIR);
+            let root = rune_home.join(ARCHIVED_SESSIONS_SUBDIR);
             return get_threads_in_root(
                 root,
                 page_size,
@@ -210,7 +210,7 @@ impl RolloutRecorder {
         }
 
         get_threads(
-            codex_home,
+            rune_home,
             page_size,
             cursor,
             sort_key,
@@ -224,7 +224,7 @@ impl RolloutRecorder {
     /// Find the newest recorded thread path, optionally filtering to a matching cwd.
     #[allow(clippy::too_many_arguments)]
     pub async fn find_latest_thread_path(
-        codex_home: &Path,
+        rune_home: &Path,
         page_size: usize,
         cursor: Option<&Cursor>,
         sort_key: ThreadSortKey,
@@ -233,13 +233,13 @@ impl RolloutRecorder {
         default_provider: &str,
         filter_cwd: Option<&Path>,
     ) -> std::io::Result<Option<PathBuf>> {
-        let state_db_ctx = state_db::open_if_present(codex_home, default_provider).await;
+        let state_db_ctx = state_db::open_if_present(rune_home, default_provider).await;
         if state_db_ctx.is_some() {
             let mut db_cursor = cursor.cloned();
             loop {
                 let Some(db_page) = state_db::list_threads_db(
                     state_db_ctx.as_deref(),
-                    codex_home,
+                    rune_home,
                     page_size,
                     db_cursor.as_ref(),
                     sort_key,
@@ -264,7 +264,7 @@ impl RolloutRecorder {
         let mut cursor = cursor.cloned();
         loop {
             let page = get_threads(
-                codex_home,
+                rune_home,
                 page_size,
                 cursor.as_ref(),
                 sort_key,
@@ -542,10 +542,10 @@ fn precompute_log_file_info(
     config: &Config,
     conversation_id: ThreadId,
 ) -> std::io::Result<LogFileInfo> {
-    // Resolve ~/.codex/sessions/YYYY/MM/DD path.
+    // Resolve ~/.rune/sessions/YYYY/MM/DD path.
     let timestamp = OffsetDateTime::now_local()
         .map_err(|e| IoError::other(format!("failed to get local time: {e}")))?;
-    let mut dir = config.codex_home.clone();
+    let mut dir = config.rune_home.clone();
     dir.push(SESSIONS_SUBDIR);
     dir.push(timestamp.year().to_string());
     dir.push(format!("{:02}", u8::from(timestamp.month())));
@@ -814,8 +814,8 @@ impl JsonlWriter {
     }
 }
 
-impl From<codex_state::ThreadsPage> for ThreadsPage {
-    fn from(db_page: codex_state::ThreadsPage) -> Self {
+impl From<rune_state::ThreadsPage> for ThreadsPage {
+    fn from(db_page: rune_state::ThreadsPage) -> Self {
         let items = db_page
             .items
             .into_iter()
@@ -864,7 +864,7 @@ fn select_resume_path(page: &ThreadsPage, filter_cwd: Option<&Path>) -> Option<P
 }
 
 fn select_resume_path_from_db_page(
-    page: &codex_state::ThreadsPage,
+    page: &rune_state::ThreadsPage,
     filter_cwd: Option<&Path>,
 ) -> Option<PathBuf> {
     match filter_cwd {
@@ -893,16 +893,16 @@ fn cwd_matches(session_cwd: &Path, cwd: &Path) -> bool {
 mod tests {
     use super::*;
     use crate::config::ConfigBuilder;
-    use codex_protocol::protocol::AgentMessageEvent;
-    use codex_protocol::protocol::EventMsg;
-    use codex_protocol::protocol::UserMessageEvent;
+    use rune_protocol::protocol::AgentMessageEvent;
+    use rune_protocol::protocol::EventMsg;
+    use rune_protocol::protocol::UserMessageEvent;
     use tempfile::TempDir;
 
     #[tokio::test]
     async fn recorder_materializes_only_after_explicit_persist() -> std::io::Result<()> {
         let home = TempDir::new().expect("temp dir");
         let config = ConfigBuilder::default()
-            .codex_home(home.path().to_path_buf())
+            .rune_home(home.path().to_path_buf())
             .build()
             .await?;
         let thread_id = ThreadId::new();

@@ -27,9 +27,9 @@ impl GitSha {
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Display, JsonSchema, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum AuthMode {
-    /// OpenAI API key provided by the caller and stored by Codex.
+    /// OpenAI API key provided by the caller and stored by Rune.
     ApiKey,
-    /// ChatGPT OAuth managed by Codex (tokens persisted and refreshed by Codex).
+    /// ChatGPT OAuth managed by Rune (tokens persisted and refreshed by Rune).
     Chatgpt,
     /// [UNSTABLE] FOR OPENAI INTERNAL USE ONLY - DO NOT USE.
     ///
@@ -368,17 +368,17 @@ client_request_definitions! {
         params: v1::GetConversationSummaryParams,
         response: v1::GetConversationSummaryResponse,
     },
-    /// List recorded Codex conversations (rollouts) with optional pagination and search.
+    /// List recorded Rune conversations (rollouts) with optional pagination and search.
     ListConversations {
         params: v1::ListConversationsParams,
         response: v1::ListConversationsResponse,
     },
-    /// Resume a recorded Codex conversation from a rollout file.
+    /// Resume a recorded Rune conversation from a rollout file.
     ResumeConversation {
         params: v1::ResumeConversationParams,
         response: v1::ResumeConversationResponse,
     },
-    /// Fork a recorded Codex conversation into a new session.
+    /// Fork a recorded Rune conversation into a new session.
     ForkConversation {
         params: v1::ForkConversationParams,
         response: v1::ForkConversationResponse,
@@ -682,7 +682,7 @@ pub struct FuzzyFileSearchParams {
     pub cancellation_token: Option<String>,
 }
 
-/// Superset of [`codex_file_search::FileMatch`]
+/// Superset of [`rune_file_search::FileMatch`]
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]
 pub struct FuzzyFileSearchResult {
     pub root: String,
@@ -709,7 +709,7 @@ server_notification_definitions! {
     TurnPlanUpdated => "turn/plan/updated" (v2::TurnPlanUpdatedNotification),
     ItemStarted => "item/started" (v2::ItemStartedNotification),
     ItemCompleted => "item/completed" (v2::ItemCompletedNotification),
-    /// This event is internal-only. Used by Codex Cloud.
+    /// This event is internal-only. Used by Rune Cloud.
     RawResponseItemCompleted => "rawResponseItem/completed" (v2::RawResponseItemCompletedNotification),
     AgentMessageDelta => "item/agentMessage/delta" (v2::AgentMessageDeltaNotification),
     /// EXPERIMENTAL - proposed plan streaming deltas for plan items.
@@ -753,10 +753,10 @@ client_notification_definitions! {
 mod tests {
     use super::*;
     use anyhow::Result;
-    use codex_protocol::ThreadId;
-    use codex_protocol::account::PlanType;
-    use codex_protocol::parse_command::ParsedCommand;
-    use codex_protocol::protocol::AskForApproval;
+    use rune_protocol::ThreadId;
+    use rune_protocol::account::PlanType;
+    use rune_protocol::parse_command::ParsedCommand;
+    use rune_protocol::protocol::AskForApproval;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use std::path::PathBuf;

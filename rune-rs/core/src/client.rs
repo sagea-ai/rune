@@ -1,6 +1,6 @@
 //! Session- and turn-scoped helpers for talking to model provider APIs.
 //!
-//! `ModelClient` is intended to live for the lifetime of a Codex session and holds the stable
+//! `ModelClient` is intended to live for the lifetime of a Rune session and holds the stable
 //! configuration and state needed to talk to a provider (auth, provider selection, conversation id,
 //! and feature-gated request behavior).
 //!
@@ -37,39 +37,39 @@ use crate::api_bridge::CoreAuthProvider;
 use crate::api_bridge::auth_provider_from_auth;
 use crate::api_bridge::map_api_error;
 use crate::auth::UnauthorizedRecovery;
-use codex_api::CompactClient as ApiCompactClient;
-use codex_api::CompactionInput as ApiCompactionInput;
-use codex_api::MemoriesClient as ApiMemoriesClient;
-use codex_api::MemoryTrace as ApiMemoryTrace;
-use codex_api::MemoryTraceSummarizeInput as ApiMemoryTraceSummarizeInput;
-use codex_api::MemoryTraceSummaryOutput as ApiMemoryTraceSummaryOutput;
-use codex_api::Prompt as ApiPrompt;
-use codex_api::RequestTelemetry;
-use codex_api::ReqwestTransport;
-use codex_api::ResponseAppendWsRequest;
-use codex_api::ResponseCreateWsRequest;
-use codex_api::ResponsesClient as ApiResponsesClient;
-use codex_api::ResponsesOptions as ApiResponsesOptions;
-use codex_api::ResponsesWebsocketClient as ApiWebSocketResponsesClient;
-use codex_api::ResponsesWebsocketConnection as ApiWebSocketConnection;
-use codex_api::SseTelemetry;
-use codex_api::TransportError;
-use codex_api::WebsocketTelemetry;
-use codex_api::build_conversation_headers;
-use codex_api::common::Reasoning;
-use codex_api::common::ResponsesWsRequest;
-use codex_api::create_text_param_for_request;
-use codex_api::error::ApiError;
-use codex_api::requests::responses::Compression;
-use codex_otel::OtelManager;
+use rune_api::CompactClient as ApiCompactClient;
+use rune_api::CompactionInput as ApiCompactionInput;
+use rune_api::MemoriesClient as ApiMemoriesClient;
+use rune_api::MemoryTrace as ApiMemoryTrace;
+use rune_api::MemoryTraceSummarizeInput as ApiMemoryTraceSummarizeInput;
+use rune_api::MemoryTraceSummaryOutput as ApiMemoryTraceSummaryOutput;
+use rune_api::Prompt as ApiPrompt;
+use rune_api::RequestTelemetry;
+use rune_api::ReqwestTransport;
+use rune_api::ResponseAppendWsRequest;
+use rune_api::ResponseCreateWsRequest;
+use rune_api::ResponsesClient as ApiResponsesClient;
+use rune_api::ResponsesOptions as ApiResponsesOptions;
+use rune_api::ResponsesWebsocketClient as ApiWebSocketResponsesClient;
+use rune_api::ResponsesWebsocketConnection as ApiWebSocketConnection;
+use rune_api::SseTelemetry;
+use rune_api::TransportError;
+use rune_api::WebsocketTelemetry;
+use rune_api::build_conversation_headers;
+use rune_api::common::Reasoning;
+use rune_api::common::ResponsesWsRequest;
+use rune_api::create_text_param_for_request;
+use rune_api::error::ApiError;
+use rune_api::requests::responses::Compression;
+use rune_otel::OtelManager;
 
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ReasoningSummary as ReasoningSummaryConfig;
-use codex_protocol::config_types::Verbosity as VerbosityConfig;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
-use codex_protocol::protocol::SessionSource;
+use rune_protocol::ThreadId;
+use rune_protocol::config_types::ReasoningSummary as ReasoningSummaryConfig;
+use rune_protocol::config_types::Verbosity as VerbosityConfig;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::openai_models::ModelInfo;
+use rune_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use rune_protocol::protocol::SessionSource;
 use eventsource_stream::Event;
 use eventsource_stream::EventStreamError;
 use futures::StreamExt;
@@ -89,23 +89,23 @@ use tokio_tungstenite::tungstenite::Message;
 use tracing::warn;
 
 use crate::AuthManager;
-use crate::auth::CodexAuth;
+use crate::auth::RuneAuth;
 use crate::auth::RefreshTokenError;
 use crate::client_common::Prompt;
 use crate::client_common::ResponseEvent;
 use crate::client_common::ResponseStream;
 use crate::default_client::build_reqwest_client;
-use crate::error::CodexErr;
+use crate::error::RuneErr;
 use crate::error::Result;
-use crate::flags::CODEX_RS_SSE_FIXTURE;
+use crate::flags::RUNE_RS_SSE_FIXTURE;
 use crate::model_provider_info::ModelProviderInfo;
 use crate::model_provider_info::WireApi;
 use crate::tools::spec::create_tools_json_for_responses_api;
 
 pub const OPENAI_BETA_HEADER: &str = "OpenAI-Beta";
 pub const OPENAI_BETA_RESPONSES_WEBSOCKETS: &str = "responses_websockets=2026-02-04";
-pub const X_CODEX_TURN_STATE_HEADER: &str = "x-rune-turn-state";
-pub const X_CODEX_TURN_METADATA_HEADER: &str = "x-rune-turn-metadata";
+pub const X_RUNE_TURN_STATE_HEADER: &str = "x-rune-turn-state";
+pub const X_RUNE_TURN_METADATA_HEADER: &str = "x-rune-turn-metadata";
 pub const X_RESPONSESAPI_INCLUDE_TIMING_METRICS_HEADER: &str =
     "x-responsesapi-include-timing-metrics";
 const RESPONSES_WEBSOCKETS_V2_BETA_HEADER_VALUE: &str = "responses_websockets=2026-02-06";
@@ -168,14 +168,14 @@ impl std::fmt::Debug for ModelClientState {
 /// Keeping this as a single bundle ensures preconnect and normal request paths
 /// share the same auth/provider setup flow.
 struct CurrentClientSetup {
-    auth: Option<CodexAuth>,
-    api_provider: codex_api::Provider,
+    auth: Option<RuneAuth>,
+    api_provider: rune_api::Provider,
     api_auth: CoreAuthProvider,
 }
 
 /// A session-scoped client for model-provider API calls.
 ///
-/// This holds configuration and state that should be shared across turns within a Codex session
+/// This holds configuration and state that should be shared across turns within a Rune session
 /// (auth, provider selection, conversation id, feature-gated request behavior, and transport
 /// fallback state).
 ///
@@ -203,7 +203,7 @@ pub struct ModelClient {
 /// When startup preconnect is still running, first use of this session awaits that in-flight task
 /// before opening a new websocket so preconnect acts as the first connection attempt for the turn.
 ///
-/// Create a fresh `ModelClientSession` for each Codex turn. Reusing it across turns would replay
+/// Create a fresh `ModelClientSession` for each Rune turn. Reusing it across turns would replay
 /// the previous turn's sticky-routing token into the next turn, which violates the client/server
 /// contract and can cause routing bugs.
 pub struct ModelClientSession {
@@ -234,7 +234,7 @@ impl ModelClient {
     #[allow(clippy::too_many_arguments)]
     /// Creates a new session-scoped `ModelClient`.
     ///
-    /// All arguments are expected to be stable for the lifetime of a Codex session. Per-turn values
+    /// All arguments are expected to be stable for the lifetime of a Rune session. Per-turn values
     /// are passed to [`ModelClientSession::stream`] (and other turn-scoped methods) explicitly.
     pub fn new(
         auth_manager: Option<Arc<AuthManager>>,
@@ -485,7 +485,7 @@ impl ModelClient {
         let api_provider = self
             .state
             .provider
-            .to_api_provider(auth.as_ref().map(CodexAuth::auth_mode))?;
+            .to_api_provider(auth.as_ref().map(RuneAuth::auth_mode))?;
         let api_auth = auth_provider_from_auth(auth.clone(), &self.state.provider)?;
         Ok(CurrentClientSetup {
             auth,
@@ -501,7 +501,7 @@ impl ModelClient {
     async fn connect_websocket(
         &self,
         otel_manager: &OtelManager,
-        api_provider: codex_api::Provider,
+        api_provider: rune_api::Provider,
         api_auth: CoreAuthProvider,
         turn_state: Option<Arc<OnceLock<String>>>,
         turn_metadata_header: Option<&str>,
@@ -782,7 +782,7 @@ impl ModelClientSession {
     async fn websocket_connection(
         &mut self,
         otel_manager: &OtelManager,
-        api_provider: codex_api::Provider,
+        api_provider: rune_api::Provider,
         api_auth: CoreAuthProvider,
         turn_metadata_header: Option<&str>,
         options: &ApiResponsesOptions,
@@ -839,9 +839,9 @@ impl ModelClientSession {
         ))
     }
 
-    fn responses_request_compression(&self, auth: Option<&crate::auth::CodexAuth>) -> Compression {
+    fn responses_request_compression(&self, auth: Option<&crate::auth::RuneAuth>) -> Compression {
         if self.client.state.enable_request_compression
-            && auth.is_some_and(CodexAuth::is_chatgpt_auth)
+            && auth.is_some_and(RuneAuth::is_chatgpt_auth)
             && self.client.state.provider.is_openai()
         {
             Compression::Zstd
@@ -864,9 +864,9 @@ impl ModelClientSession {
         summary: ReasoningSummaryConfig,
         turn_metadata_header: Option<&str>,
     ) -> Result<ResponseStream> {
-        if let Some(path) = &*CODEX_RS_SSE_FIXTURE {
+        if let Some(path) = &*RUNE_RS_SSE_FIXTURE {
             warn!(path, "Streaming from fixture");
-            let stream = codex_api::stream_from_fixture(
+            let stream = rune_api::stream_from_fixture(
                 path,
                 self.client.state.provider.stream_idle_timeout(),
             )
@@ -1080,7 +1080,7 @@ impl ModelClientSession {
         }
     }
 
-    /// Permanently disables WebSockets for this Codex session and resets WebSocket state.
+    /// Permanently disables WebSockets for this Rune session and resets WebSocket state.
     ///
     /// This is used after exhausting the provider retry budget, to force subsequent requests onto
     /// the HTTP transport. It also clears any warmed websocket preconnect state so future turns
@@ -1093,7 +1093,7 @@ impl ModelClientSession {
         if activated {
             warn!("falling back to HTTP");
             otel_manager.counter(
-                "codex.transport.fallback_to_http",
+                "rune.transport.fallback_to_http",
                 1,
                 &[("from_wire_api", "responses_websocket")],
             );
@@ -1127,7 +1127,7 @@ fn parse_turn_metadata_header(turn_metadata_header: Option<&str>) -> Option<Head
 
 /// Builds the extra headers attached to Responses API requests.
 ///
-/// These headers implement Codex-specific conventions:
+/// These headers implement Rune-specific conventions:
 ///
 /// - `x-rune-beta-features`: comma-separated beta feature keys enabled for the session.
 /// - `x-rune-turn-state`: sticky routing token captured earlier in the turn.
@@ -1148,10 +1148,10 @@ fn build_responses_headers(
         && let Some(state) = turn_state.get()
         && let Ok(header_value) = HeaderValue::from_str(state)
     {
-        headers.insert(X_CODEX_TURN_STATE_HEADER, header_value);
+        headers.insert(X_RUNE_TURN_STATE_HEADER, header_value);
     }
     if let Some(header_value) = turn_metadata_header {
-        headers.insert(X_CODEX_TURN_METADATA_HEADER, header_value.clone());
+        headers.insert(X_RUNE_TURN_METADATA_HEADER, header_value.clone());
     }
     headers
 }
@@ -1219,7 +1219,7 @@ where
 /// Handles a 401 response by optionally refreshing ChatGPT tokens once.
 ///
 /// When refresh succeeds, the caller should retry the API call; otherwise
-/// the mapped `CodexErr` is returned to the caller.
+/// the mapped `RuneErr` is returned to the caller.
 async fn handle_unauthorized(
     transport: TransportError,
     auth_recovery: &mut Option<UnauthorizedRecovery>,
@@ -1229,8 +1229,8 @@ async fn handle_unauthorized(
     {
         return match recovery.next().await {
             Ok(_) => Ok(()),
-            Err(RefreshTokenError::Permanent(failed)) => Err(CodexErr::RefreshTokenFailed(failed)),
-            Err(RefreshTokenError::Transient(other)) => Err(CodexErr::Io(other)),
+            Err(RefreshTokenError::Permanent(failed)) => Err(RuneErr::RefreshTokenFailed(failed)),
+            Err(RefreshTokenError::Transient(other)) => Err(RuneErr::Io(other)),
         };
     }
 

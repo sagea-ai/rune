@@ -1,22 +1,22 @@
 #![cfg(not(target_os = "windows"))]
 
-use codex_core::CodexAuth;
-use codex_core::features::Feature;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use rune_core::RuneAuth;
+use rune_core::features::Feature;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn request_body_is_zstd_compressed_for_codex_backend_when_enabled() -> anyhow::Result<()> {
+async fn request_body_is_zstd_compressed_for_rune_backend_when_enabled() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
@@ -26,16 +26,16 @@ async fn request_body_is_zstd_compressed_for_codex_backend_when_enabled() -> any
     )
     .await;
 
-    let base_url = format!("{}/backend-api/codex/v1", server.uri());
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let base_url = format!("{}/backend-api/rune/v1", server.uri());
+    let mut builder = test_rune()
+        .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(move |config| {
             config.features.enable(Feature::EnableRequestCompression);
             config.model_provider.base_url = Some(base_url);
         });
-    let codex = builder.build(&server).await?.codex;
+    let rune = builder.build(&server).await?.rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "compress me".into(),
@@ -46,7 +46,7 @@ async fn request_body_is_zstd_compressed_for_codex_backend_when_enabled() -> any
         .await?;
 
     // Wait until the task completes so the request definitely hit the server.
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = request_log.single_request();
     assert_eq!(request.header("content-encoding").as_deref(), Some("zstd"));
@@ -72,14 +72,14 @@ async fn request_body_is_not_compressed_for_api_key_auth_even_when_enabled() -> 
     )
     .await;
 
-    let base_url = format!("{}/backend-api/codex/v1", server.uri());
-    let mut builder = test_codex().with_config(move |config| {
+    let base_url = format!("{}/backend-api/rune/v1", server.uri());
+    let mut builder = test_rune().with_config(move |config| {
         config.features.enable(Feature::EnableRequestCompression);
         config.model_provider.base_url = Some(base_url);
     });
-    let codex = builder.build(&server).await?.codex;
+    let rune = builder.build(&server).await?.rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "do not compress".into(),
@@ -89,7 +89,7 @@ async fn request_body_is_not_compressed_for_api_key_auth_even_when_enabled() -> 
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = request_log.single_request();
     assert!(

@@ -6,7 +6,7 @@ license.workspace = true
 
 [lib]
 doctest = false
-name = "codex_otel"
+name = "rune_otel"
 path = "src/lib.rs"
 
 [lints]
@@ -23,7 +23,6 @@ disable-default-metrics-exporter = []
 chrono = { workspace = true }
 rune-utils-absolute-path = { workspace = true }
 rune-utils-string = { workspace = true }
-rune-api = { workspace = true }
 rune-protocol = { workspace = true }
 eventsource-stream = { workspace = true }
 opentelemetry = { workspace = true, features = ["logs", "metrics", "trace"] }

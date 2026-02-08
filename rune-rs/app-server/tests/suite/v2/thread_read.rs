@@ -3,19 +3,19 @@ use app_test_support::McpProcess;
 use app_test_support::create_fake_rollout_with_text_elements;
 use app_test_support::create_mock_responses_server_repeating_assistant;
 use app_test_support::to_response;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SessionSource;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadReadParams;
-use codex_app_server_protocol::ThreadReadResponse;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::UserInput;
-use codex_protocol::user_input::ByteRange;
-use codex_protocol::user_input::TextElement;
+use rune_app_server_protocol::JSONRPCError;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::SessionSource;
+use rune_app_server_protocol::ThreadItem;
+use rune_app_server_protocol::ThreadReadParams;
+use rune_app_server_protocol::ThreadReadResponse;
+use rune_app_server_protocol::ThreadStartParams;
+use rune_app_server_protocol::ThreadStartResponse;
+use rune_app_server_protocol::TurnStatus;
+use rune_app_server_protocol::UserInput;
+use rune_protocol::user_input::ByteRange;
+use rune_protocol::user_input::TextElement;
 use pretty_assertions::assert_eq;
 use std::path::Path;
 use std::path::PathBuf;
@@ -27,8 +27,8 @@ const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs
 #[tokio::test]
 async fn thread_read_returns_summary_without_turns() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
     let preview = "Saved user message";
     let text_elements = [TextElement::new(
@@ -36,7 +36,7 @@ async fn thread_read_returns_summary_without_turns() -> Result<()> {
         Some("<note>".into()),
     )];
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        rune_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         preview,
@@ -48,7 +48,7 @@ async fn thread_read_returns_summary_without_turns() -> Result<()> {
         None,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let read_id = mcp
@@ -80,8 +80,8 @@ async fn thread_read_returns_summary_without_turns() -> Result<()> {
 #[tokio::test]
 async fn thread_read_can_include_turns() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
     let preview = "Saved user message";
     let text_elements = vec![TextElement::new(
@@ -89,7 +89,7 @@ async fn thread_read_can_include_turns() -> Result<()> {
         Some("<note>".into()),
     )];
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        rune_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         preview,
@@ -101,7 +101,7 @@ async fn thread_read_can_include_turns() -> Result<()> {
         None,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let read_id = mcp
@@ -140,10 +140,10 @@ async fn thread_read_can_include_turns() -> Result<()> {
 #[tokio::test]
 async fn thread_read_loaded_thread_returns_precomputed_path_before_materialization() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -188,10 +188,10 @@ async fn thread_read_loaded_thread_returns_precomputed_path_before_materializati
 #[tokio::test]
 async fn thread_read_include_turns_rejects_unmaterialized_loaded_thread() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -237,8 +237,8 @@ async fn thread_read_include_turns_rejects_unmaterialized_loaded_thread() -> Res
 }
 
 // Helper to create a config.toml pointing at the mock model server.
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

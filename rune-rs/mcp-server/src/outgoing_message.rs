@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::atomic::AtomicI64;
 use std::sync::atomic::Ordering;
 
-use codex_core::protocol::Event;
-use codex_protocol::ThreadId;
+use rune_core::protocol::Event;
+use rune_protocol::ThreadId;
 use rmcp::model::CustomNotification;
 use rmcp::model::CustomRequest;
 use rmcp::model::ErrorData;
@@ -118,7 +118,7 @@ impl OutgoingMessageSender {
         };
 
         self.send_notification(OutgoingNotification {
-            method: "codex/event".to_string(),
+            method: "rune/event".to_string(),
             params: Some(params.clone()),
         })
         .await;
@@ -200,7 +200,7 @@ pub(crate) struct OutgoingNotificationParams {
     pub event: serde_json::Value,
 }
 
-// Additional mcp-specific data to be added to a [`codex_core::protocol::Event`] as notification.params._meta
+// Additional mcp-specific data to be added to a [`rune_core::protocol::Event`] as notification.params._meta
 // MCP Spec: https://modelcontextprotocol.io/specification/2025-06-18/basic#meta
 // Typescript Schema: https://github.com/modelcontextprotocol/modelcontextprotocol/blob/0695a497eb50a804fc0e88c18a93a21a675d6b3e/schema/2025-06-18/schema.ts
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -231,12 +231,12 @@ mod tests {
     use std::path::PathBuf;
 
     use anyhow::Result;
-    use codex_core::protocol::AskForApproval;
-    use codex_core::protocol::EventMsg;
-    use codex_core::protocol::SandboxPolicy;
-    use codex_core::protocol::SessionConfiguredEvent;
-    use codex_protocol::ThreadId;
-    use codex_protocol::openai_models::ReasoningEffort;
+    use rune_core::protocol::AskForApproval;
+    use rune_core::protocol::EventMsg;
+    use rune_core::protocol::SandboxPolicy;
+    use rune_core::protocol::SessionConfiguredEvent;
+    use rune_protocol::ThreadId;
+    use rune_protocol::openai_models::ReasoningEffort;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use tempfile::NamedTempFile;
@@ -319,7 +319,7 @@ mod tests {
         let OutgoingMessage::Notification(OutgoingNotification { method, params }) = result else {
             panic!("expected Notification for first message");
         };
-        assert_eq!(method, "codex/event");
+        assert_eq!(method, "rune/event");
 
         let Ok(expected_params) = serde_json::to_value(&event) else {
             panic!("Event must serialize");
@@ -367,7 +367,7 @@ mod tests {
         let OutgoingMessage::Notification(OutgoingNotification { method, params }) = result else {
             panic!("expected Notification for first message");
         };
-        assert_eq!(method, "codex/event");
+        assert_eq!(method, "rune/event");
         let expected_params = json!({
             "_meta": {
                 "requestId": "123",
@@ -432,7 +432,7 @@ mod tests {
         let OutgoingMessage::Notification(OutgoingNotification { method, params }) = result else {
             panic!("expected Notification for first message");
         };
-        assert_eq!(method, "codex/event");
+        assert_eq!(method, "rune/event");
         let expected_params = json!({
             "_meta": {
                 "requestId": "123",

@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::ResponseItem;
+use rune_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputPayload;
+use rune_protocol::models::ResponseItem;
 
 use crate::util::error_or_panic;
 use tracing::info;

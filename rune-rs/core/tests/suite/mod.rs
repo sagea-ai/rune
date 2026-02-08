@@ -1,56 +1,56 @@
 // Aggregates all former standalone integration tests as modules.
 use std::ffi::OsString;
 
-use codex_arg0::Arg0PathEntryGuard;
-use codex_arg0::arg0_dispatch;
+use rune_arg0::Arg0PathEntryGuard;
+use rune_arg0::arg0_dispatch;
 use ctor::ctor;
 use tempfile::TempDir;
 
-struct TestCodexAliasesGuard {
-    _codex_home: TempDir,
+struct TestRuneAliasesGuard {
+    _rune_home: TempDir,
     _arg0: Arg0PathEntryGuard,
-    _previous_codex_home: Option<OsString>,
+    _previous_rune_home: Option<OsString>,
 }
 
-const CODEX_HOME_ENV_VAR: &str = "CODEX_HOME";
+const RUNE_HOME_ENV_VAR: &str = "RUNE_HOME";
 
 // This code runs before any other tests are run.
-// It allows the test binary to behave like codex and dispatch to apply_patch and rune-linux-sandbox
+// It allows the test binary to behave like rune and dispatch to apply_patch and rune-linux-sandbox
 // based on the arg0.
 // NOTE: this doesn't work on ARM
 #[ctor]
-pub static CODEX_ALIASES_TEMP_DIR: TestCodexAliasesGuard = unsafe {
+pub static RUNE_ALIASES_TEMP_DIR: TestRuneAliasesGuard = unsafe {
     #[allow(clippy::unwrap_used)]
-    let codex_home = tempfile::Builder::new()
+    let rune_home = tempfile::Builder::new()
         .prefix("rune-core-tests")
         .tempdir()
         .unwrap();
-    let previous_codex_home = std::env::var_os(CODEX_HOME_ENV_VAR);
-    // arg0_dispatch() creates helper links under CODEX_HOME/tmp. Point it at a
-    // test-owned temp dir so startup never mutates the developer's real ~/.codex.
+    let previous_rune_home = std::env::var_os(RUNE_HOME_ENV_VAR);
+    // arg0_dispatch() creates helper links under RUNE_HOME/tmp. Point it at a
+    // test-owned temp dir so startup never mutates the developer's real ~/.rune.
     //
     // Safety: #[ctor] runs before tests start, so no test threads exist yet.
     unsafe {
-        std::env::set_var(CODEX_HOME_ENV_VAR, codex_home.path());
+        std::env::set_var(RUNE_HOME_ENV_VAR, rune_home.path());
     }
 
     #[allow(clippy::unwrap_used)]
     let arg0 = arg0_dispatch().unwrap();
     // Restore the process environment immediately so later tests observe the
-    // same CODEX_HOME state they started with.
-    match previous_codex_home.as_ref() {
+    // same RUNE_HOME state they started with.
+    match previous_rune_home.as_ref() {
         Some(value) => unsafe {
-            std::env::set_var(CODEX_HOME_ENV_VAR, value);
+            std::env::set_var(RUNE_HOME_ENV_VAR, value);
         },
         None => unsafe {
-            std::env::remove_var(CODEX_HOME_ENV_VAR);
+            std::env::remove_var(RUNE_HOME_ENV_VAR);
         },
     }
 
-    TestCodexAliasesGuard {
-        _codex_home: codex_home,
+    TestRuneAliasesGuard {
+        _rune_home: rune_home,
         _arg0: arg0,
-        _previous_codex_home: previous_codex_home,
+        _previous_rune_home: previous_rune_home,
     }
 };
 
@@ -64,7 +64,7 @@ mod auth_refresh;
 mod cli_stream;
 mod client;
 mod client_websockets;
-mod codex_delegate;
+mod rune_delegate;
 mod collaboration_instructions;
 mod compact;
 mod compact_remote;

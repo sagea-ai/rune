@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_utils_absolute_path::AbsolutePathBuf;
 
 pub(crate) const STATSIG_OTLP_HTTP_ENDPOINT: &str = "https://ab.chatgpt.com/otlp/v1/metrics";
 pub(crate) const STATSIG_API_KEY_HEADER: &str = "statsig-api-key";
@@ -33,7 +33,7 @@ pub struct OtelSettings {
     pub environment: String,
     pub service_name: String,
     pub service_version: String,
-    pub codex_home: PathBuf,
+    pub rune_home: PathBuf,
     pub exporter: OtelExporter,
     pub trace_exporter: OtelExporter,
     pub metrics_exporter: OtelExporter,
@@ -58,7 +58,7 @@ pub struct OtelTlsConfig {
 #[derive(Clone, Debug)]
 pub enum OtelExporter {
     None,
-    /// Statsig metrics ingestion exporter using Codex-internal defaults.
+    /// Statsig metrics ingestion exporter using Rune-internal defaults.
     ///
     /// This is intended for metrics only.
     Statsig,

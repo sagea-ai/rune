@@ -4,11 +4,11 @@ use crate::ModelProviderInfo;
 use crate::Prompt;
 use crate::client::ModelClientSession;
 use crate::client_common::ResponseEvent;
-use crate::codex::Session;
-use crate::codex::TurnContext;
-use crate::codex::get_last_assistant_message_from_turn;
-use crate::error::CodexErr;
-use crate::error::Result as CodexResult;
+use crate::rune::Session;
+use crate::rune::TurnContext;
+use crate::rune::get_last_assistant_message_from_turn;
+use crate::error::RuneErr;
+use crate::error::Result as RuneResult;
 use crate::protocol::CompactedItem;
 use crate::protocol::EventMsg;
 use crate::protocol::TurnContextItem;
@@ -18,13 +18,13 @@ use crate::truncate::TruncationPolicy;
 use crate::truncate::approx_token_count;
 use crate::truncate::truncate_text;
 use crate::util::backoff;
-use codex_protocol::items::ContextCompactionItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::user_input::UserInput;
+use rune_protocol::items::ContextCompactionItem;
+use rune_protocol::items::TurnItem;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::ResponseInputItem;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::protocol::RolloutItem;
+use rune_protocol::user_input::UserInput;
 use futures::prelude::*;
 use tracing::error;
 
@@ -39,7 +39,7 @@ pub(crate) fn should_use_remote_compact_task(provider: &ModelProviderInfo) -> bo
 pub(crate) async fn run_inline_auto_compact_task(
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
-) -> CodexResult<()> {
+) -> RuneResult<()> {
     let prompt = turn_context.compact_prompt().to_string();
     let input = vec![UserInput::Text {
         text: prompt,
@@ -55,7 +55,7 @@ pub(crate) async fn run_compact_task(
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
     input: Vec<UserInput>,
-) -> CodexResult<()> {
+) -> RuneResult<()> {
     let start_event = EventMsg::TurnStarted(TurnStartedEvent {
         model_context_window: turn_context.model_context_window(),
         collaboration_mode_kind: turn_context.collaboration_mode.mode,
@@ -68,7 +68,7 @@ async fn run_compact_task_inner(
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
     input: Vec<UserInput>,
-) -> CodexResult<()> {
+) -> RuneResult<()> {
     let compaction_item = TurnItem::ContextCompaction(ContextCompactionItem::new());
     sess.emit_turn_item_started(&turn_context, &compaction_item)
         .await;
@@ -142,10 +142,10 @@ async fn run_compact_task_inner(
                 }
                 break;
             }
-            Err(CodexErr::Interrupted) => {
-                return Err(CodexErr::Interrupted);
+            Err(RuneErr::Interrupted) => {
+                return Err(RuneErr::Interrupted);
             }
-            Err(e @ CodexErr::ContextWindowExceeded) => {
+            Err(e @ RuneErr::ContextWindowExceeded) => {
                 if turn_input_len > 1 {
                     // Trim from the beginning to preserve cache (prefix-based) and keep recent messages intact.
                     error!(
@@ -376,7 +376,7 @@ async fn drain_to_completed(
     client_session: &mut ModelClientSession,
     turn_metadata_header: Option<&str>,
     prompt: &Prompt,
-) -> CodexResult<()> {
+) -> RuneResult<()> {
     let mut stream = client_session
         .stream(
             prompt,
@@ -390,7 +390,7 @@ async fn drain_to_completed(
     loop {
         let maybe_event = stream.next().await;
         let Some(event) = maybe_event else {
-            return Err(CodexErr::Stream(
+            return Err(RuneErr::Stream(
                 "stream closed before response.completed".into(),
                 None,
             ));

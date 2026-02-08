@@ -2,7 +2,7 @@ use clap::Args;
 use clap::FromArgMatches;
 use clap::Parser;
 use clap::ValueEnum;
-use codex_common::CliConfigOverrides;
+use rune_common::CliConfigOverrides;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -38,7 +38,7 @@ pub struct Cli {
     /// Select the sandbox policy to use when executing model-generated shell
     /// commands.
     #[arg(long = "sandbox", short = 's', value_enum)]
-    pub sandbox_mode: Option<codex_common::SandboxModeCliArg>,
+    pub sandbox_mode: Option<rune_common::SandboxModeCliArg>,
 
     /// Configuration profile from config.toml to specify default options.
     #[arg(long = "profile", short = 'p')]
@@ -63,7 +63,7 @@ pub struct Cli {
     #[clap(long = "cd", short = 'C', value_name = "DIR")]
     pub cwd: Option<PathBuf>,
 
-    /// Allow running Codex outside a Git repository.
+    /// Allow running Rune outside a Git repository.
     #[arg(long = "skip-git-repo-check", global = true, default_value_t = false)]
     pub skip_git_repo_check: bool,
 
@@ -117,7 +117,7 @@ pub enum Command {
 #[derive(Args, Debug)]
 struct ResumeArgsRaw {
     // Note: This is the direct clap shape. We reinterpret the positional when --last is set
-    // so "codex resume --last <prompt>" treats the positional as a prompt, not a session id.
+    // so "rune resume --last <prompt>" treats the positional as a prompt, not a session id.
     /// Conversation/session id (UUID) or thread name. UUIDs take precedence if it parses.
     /// If omitted, use --last to pick the most recent recorded session.
     #[arg(value_name = "SESSION_ID")]
@@ -263,7 +263,7 @@ mod tests {
             "--last",
             "--json",
             "--model",
-            "gpt-5.2-codex",
+            "gpt-5.2-rune",
             "--dangerously-bypass-approvals-and-sandbox",
             "--skip-git-repo-check",
             "--ephemeral",

@@ -1,13 +1,13 @@
-use codex_execpolicy_legacy::ArgType;
-use codex_execpolicy_legacy::Error;
-use codex_execpolicy_legacy::ExecCall;
-use codex_execpolicy_legacy::MatchedArg;
-use codex_execpolicy_legacy::MatchedExec;
-use codex_execpolicy_legacy::PolicyParser;
-use codex_execpolicy_legacy::Result;
-use codex_execpolicy_legacy::ValidExec;
+use rune_execpolicy_legacy::ArgType;
+use rune_execpolicy_legacy::Error;
+use rune_execpolicy_legacy::ExecCall;
+use rune_execpolicy_legacy::MatchedArg;
+use rune_execpolicy_legacy::MatchedExec;
+use rune_execpolicy_legacy::PolicyParser;
+use rune_execpolicy_legacy::Result;
+use rune_execpolicy_legacy::ValidExec;
 
-extern crate codex_execpolicy_legacy;
+extern crate rune_execpolicy_legacy;
 
 #[test]
 fn test_invalid_subcommand() -> Result<()> {

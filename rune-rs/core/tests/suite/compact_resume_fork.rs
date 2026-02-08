@@ -4,27 +4,27 @@
 //!
 //! Each test sets up a mocked SSE conversation and drives the conversation through
 //! a specific sequence of operations. After every operation we capture the
-//! request payload that Codex would send to the model and assert that the
+//! request payload that Rune would send to the model and assert that the
 //! model-visible history matches the expected sequence of messages.
 
 use super::compact::COMPACT_WARNING_MESSAGE;
 use super::compact::FIRST_REPLY;
 use super::compact::SUMMARY_TEXT;
-use codex_core::CodexThread;
-use codex_core::ThreadManager;
-use codex_core::compact::SUMMARIZATION_PROMPT;
-use codex_core::config::Config;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::WarningEvent;
-use codex_core::spawn::CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR;
-use codex_protocol::user_input::UserInput;
+use rune_core::RuneThread;
+use rune_core::ThreadManager;
+use rune_core::compact::SUMMARIZATION_PROMPT;
+use rune_core::config::Config;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::WarningEvent;
+use rune_core::spawn::RUNE_SANDBOX_NETWORK_DISABLED_ENV_VAR;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses::ResponseMock;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::mount_sse_once_match;
 use core_test_support::responses::sse;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -36,7 +36,7 @@ use wiremock::MockServer;
 const AFTER_SECOND_RESUME: &str = "AFTER_SECOND_RESUME";
 
 fn network_disabled() -> bool {
-    std::env::var(CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR).is_ok()
+    std::env::var(RUNE_SANDBOX_NETWORK_DISABLED_ENV_VAR).is_ok()
 }
 
 fn body_contains_text(body: &str, text: &str) -> bool {
@@ -141,7 +141,7 @@ async fn compact_resume_and_fork_preserve_model_history_view() {
     // 1. Arrange mocked SSE responses for the initial compact/resume/fork flow.
     let server = MockServer::start().await;
     let request_log = mount_initial_flow(&server).await;
-    let expected_model = "gpt-5.1-codex";
+    let expected_model = "gpt-5.1-rune";
     // 2. Start a new conversation and drive it through the compact/resume/fork steps.
     let (_home, config, manager, base) =
         start_test_conversation(&server, Some(expected_model)).await;
@@ -950,10 +950,10 @@ async fn mount_second_compact_flow(server: &MockServer) -> Vec<ResponseMock> {
 async fn start_test_conversation(
     server: &MockServer,
     model: Option<&str>,
-) -> (Arc<TempDir>, Config, Arc<ThreadManager>, Arc<CodexThread>) {
+) -> (Arc<TempDir>, Config, Arc<ThreadManager>, Arc<RuneThread>) {
     let base_url = format!("{}/v1", server.uri());
     let model = model.map(str::to_string);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider.name = "Non-OpenAI Model provider".to_string();
         config.model_provider.base_url = Some(base_url);
         config.compact_prompt = Some(SUMMARIZATION_PROMPT.to_string());
@@ -962,10 +962,10 @@ async fn start_test_conversation(
         }
     });
     let test = builder.build(server).await.expect("create conversation");
-    (test.home, test.config, test.thread_manager, test.codex)
+    (test.home, test.config, test.thread_manager, test.rune)
 }
 
-async fn user_turn(conversation: &Arc<CodexThread>, text: &str) {
+async fn user_turn(conversation: &Arc<RuneThread>, text: &str) {
     conversation
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
@@ -979,7 +979,7 @@ async fn user_turn(conversation: &Arc<CodexThread>, text: &str) {
     wait_for_event(conversation, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
-async fn compact_conversation(conversation: &Arc<CodexThread>) {
+async fn compact_conversation(conversation: &Arc<RuneThread>) {
     conversation
         .submit(Op::Compact)
         .await
@@ -992,7 +992,7 @@ async fn compact_conversation(conversation: &Arc<CodexThread>) {
     wait_for_event(conversation, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
-async fn fetch_conversation_path(conversation: &Arc<CodexThread>) -> std::path::PathBuf {
+async fn fetch_conversation_path(conversation: &Arc<RuneThread>) -> std::path::PathBuf {
     conversation.rollout_path().expect("rollout path")
 }
 
@@ -1000,9 +1000,9 @@ async fn resume_conversation(
     manager: &ThreadManager,
     config: &Config,
     path: std::path::PathBuf,
-) -> Arc<CodexThread> {
-    let auth_manager = codex_core::AuthManager::from_auth_for_testing(
-        codex_core::CodexAuth::from_api_key("dummy"),
+) -> Arc<RuneThread> {
+    let auth_manager = rune_core::AuthManager::from_auth_for_testing(
+        rune_core::RuneAuth::from_api_key("dummy"),
     );
     manager
         .resume_thread_from_rollout(config.clone(), path, auth_manager)
@@ -1017,7 +1017,7 @@ async fn fork_thread(
     config: &Config,
     path: std::path::PathBuf,
     nth_user_message: usize,
-) -> Arc<CodexThread> {
+) -> Arc<RuneThread> {
     manager
         .fork_thread(nth_user_message, config.clone(), path)
         .await

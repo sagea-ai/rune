@@ -14,7 +14,7 @@ use crate::skills::SkillsManager;
 use crate::state_db::StateDbHandle;
 use crate::tools::sandboxing::ApprovalStore;
 use crate::unified_exec::UnifiedExecProcessManager;
-use codex_otel::OtelManager;
+use rune_otel::OtelManager;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;

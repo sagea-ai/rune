@@ -6,28 +6,28 @@ use anyhow::Context;
 use anyhow::Result;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use base64::Engine;
-use codex_windows_sandbox::canonicalize_path;
-use codex_windows_sandbox::convert_string_sid_to_sid;
-use codex_windows_sandbox::ensure_allow_mask_aces_with_inheritance;
-use codex_windows_sandbox::ensure_allow_write_aces;
-use codex_windows_sandbox::extract_setup_failure;
-use codex_windows_sandbox::hide_newly_created_users;
-use codex_windows_sandbox::is_command_cwd_root;
-use codex_windows_sandbox::load_or_create_cap_sids;
-use codex_windows_sandbox::log_note;
-use codex_windows_sandbox::path_mask_allows;
-use codex_windows_sandbox::protect_workspace_codex_dir;
-use codex_windows_sandbox::sandbox_dir;
-use codex_windows_sandbox::sandbox_secrets_dir;
-use codex_windows_sandbox::string_from_sid_bytes;
-use codex_windows_sandbox::to_wide;
-use codex_windows_sandbox::workspace_cap_sid_for_cwd;
-use codex_windows_sandbox::write_setup_error_report;
-use codex_windows_sandbox::SetupErrorCode;
-use codex_windows_sandbox::SetupErrorReport;
-use codex_windows_sandbox::SetupFailure;
-use codex_windows_sandbox::LOG_FILE_NAME;
-use codex_windows_sandbox::SETUP_VERSION;
+use rune_windows_sandbox::canonicalize_path;
+use rune_windows_sandbox::convert_string_sid_to_sid;
+use rune_windows_sandbox::ensure_allow_mask_aces_with_inheritance;
+use rune_windows_sandbox::ensure_allow_write_aces;
+use rune_windows_sandbox::extract_setup_failure;
+use rune_windows_sandbox::hide_newly_created_users;
+use rune_windows_sandbox::is_command_cwd_root;
+use rune_windows_sandbox::load_or_create_cap_sids;
+use rune_windows_sandbox::log_note;
+use rune_windows_sandbox::path_mask_allows;
+use rune_windows_sandbox::protect_workspace_rune_dir;
+use rune_windows_sandbox::sandbox_dir;
+use rune_windows_sandbox::sandbox_secrets_dir;
+use rune_windows_sandbox::string_from_sid_bytes;
+use rune_windows_sandbox::to_wide;
+use rune_windows_sandbox::workspace_cap_sid_for_cwd;
+use rune_windows_sandbox::write_setup_error_report;
+use rune_windows_sandbox::SetupErrorCode;
+use rune_windows_sandbox::SetupErrorReport;
+use rune_windows_sandbox::SetupFailure;
+use rune_windows_sandbox::LOG_FILE_NAME;
+use rune_windows_sandbox::SETUP_VERSION;
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::HashSet;
@@ -78,7 +78,7 @@ struct Payload {
     version: u32,
     offline_username: String,
     online_username: String,
-    codex_home: PathBuf,
+    rune_home: PathBuf,
     command_cwd: PathBuf,
     read_roots: Vec<PathBuf>,
     write_roots: Vec<PathBuf>,
@@ -344,8 +344,8 @@ pub fn main() -> Result<()> {
     let ret = real_main();
     if let Err(e) = &ret {
         // Best-effort: log unexpected top-level errors.
-        if let Ok(codex_home) = std::env::var("CODEX_HOME") {
-            let sbx_dir = sandbox_dir(Path::new(&codex_home));
+        if let Ok(rune_home) = std::env::var("RUNE_HOME") {
+            let sbx_dir = sandbox_dir(Path::new(&rune_home));
             let _ = std::fs::create_dir_all(&sbx_dir);
             let log_path = sbx_dir.join(LOG_FILE_NAME);
             if let Ok(mut f) = File::options().create(true).append(true).open(&log_path) {
@@ -391,7 +391,7 @@ fn real_main() -> Result<()> {
             ),
         )));
     }
-    let sbx_dir = sandbox_dir(&payload.codex_home);
+    let sbx_dir = sandbox_dir(&payload.rune_home);
     std::fs::create_dir_all(&sbx_dir).map_err(|err| {
         anyhow::Error::new(SetupFailure::new(
             SetupErrorCode::HelperSandboxDirCreateFailed,
@@ -422,7 +422,7 @@ fn real_main() -> Result<()> {
             code: failure.code,
             message: failure.message.clone(),
         };
-        if let Err(write_err) = write_setup_error_report(&payload.codex_home, &report) {
+        if let Err(write_err) = write_setup_error_report(&payload.rune_home, &report) {
             let _ = log_line(
                 &mut log,
                 &format!("setup error report write failed: {write_err}"),
@@ -507,7 +507,7 @@ fn run_setup_full(payload: &Payload, log: &mut File, sbx_dir: &Path) -> Result<(
     if refresh_only {
     } else {
         let provision_result = provision_sandbox_users(
-            &payload.codex_home,
+            &payload.rune_home,
             &payload.offline_username,
             &payload.online_username,
             log,
@@ -551,7 +551,7 @@ fn run_setup_full(payload: &Payload, log: &mut File, sbx_dir: &Path) -> Result<(
         ))
     })?;
 
-    let caps = load_or_create_cap_sids(&payload.codex_home).map_err(|err| {
+    let caps = load_or_create_cap_sids(&payload.rune_home).map_err(|err| {
         anyhow::Error::new(SetupFailure::new(
             SetupErrorCode::HelperCapabilitySidFailed,
             format!("load or create capability SIDs failed: {err}"),
@@ -565,7 +565,7 @@ fn run_setup_full(payload: &Payload, log: &mut File, sbx_dir: &Path) -> Result<(
             ))
         })?
     };
-    let workspace_sid_str = workspace_cap_sid_for_cwd(&payload.codex_home, &payload.command_cwd)?;
+    let workspace_sid_str = workspace_cap_sid_for_cwd(&payload.rune_home, &payload.command_cwd)?;
     let workspace_psid = unsafe {
         convert_string_sid_to_sid(&workspace_sid_str)
             .ok_or_else(|| anyhow::anyhow!("convert workspace capability SID failed"))?
@@ -751,7 +751,7 @@ fn run_setup_full(payload: &Payload, log: &mut File, sbx_dir: &Path) -> Result<(
     }
     if !refresh_only {
         lock_sandbox_dir(
-            &sandbox_dir(&payload.codex_home),
+            &sandbox_dir(&payload.rune_home),
             &payload.real_user,
             &sandbox_group_sid,
             GRANT_ACCESS,
@@ -762,12 +762,12 @@ fn run_setup_full(payload: &Payload, log: &mut File, sbx_dir: &Path) -> Result<(
                 SetupErrorCode::HelperSandboxLockFailed,
                 format!(
                     "lock sandbox dir {} failed: {err}",
-                    sandbox_dir(&payload.codex_home).display()
+                    sandbox_dir(&payload.rune_home).display()
                 ),
             ))
         })?;
         lock_sandbox_dir(
-            &sandbox_secrets_dir(&payload.codex_home),
+            &sandbox_secrets_dir(&payload.rune_home),
             &payload.real_user,
             &sandbox_group_sid,
             DENY_ACCESS,
@@ -778,37 +778,37 @@ fn run_setup_full(payload: &Payload, log: &mut File, sbx_dir: &Path) -> Result<(
                 SetupErrorCode::HelperSandboxLockFailed,
                 format!(
                     "lock sandbox secrets dir {} failed: {err}",
-                    sandbox_secrets_dir(&payload.codex_home).display()
+                    sandbox_secrets_dir(&payload.rune_home).display()
                 ),
             ))
         })?;
-        let legacy_users = sandbox_dir(&payload.codex_home).join("sandbox_users.json");
+        let legacy_users = sandbox_dir(&payload.rune_home).join("sandbox_users.json");
         if legacy_users.exists() {
             let _ = std::fs::remove_file(&legacy_users);
         }
     }
 
-    // Protect the current workspace's `.codex` directory from tampering (write/delete) by using a
-    // workspace-specific capability SID. If `.codex` doesn't exist yet, skip it (it will be picked
+    // Protect the current workspace's `.rune` directory from tampering (write/delete) by using a
+    // workspace-specific capability SID. If `.rune` doesn't exist yet, skip it (it will be picked
     // up on the next refresh).
-    match unsafe { protect_workspace_codex_dir(&payload.command_cwd, workspace_psid) } {
+    match unsafe { protect_workspace_rune_dir(&payload.command_cwd, workspace_psid) } {
         Ok(true) => {
-            let cwd_codex = payload.command_cwd.join(".codex");
+            let cwd_rune = payload.command_cwd.join(".rune");
             log_line(
                 log,
                 &format!(
-                    "applied deny ACE to protect workspace .codex {}",
-                    cwd_codex.display()
+                    "applied deny ACE to protect workspace .rune {}",
+                    cwd_rune.display()
                 ),
             )?;
         }
         Ok(false) => {}
         Err(err) => {
-            let cwd_codex = payload.command_cwd.join(".codex");
-            refresh_errors.push(format!("deny ACE failed on {}: {err}", cwd_codex.display()));
+            let cwd_rune = payload.command_cwd.join(".rune");
+            refresh_errors.push(format!("deny ACE failed on {}: {err}", cwd_rune.display()));
             log_line(
                 log,
-                &format!("deny ACE failed on {}: {err}", cwd_codex.display()),
+                &format!("deny ACE failed on {}: {err}", cwd_rune.display()),
             )?;
         }
     }

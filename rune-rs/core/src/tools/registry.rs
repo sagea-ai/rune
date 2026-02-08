@@ -11,9 +11,9 @@ use crate::tools::context::ToolInvocation;
 use crate::tools::context::ToolOutput;
 use crate::tools::context::ToolPayload;
 use async_trait::async_trait;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::models::ResponseInputItem;
-use codex_utils_readiness::Readiness;
+use rune_protocol::config_types::WindowsSandboxLevel;
+use rune_protocol::models::ResponseInputItem;
+use rune_utils_readiness::Readiness;
 use tracing::warn;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

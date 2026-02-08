@@ -7,8 +7,8 @@ use tempfile::TempDir;
 
 #[test]
 fn execpolicy_check_matches_expected_json() -> Result<(), Box<dyn std::error::Error>> {
-    let codex_home = TempDir::new()?;
-    let policy_path = codex_home.path().join("rules").join("policy.rules");
+    let rune_home = TempDir::new()?;
+    let policy_path = rune_home.path().join("rules").join("policy.rules");
     fs::create_dir_all(
         policy_path
             .parent()
@@ -24,8 +24,8 @@ prefix_rule(
 "#,
     )?;
 
-    let output = Command::new(codex_utils_cargo_bin::cargo_bin("codex")?)
-        .env("CODEX_HOME", codex_home.path())
+    let output = Command::new(rune_utils_cargo_bin::cargo_bin("rune")?)
+        .env("RUNE_HOME", rune_home.path())
         .args([
             "execpolicy",
             "check",
@@ -63,8 +63,8 @@ prefix_rule(
 #[test]
 fn execpolicy_check_includes_justification_when_present() -> Result<(), Box<dyn std::error::Error>>
 {
-    let codex_home = TempDir::new()?;
-    let policy_path = codex_home.path().join("rules").join("policy.rules");
+    let rune_home = TempDir::new()?;
+    let policy_path = rune_home.path().join("rules").join("policy.rules");
     fs::create_dir_all(
         policy_path
             .parent()
@@ -81,8 +81,8 @@ prefix_rule(
 "#,
     )?;
 
-    let output = Command::new(codex_utils_cargo_bin::cargo_bin("codex")?)
-        .env("CODEX_HOME", codex_home.path())
+    let output = Command::new(rune_utils_cargo_bin::cargo_bin("rune")?)
+        .env("RUNE_HOME", rune_home.path())
         .args([
             "execpolicy",
             "check",

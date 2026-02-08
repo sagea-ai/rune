@@ -1,11 +1,11 @@
 /// Update action the CLI should perform after the TUI exits.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UpdateAction {
-    /// Update via `npm install -g @openai/codex@latest`.
+    /// Update via `npm install -g @openai/rune@latest`.
     NpmGlobalLatest,
-    /// Update via `bun install -g @openai/codex@latest`.
+    /// Update via `bun install -g @openai/rune@latest`.
     BunGlobalLatest,
-    /// Update via `brew upgrade codex`.
+    /// Update via `brew upgrade rune`.
     BrewUpgrade,
 }
 
@@ -13,9 +13,9 @@ impl UpdateAction {
     /// Returns the list of command-line arguments for invoking the update.
     pub fn command_args(self) -> (&'static str, &'static [&'static str]) {
         match self {
-            UpdateAction::NpmGlobalLatest => ("npm", &["install", "-g", "@openai/codex"]),
-            UpdateAction::BunGlobalLatest => ("bun", &["install", "-g", "@openai/codex"]),
-            UpdateAction::BrewUpgrade => ("brew", &["upgrade", "--cask", "codex"]),
+            UpdateAction::NpmGlobalLatest => ("npm", &["install", "-g", "@openai/rune"]),
+            UpdateAction::BunGlobalLatest => ("bun", &["install", "-g", "@openai/rune"]),
+            UpdateAction::BrewUpgrade => ("brew", &["upgrade", "--cask", "rune"]),
         }
     }
 
@@ -30,8 +30,8 @@ impl UpdateAction {
 #[cfg(not(debug_assertions))]
 pub(crate) fn get_update_action() -> Option<UpdateAction> {
     let exe = std::env::current_exe().unwrap_or_default();
-    let managed_by_npm = std::env::var_os("CODEX_MANAGED_BY_NPM").is_some();
-    let managed_by_bun = std::env::var_os("CODEX_MANAGED_BY_BUN").is_some();
+    let managed_by_npm = std::env::var_os("RUNE_MANAGED_BY_NPM").is_some();
+    let managed_by_bun = std::env::var_os("RUNE_MANAGED_BY_BUN").is_some();
 
     detect_update_action(
         cfg!(target_os = "macos"),
@@ -82,7 +82,7 @@ mod tests {
         assert_eq!(
             detect_update_action(
                 true,
-                std::path::Path::new("/opt/homebrew/bin/codex"),
+                std::path::Path::new("/opt/homebrew/bin/rune"),
                 false,
                 false
             ),
@@ -91,7 +91,7 @@ mod tests {
         assert_eq!(
             detect_update_action(
                 true,
-                std::path::Path::new("/usr/local/bin/codex"),
+                std::path::Path::new("/usr/local/bin/rune"),
                 false,
                 false
             ),

@@ -9,7 +9,7 @@ name = "rune-mcp-server"
 path = "src/main.rs"
 
 [lib]
-name = "codex_mcp_server"
+name = "rune_mcp_server"
 path = "src/lib.rs"
 
 [lints]

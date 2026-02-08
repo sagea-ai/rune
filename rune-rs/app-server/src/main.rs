@@ -1,14 +1,14 @@
 use clap::Parser;
-use codex_app_server::AppServerTransport;
-use codex_app_server::run_main_with_transport;
-use codex_arg0::arg0_dispatch_or_else;
-use codex_common::CliConfigOverrides;
-use codex_core::config_loader::LoaderOverrides;
+use rune_app_server::AppServerTransport;
+use rune_app_server::run_main_with_transport;
+use rune_arg0::arg0_dispatch_or_else;
+use rune_common::CliConfigOverrides;
+use rune_core::config_loader::LoaderOverrides;
 use std::path::PathBuf;
 
 // Debug-only test hook: lets integration tests point the server at a temporary
 // managed config file without writing to /etc.
-const MANAGED_CONFIG_PATH_ENV_VAR: &str = "CODEX_APP_SERVER_MANAGED_CONFIG_PATH";
+const MANAGED_CONFIG_PATH_ENV_VAR: &str = "RUNE_APP_SERVER_MANAGED_CONFIG_PATH";
 
 #[derive(Debug, Parser)]
 struct AppServerArgs {
@@ -23,7 +23,7 @@ struct AppServerArgs {
 }
 
 fn main() -> anyhow::Result<()> {
-    arg0_dispatch_or_else(|codex_linux_sandbox_exe| async move {
+    arg0_dispatch_or_else(|rune_linux_sandbox_exe| async move {
         let args = AppServerArgs::parse();
         let managed_config_path = managed_config_path_from_debug_env();
         let loader_overrides = LoaderOverrides {
@@ -33,7 +33,7 @@ fn main() -> anyhow::Result<()> {
         let transport = args.listen;
 
         run_main_with_transport(
-            codex_linux_sandbox_exe,
+            rune_linux_sandbox_exe,
             CliConfigOverrides::default(),
             loader_overrides,
             false,

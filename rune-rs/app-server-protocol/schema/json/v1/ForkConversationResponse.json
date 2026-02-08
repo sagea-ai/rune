@@ -94,7 +94,7 @@
       ]
     },
     "AskForApproval": {
-      "description": "Determines the conditions under which the user is consulted to approve running the command proposed by Codex.",
+      "description": "Determines the conditions under which the user is consulted to approve running the command proposed by Rune.",
       "oneOf": [
         {
           "description": "Under this policy, only \"known safe\" commands—as determined by `is_safe_command()`—that **only read files** are auto‑approved. Everything else will ask the user to approve.",
@@ -168,8 +168,8 @@
       ],
       "type": "object"
     },
-    "CodexErrorInfo": {
-      "description": "Codex errors that we expose to clients.",
+    "RuneErrorInfo": {
+      "description": "Rune errors that we expose to clients.",
       "oneOf": [
         {
           "enum": [
@@ -210,7 +210,7 @@
           "required": [
             "model_cap"
           ],
-          "title": "ModelCapCodexErrorInfo",
+          "title": "ModelCapRuneErrorInfo",
           "type": "object"
         },
         {
@@ -233,7 +233,7 @@
           "required": [
             "http_connection_failed"
           ],
-          "title": "HttpConnectionFailedCodexErrorInfo",
+          "title": "HttpConnectionFailedRuneErrorInfo",
           "type": "object"
         },
         {
@@ -257,7 +257,7 @@
           "required": [
             "response_stream_connection_failed"
           ],
-          "title": "ResponseStreamConnectionFailedCodexErrorInfo",
+          "title": "ResponseStreamConnectionFailedRuneErrorInfo",
           "type": "object"
         },
         {
@@ -281,7 +281,7 @@
           "required": [
             "response_stream_disconnected"
           ],
-          "title": "ResponseStreamDisconnectedCodexErrorInfo",
+          "title": "ResponseStreamDisconnectedRuneErrorInfo",
           "type": "object"
         },
         {
@@ -305,7 +305,7 @@
           "required": [
             "response_too_many_failed_attempts"
           ],
-          "title": "ResponseTooManyFailedAttemptsCodexErrorInfo",
+          "title": "ResponseTooManyFailedAttemptsRuneErrorInfo",
           "type": "object"
         }
       ]
@@ -451,10 +451,10 @@
         {
           "description": "Error while executing a submission",
           "properties": {
-            "codex_error_info": {
+            "rune_error_info": {
               "anyOf": [
                 {
-                  "$ref": "#/definitions/CodexErrorInfo"
+                  "$ref": "#/definitions/RuneErrorInfo"
                 },
                 {
                   "type": "null"
@@ -1730,10 +1730,10 @@
                 "null"
               ]
             },
-            "codex_error_info": {
+            "rune_error_info": {
               "anyOf": [
                 {
-                  "$ref": "#/definitions/CodexErrorInfo"
+                  "$ref": "#/definitions/RuneErrorInfo"
                 },
                 {
                   "type": "null"

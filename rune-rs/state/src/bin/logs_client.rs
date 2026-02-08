@@ -4,19 +4,19 @@ use std::time::Duration;
 use anyhow::Context;
 use chrono::DateTime;
 use clap::Parser;
-use codex_state::LogQuery;
-use codex_state::LogRow;
-use codex_state::StateRuntime;
+use rune_state::LogQuery;
+use rune_state::LogRow;
+use rune_state::StateRuntime;
 use dirs::home_dir;
 use owo_colors::OwoColorize;
 
 #[derive(Debug, Parser)]
 #[command(name = "rune-state-logs")]
-#[command(about = "Tail Codex logs from the state SQLite DB with simple filters")]
+#[command(about = "Tail Rune logs from the state SQLite DB with simple filters")]
 struct Args {
-    /// Path to CODEX_HOME. Defaults to $CODEX_HOME or ~/.codex.
-    #[arg(long, env = "CODEX_HOME")]
-    codex_home: Option<PathBuf>,
+    /// Path to RUNE_HOME. Defaults to $RUNE_HOME or ~/.rune.
+    #[arg(long, env = "RUNE_HOME")]
+    rune_home: Option<PathBuf>,
 
     /// Direct path to the SQLite database. Overrides --rune-home.
     #[arg(long)]
@@ -75,11 +75,11 @@ async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     let db_path = resolve_db_path(&args)?;
     let filter = build_filter(&args)?;
-    let codex_home = db_path
+    let rune_home = db_path
         .parent()
         .map(ToOwned::to_owned)
         .unwrap_or_else(|| PathBuf::from("."));
-    let runtime = StateRuntime::init(codex_home, "logs-client".to_string(), None).await?;
+    let runtime = StateRuntime::init(rune_home, "logs-client".to_string(), None).await?;
 
     let mut last_id = print_backfill(runtime.as_ref(), &filter, args.backfill).await?;
     if last_id == 0 {
@@ -102,15 +102,15 @@ fn resolve_db_path(args: &Args) -> anyhow::Result<PathBuf> {
         return Ok(db.clone());
     }
 
-    let codex_home = args.codex_home.clone().unwrap_or_else(default_codex_home);
-    Ok(codex_state::state_db_path(codex_home.as_path()))
+    let rune_home = args.rune_home.clone().unwrap_or_else(default_rune_home);
+    Ok(rune_state::state_db_path(rune_home.as_path()))
 }
 
-fn default_codex_home() -> PathBuf {
+fn default_rune_home() -> PathBuf {
     if let Some(home) = home_dir() {
-        return home.join(".codex");
+        return home.join(".rune");
     }
-    PathBuf::from(".codex")
+    PathBuf::from(".rune")
 }
 
 fn build_filter(args: &Args) -> anyhow::Result<LogFilter> {

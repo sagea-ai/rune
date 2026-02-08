@@ -9,42 +9,42 @@ use app_test_support::create_mock_responses_server_sequence_unchecked;
 use app_test_support::create_shell_command_sse_response;
 use app_test_support::format_with_current_shell_display;
 use app_test_support::to_response;
-use codex_app_server_protocol::ByteRange;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::CommandExecutionApprovalDecision;
-use codex_app_server_protocol::CommandExecutionRequestApprovalResponse;
-use codex_app_server_protocol::CommandExecutionStatus;
-use codex_app_server_protocol::FileChangeApprovalDecision;
-use codex_app_server_protocol::FileChangeOutputDeltaNotification;
-use codex_app_server_protocol::FileChangeRequestApprovalResponse;
-use codex_app_server_protocol::ItemCompletedNotification;
-use codex_app_server_protocol::ItemStartedNotification;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::PatchApplyStatus;
-use codex_app_server_protocol::PatchChangeKind;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::TextElement;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnCompletedNotification;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::TurnStartedNotification;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_core::config::ConfigToml;
-use codex_core::features::FEATURES;
-use codex_core::features::Feature;
-use codex_core::personality_migration::PERSONALITY_MIGRATION_FILENAME;
-use codex_core::protocol_config_types::ReasoningSummary;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::Settings;
-use codex_protocol::openai_models::ReasoningEffort;
+use rune_app_server_protocol::ByteRange;
+use rune_app_server_protocol::ClientInfo;
+use rune_app_server_protocol::CommandExecutionApprovalDecision;
+use rune_app_server_protocol::CommandExecutionRequestApprovalResponse;
+use rune_app_server_protocol::CommandExecutionStatus;
+use rune_app_server_protocol::FileChangeApprovalDecision;
+use rune_app_server_protocol::FileChangeOutputDeltaNotification;
+use rune_app_server_protocol::FileChangeRequestApprovalResponse;
+use rune_app_server_protocol::ItemCompletedNotification;
+use rune_app_server_protocol::ItemStartedNotification;
+use rune_app_server_protocol::JSONRPCNotification;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::PatchApplyStatus;
+use rune_app_server_protocol::PatchChangeKind;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::ServerRequest;
+use rune_app_server_protocol::TextElement;
+use rune_app_server_protocol::ThreadItem;
+use rune_app_server_protocol::ThreadStartParams;
+use rune_app_server_protocol::ThreadStartResponse;
+use rune_app_server_protocol::TurnCompletedNotification;
+use rune_app_server_protocol::TurnStartParams;
+use rune_app_server_protocol::TurnStartResponse;
+use rune_app_server_protocol::TurnStartedNotification;
+use rune_app_server_protocol::TurnStatus;
+use rune_app_server_protocol::UserInput as V2UserInput;
+use rune_core::config::ConfigToml;
+use rune_core::features::FEATURES;
+use rune_core::features::Feature;
+use rune_core::personality_migration::PERSONALITY_MIGRATION_FILENAME;
+use rune_core::protocol_config_types::ReasoningSummary;
+use rune_protocol::config_types::CollaborationMode;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::config_types::Personality;
+use rune_protocol::config_types::Settings;
+use rune_protocol::openai_models::ReasoningEffort;
 use core_test_support::responses;
 use core_test_support::skip_if_no_network;
 use pretty_assertions::assert_eq;
@@ -54,7 +54,7 @@ use tempfile::TempDir;
 use tokio::time::timeout;
 
 const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
-const TEST_ORIGINATOR: &str = "codex_vscode";
+const TEST_ORIGINATOR: &str = "rune_vscode";
 const LOCAL_PRAGMATIC_TEMPLATE: &str = "You are a deeply pragmatic, effective software engineer.";
 
 #[tokio::test]
@@ -62,20 +62,20 @@ async fn turn_start_sends_originator_header() -> Result<()> {
     let responses = vec![create_final_assistant_message_sse_response("Done")?];
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
 
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        rune_home.path(),
         &server.uri(),
         "never",
         &BTreeMap::from([(Feature::Personality, true)]),
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(
         DEFAULT_READ_TIMEOUT,
         mcp.initialize_with_client_info(ClientInfo {
             name: TEST_ORIGINATOR.to_string(),
-            title: Some("Codex VS Code Extension".to_string()),
+            title: Some("Rune VS Code Extension".to_string()),
             version: "0.1.0".to_string(),
         }),
     )
@@ -137,15 +137,15 @@ async fn turn_start_emits_user_message_item_with_text_elements() -> Result<()> {
     let responses = vec![create_final_assistant_message_sse_response("Done")?];
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
 
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        rune_home.path(),
         &server.uri(),
         "never",
         &BTreeMap::from([(Feature::Personality, true)]),
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let thread_req = mcp
@@ -221,7 +221,7 @@ async fn turn_start_emits_user_message_item_with_text_elements() -> Result<()> {
 #[tokio::test]
 async fn turn_start_emits_notifications_and_accepts_model_override() -> Result<()> {
     // Provide a mock server and config so model wiring is valid.
-    // Three Codex turns hit the mock model (session start + two turn/start calls).
+    // Three Rune turns hit the mock model (session start + two turn/start calls).
     let responses = vec![
         create_final_assistant_message_sse_response("Done")?,
         create_final_assistant_message_sse_response("Done")?,
@@ -229,15 +229,15 @@ async fn turn_start_emits_notifications_and_accepts_model_override() -> Result<(
     ];
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
 
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        rune_home.path(),
         &server.uri(),
         "never",
         &BTreeMap::from([(Feature::Personality, true)]),
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // Start a thread (v2) and capture its id.
@@ -284,7 +284,7 @@ async fn turn_start_emits_notifications_and_accepts_model_override() -> Result<(
     assert_eq!(started.thread_id, thread.id);
     assert_eq!(
         started.turn.status,
-        codex_app_server_protocol::TurnStatus::InProgress
+        rune_app_server_protocol::TurnStatus::InProgress
     );
 
     // Send a second turn that exercises the overrides path: change the model.
@@ -344,20 +344,20 @@ async fn turn_start_accepts_collaboration_mode_override_v2() -> Result<()> {
     ]);
     let response_mock = responses::mount_sse_once(&server, body).await;
 
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        rune_home.path(),
         &server.uri(),
         "never",
         &BTreeMap::default(),
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let thread_req = mcp
         .send_thread_start_request(ThreadStartParams {
-            model: Some("gpt-5.2-codex".to_string()),
+            model: Some("gpt-5.2-rune".to_string()),
             ..Default::default()
         })
         .await?;
@@ -426,15 +426,15 @@ async fn turn_start_accepts_personality_override_v2() -> Result<()> {
     ]);
     let response_mock = responses::mount_sse_once(&server, body).await;
 
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        rune_home.path(),
         &server.uri(),
         "never",
         &BTreeMap::from([(Feature::Personality, true)]),
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let thread_req = mcp
@@ -507,15 +507,15 @@ async fn turn_start_change_personality_mid_thread_v2() -> Result<()> {
     ]);
     let response_mock = responses::mount_sse_sequence(&server, vec![sse1, sse2]).await;
 
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        rune_home.path(),
         &server.uri(),
         "never",
         &BTreeMap::from([(Feature::Personality, true)]),
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let thread_req = mcp
@@ -613,15 +613,15 @@ async fn turn_start_uses_migrated_pragmatic_personality_without_override_v2() ->
     ]);
     let response_mock = responses::mount_sse_once(&server, body).await;
 
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        rune_home.path(),
         &server.uri(),
         "never",
         &BTreeMap::from([(Feature::Personality, true)]),
     )?;
     create_fake_rollout(
-        codex_home.path(),
+        rune_home.path(),
         "2025-01-01T00-00-00",
         "2025-01-01T00:00:00Z",
         "history user message",
@@ -629,15 +629,15 @@ async fn turn_start_uses_migrated_pragmatic_personality_without_override_v2() ->
         None,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let persisted_toml: ConfigToml = toml::from_str(&std::fs::read_to_string(
-        codex_home.path().join("config.toml"),
+        rune_home.path().join("config.toml"),
     )?)?;
     assert_eq!(persisted_toml.personality, Some(Personality::Pragmatic));
     assert!(
-        codex_home
+        rune_home
             .path()
             .join(PERSONALITY_MIGRATION_FILENAME)
             .exists(),
@@ -646,7 +646,7 @@ async fn turn_start_uses_migrated_pragmatic_personality_without_override_v2() ->
 
     let thread_req = mcp
         .send_thread_start_request(ThreadStartParams {
-            model: Some("gpt-5.2-codex".to_string()),
+            model: Some("gpt-5.2-rune".to_string()),
             ..Default::default()
         })
         .await?;
@@ -693,7 +693,7 @@ async fn turn_start_uses_migrated_pragmatic_personality_without_override_v2() ->
 
 #[tokio::test]
 async fn turn_start_accepts_local_image_input() -> Result<()> {
-    // Two Codex turns hit the mock model (session start + turn/start).
+    // Two Rune turns hit the mock model (session start + turn/start).
     let responses = vec![
         create_final_assistant_message_sse_response("Done")?,
         create_final_assistant_message_sse_response("Done")?,
@@ -702,15 +702,15 @@ async fn turn_start_accepts_local_image_input() -> Result<()> {
     // which the strict matcher does not currently cover.
     let server = create_mock_responses_server_sequence_unchecked(responses).await;
 
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
     create_config_toml(
-        codex_home.path(),
+        rune_home.path(),
         &server.uri(),
         "never",
         &BTreeMap::default(),
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let thread_req = mcp
@@ -726,7 +726,7 @@ async fn turn_start_accepts_local_image_input() -> Result<()> {
     .await??;
     let ThreadStartResponse { thread, .. } = to_response::<ThreadStartResponse>(thread_resp)?;
 
-    let image_path = codex_home.path().join("image.png");
+    let image_path = rune_home.path().join("image.png");
     // No need to actually write the file; we just exercise the input path.
 
     let turn_req = mcp
@@ -753,7 +753,7 @@ async fn turn_start_exec_approval_toggle_v2() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().to_path_buf();
+    let rune_home = tmp.path().to_path_buf();
 
     // Mock server: first turn requests a shell call (elicitation), then completes.
     // Second turn same, but we'll set approval_policy=never to avoid elicitation.
@@ -784,13 +784,13 @@ async fn turn_start_exec_approval_toggle_v2() -> Result<()> {
     let server = create_mock_responses_server_sequence(responses).await;
     // Default approval is untrusted to force elicitation on first turn.
     create_config_toml(
-        codex_home.as_path(),
+        rune_home.as_path(),
         &server.uri(),
         "untrusted",
         &BTreeMap::default(),
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.as_path()).await?;
+    let mut mcp = McpProcess::new(rune_home.as_path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // thread/start
@@ -839,12 +839,12 @@ async fn turn_start_exec_approval_toggle_v2() -> Result<()> {
     // Approve and wait for task completion
     mcp.send_response(
         request_id,
-        serde_json::json!({ "decision": codex_core::protocol::ReviewDecision::Approved }),
+        serde_json::json!({ "decision": rune_core::protocol::ReviewDecision::Approved }),
     )
     .await?;
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
     timeout(
@@ -861,8 +861,8 @@ async fn turn_start_exec_approval_toggle_v2() -> Result<()> {
                 text: "run python again".to_string(),
                 text_elements: Vec::new(),
             }],
-            approval_policy: Some(codex_app_server_protocol::AskForApproval::Never),
-            sandbox_policy: Some(codex_app_server_protocol::SandboxPolicy::DangerFullAccess),
+            approval_policy: Some(rune_app_server_protocol::AskForApproval::Never),
+            sandbox_policy: Some(rune_app_server_protocol::SandboxPolicy::DangerFullAccess),
             model: Some("mock-model".to_string()),
             effort: Some(ReasoningEffort::Medium),
             summary: Some(ReasoningSummary::Auto),
@@ -878,7 +878,7 @@ async fn turn_start_exec_approval_toggle_v2() -> Result<()> {
     // Ensure we do NOT receive a CommandExecutionRequestApproval request before task completes
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
     timeout(
@@ -895,7 +895,7 @@ async fn turn_start_exec_approval_decline_v2() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().to_path_buf();
+    let rune_home = tmp.path().to_path_buf();
     let workspace = tmp.path().join("workspace");
     std::fs::create_dir(&workspace)?;
 
@@ -914,13 +914,13 @@ async fn turn_start_exec_approval_decline_v2() -> Result<()> {
     ];
     let server = create_mock_responses_server_sequence(responses).await;
     create_config_toml(
-        codex_home.as_path(),
+        rune_home.as_path(),
         &server.uri(),
         "untrusted",
         &BTreeMap::default(),
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.as_path()).await?;
+    let mut mcp = McpProcess::new(rune_home.as_path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -1027,7 +1027,7 @@ async fn turn_start_exec_approval_decline_v2() -> Result<()> {
 
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
 
@@ -1039,8 +1039,8 @@ async fn turn_start_updates_sandbox_and_cwd_between_turns_v2() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let rune_home = tmp.path().join("rune_home");
+    std::fs::create_dir(&rune_home)?;
     let workspace_root = tmp.path().join("workspace");
     std::fs::create_dir(&workspace_root)?;
     let first_cwd = workspace_root.join("turn1");
@@ -1066,13 +1066,13 @@ async fn turn_start_updates_sandbox_and_cwd_between_turns_v2() -> Result<()> {
     ];
     let server = create_mock_responses_server_sequence(responses).await;
     create_config_toml(
-        &codex_home,
+        &rune_home,
         &server.uri(),
         "untrusted",
         &BTreeMap::default(),
     )?;
 
-    let mut mcp = McpProcess::new(&codex_home).await?;
+    let mut mcp = McpProcess::new(&rune_home).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // thread/start
@@ -1098,8 +1098,8 @@ async fn turn_start_updates_sandbox_and_cwd_between_turns_v2() -> Result<()> {
                 text_elements: Vec::new(),
             }],
             cwd: Some(first_cwd.clone()),
-            approval_policy: Some(codex_app_server_protocol::AskForApproval::Never),
-            sandbox_policy: Some(codex_app_server_protocol::SandboxPolicy::WorkspaceWrite {
+            approval_policy: Some(rune_app_server_protocol::AskForApproval::Never),
+            sandbox_policy: Some(rune_app_server_protocol::SandboxPolicy::WorkspaceWrite {
                 writable_roots: vec![first_cwd.try_into()?],
                 network_access: false,
                 exclude_tmpdir_env_var: false,
@@ -1120,7 +1120,7 @@ async fn turn_start_updates_sandbox_and_cwd_between_turns_v2() -> Result<()> {
     .await??;
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
     mcp.clear_message_buffer();
@@ -1134,8 +1134,8 @@ async fn turn_start_updates_sandbox_and_cwd_between_turns_v2() -> Result<()> {
                 text_elements: Vec::new(),
             }],
             cwd: Some(second_cwd.clone()),
-            approval_policy: Some(codex_app_server_protocol::AskForApproval::Never),
-            sandbox_policy: Some(codex_app_server_protocol::SandboxPolicy::DangerFullAccess),
+            approval_policy: Some(rune_app_server_protocol::AskForApproval::Never),
+            sandbox_policy: Some(rune_app_server_protocol::SandboxPolicy::DangerFullAccess),
             model: Some("mock-model".to_string()),
             effort: Some(ReasoningEffort::Medium),
             summary: Some(ReasoningSummary::Auto),
@@ -1183,7 +1183,7 @@ async fn turn_start_updates_sandbox_and_cwd_between_turns_v2() -> Result<()> {
 
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
 
@@ -1195,8 +1195,8 @@ async fn turn_start_file_change_approval_v2() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let rune_home = tmp.path().join("rune_home");
+    std::fs::create_dir(&rune_home)?;
     let workspace = tmp.path().join("workspace");
     std::fs::create_dir(&workspace)?;
 
@@ -1211,13 +1211,13 @@ async fn turn_start_file_change_approval_v2() -> Result<()> {
     ];
     let server = create_mock_responses_server_sequence(responses).await;
     create_config_toml(
-        &codex_home,
+        &rune_home,
         &server.uri(),
         "untrusted",
         &BTreeMap::default(),
     )?;
 
-    let mut mcp = McpProcess::new(&codex_home).await?;
+    let mut mcp = McpProcess::new(&rune_home).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_req = mcp
@@ -1292,7 +1292,7 @@ async fn turn_start_file_change_approval_v2() -> Result<()> {
     let expected_readme_path = expected_readme_path.to_string_lossy().into_owned();
     pretty_assertions::assert_eq!(
         started_changes,
-        vec![codex_app_server_protocol::FileUpdateChange {
+        vec![rune_app_server_protocol::FileUpdateChange {
             path: expected_readme_path.clone(),
             kind: PatchChangeKind::Add,
             diff: "new line\n".to_string(),
@@ -1352,7 +1352,7 @@ async fn turn_start_file_change_approval_v2() -> Result<()> {
 
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
 
@@ -1367,8 +1367,8 @@ async fn turn_start_file_change_approval_accept_for_session_persists_v2() -> Res
     skip_if_no_network!(Ok(()));
 
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let rune_home = tmp.path().join("rune_home");
+    std::fs::create_dir(&rune_home)?;
     let workspace = tmp.path().join("workspace");
     std::fs::create_dir(&workspace)?;
 
@@ -1393,13 +1393,13 @@ async fn turn_start_file_change_approval_accept_for_session_persists_v2() -> Res
     ];
     let server = create_mock_responses_server_sequence(responses).await;
     create_config_toml(
-        &codex_home,
+        &rune_home,
         &server.uri(),
         "untrusted",
         &BTreeMap::default(),
     )?;
 
-    let mut mcp = McpProcess::new(&codex_home).await?;
+    let mut mcp = McpProcess::new(&rune_home).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_req = mcp
@@ -1486,7 +1486,7 @@ async fn turn_start_file_change_approval_accept_for_session_persists_v2() -> Res
     .await??;
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
 
@@ -1544,7 +1544,7 @@ async fn turn_start_file_change_approval_accept_for_session_persists_v2() -> Res
     .await??;
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
 
@@ -1558,8 +1558,8 @@ async fn turn_start_file_change_approval_decline_v2() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let rune_home = tmp.path().join("rune_home");
+    std::fs::create_dir(&rune_home)?;
     let workspace = tmp.path().join("workspace");
     std::fs::create_dir(&workspace)?;
 
@@ -1574,13 +1574,13 @@ async fn turn_start_file_change_approval_decline_v2() -> Result<()> {
     ];
     let server = create_mock_responses_server_sequence(responses).await;
     create_config_toml(
-        &codex_home,
+        &rune_home,
         &server.uri(),
         "untrusted",
         &BTreeMap::default(),
     )?;
 
-    let mut mcp = McpProcess::new(&codex_home).await?;
+    let mut mcp = McpProcess::new(&rune_home).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_req = mcp
@@ -1655,7 +1655,7 @@ async fn turn_start_file_change_approval_decline_v2() -> Result<()> {
     let expected_readme_path_str = expected_readme_path.to_string_lossy().into_owned();
     pretty_assertions::assert_eq!(
         started_changes,
-        vec![codex_app_server_protocol::FileUpdateChange {
+        vec![rune_app_server_protocol::FileUpdateChange {
             path: expected_readme_path_str.clone(),
             kind: PatchChangeKind::Add,
             diff: "new line\n".to_string(),
@@ -1695,7 +1695,7 @@ async fn turn_start_file_change_approval_decline_v2() -> Result<()> {
 
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
 
@@ -1717,16 +1717,16 @@ async fn command_execution_notifications_include_process_id() -> Result<()> {
         create_final_assistant_message_sse_response("done")?,
     ];
     let server = create_mock_responses_server_sequence(responses).await;
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
     create_config_toml_with_sandbox(
-        codex_home.path(),
+        rune_home.path(),
         &server.uri(),
         "never",
         &BTreeMap::from([(Feature::UnifiedExec, true)]),
         "danger-full-access",
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -1749,7 +1749,7 @@ async fn command_execution_notifications_include_process_id() -> Result<()> {
                 text: "run a command".to_string(),
                 text_elements: Vec::new(),
             }],
-            sandbox_policy: Some(codex_app_server_protocol::SandboxPolicy::DangerFullAccess),
+            sandbox_policy: Some(rune_app_server_protocol::SandboxPolicy::DangerFullAccess),
             ..Default::default()
         })
         .await?;
@@ -1846,13 +1846,13 @@ async fn command_execution_notifications_include_process_id() -> Result<()> {
 
 // Helper to create a config.toml pointing at the mock model server.
 fn create_config_toml(
-    codex_home: &Path,
+    rune_home: &Path,
     server_uri: &str,
     approval_policy: &str,
     feature_flags: &BTreeMap<Feature, bool>,
 ) -> std::io::Result<()> {
     create_config_toml_with_sandbox(
-        codex_home,
+        rune_home,
         server_uri,
         approval_policy,
         feature_flags,
@@ -1861,7 +1861,7 @@ fn create_config_toml(
 }
 
 fn create_config_toml_with_sandbox(
-    codex_home: &Path,
+    rune_home: &Path,
     server_uri: &str,
     approval_policy: &str,
     feature_flags: &BTreeMap<Feature, bool>,
@@ -1883,7 +1883,7 @@ fn create_config_toml_with_sandbox(
         })
         .collect::<Vec<_>>()
         .join("\n");
-    let config_toml = codex_home.join("config.toml");
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

@@ -5,7 +5,7 @@ Central place for approvals + sandbox selection + retry semantics. Drives a
 simple sequence for any ToolRuntime: approval → select sandbox → attempt →
 retry without sandbox on denial (no re‑approval thanks to caching).
 */
-use crate::error::CodexErr;
+use crate::error::RuneErr;
 use crate::error::SandboxErr;
 use crate::exec::ExecToolCallOutput;
 use crate::features::Feature;
@@ -18,9 +18,9 @@ use crate::tools::sandboxing::ToolCtx;
 use crate::tools::sandboxing::ToolError;
 use crate::tools::sandboxing::ToolRuntime;
 use crate::tools::sandboxing::default_exec_approval_requirement;
-use codex_otel::ToolDecisionSource;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::ReviewDecision;
+use rune_otel::ToolDecisionSource;
+use rune_protocol::protocol::AskForApproval;
+use rune_protocol::protocol::ReviewDecision;
 
 pub(crate) struct ToolOrchestrator {
     sandbox: SandboxManager,
@@ -38,7 +38,7 @@ impl ToolOrchestrator {
         tool: &mut T,
         req: &Rq,
         tool_ctx: &ToolCtx<'_>,
-        turn_ctx: &crate::codex::TurnContext,
+        turn_ctx: &crate::rune::TurnContext,
         approval_policy: AskForApproval,
     ) -> Result<Out, ToolError>
     where
@@ -104,7 +104,7 @@ impl ToolOrchestrator {
             policy: &turn_ctx.sandbox_policy,
             manager: &self.sandbox,
             sandbox_cwd: &turn_ctx.cwd,
-            codex_linux_sandbox_exe: turn_ctx.codex_linux_sandbox_exe.as_ref(),
+            rune_linux_sandbox_exe: turn_ctx.rune_linux_sandbox_exe.as_ref(),
             use_linux_sandbox_bwrap,
             windows_sandbox_level: turn_ctx.windows_sandbox_level,
         };
@@ -114,16 +114,16 @@ impl ToolOrchestrator {
                 // We have a successful initial result
                 Ok(out)
             }
-            Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied { output }))) => {
+            Err(ToolError::Rune(RuneErr::Sandbox(SandboxErr::Denied { output }))) => {
                 if !tool.escalate_on_failure() {
-                    return Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+                    return Err(ToolError::Rune(RuneErr::Sandbox(SandboxErr::Denied {
                         output,
                     })));
                 }
                 // Under `Never` or `OnRequest`, do not retry without sandbox; surface a concise
                 // sandbox denial that preserves the original output.
                 if !tool.wants_no_sandbox_approval(approval_policy) {
-                    return Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+                    return Err(ToolError::Rune(RuneErr::Sandbox(SandboxErr::Denied {
                         output,
                     })));
                 }
@@ -156,7 +156,7 @@ impl ToolOrchestrator {
                     policy: &turn_ctx.sandbox_policy,
                     manager: &self.sandbox,
                     sandbox_cwd: &turn_ctx.cwd,
-                    codex_linux_sandbox_exe: None,
+                    rune_linux_sandbox_exe: None,
                     use_linux_sandbox_bwrap,
                     windows_sandbox_level: turn_ctx.windows_sandbox_level,
                 };

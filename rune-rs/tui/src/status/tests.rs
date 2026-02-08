@@ -4,19 +4,19 @@ use crate::history_cell::HistoryCell;
 use chrono::Duration as ChronoDuration;
 use chrono::TimeZone;
 use chrono::Utc;
-use codex_core::AuthManager;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_core::models_manager::manager::ModelsManager;
-use codex_core::protocol::CreditsSnapshot;
-use codex_core::protocol::RateLimitSnapshot;
-use codex_core::protocol::RateLimitWindow;
-use codex_core::protocol::SandboxPolicy;
-use codex_core::protocol::TokenUsage;
-use codex_core::protocol::TokenUsageInfo;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::openai_models::ReasoningEffort;
+use rune_core::AuthManager;
+use rune_core::config::Config;
+use rune_core::config::ConfigBuilder;
+use rune_core::models_manager::manager::ModelsManager;
+use rune_core::protocol::CreditsSnapshot;
+use rune_core::protocol::RateLimitSnapshot;
+use rune_core::protocol::RateLimitWindow;
+use rune_core::protocol::SandboxPolicy;
+use rune_core::protocol::TokenUsage;
+use rune_core::protocol::TokenUsageInfo;
+use rune_protocol::ThreadId;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::openai_models::ReasoningEffort;
 use insta::assert_snapshot;
 use ratatui::prelude::*;
 use std::path::PathBuf;
@@ -24,7 +24,7 @@ use tempfile::TempDir;
 
 async fn test_config(temp_home: &TempDir) -> Config {
     ConfigBuilder::default()
-        .codex_home(temp_home.path().to_path_buf())
+        .rune_home(temp_home.path().to_path_buf())
         .build()
         .await
         .expect("load config")
@@ -32,7 +32,7 @@ async fn test_config(temp_home: &TempDir) -> Config {
 
 fn test_auth_manager(config: &Config) -> AuthManager {
     AuthManager::new(
-        config.codex_home.clone(),
+        config.rune_home.clone(),
         false,
         config.cli_auth_credentials_store_mode,
     )
@@ -625,7 +625,7 @@ async fn status_snapshot_shows_missing_limits_message() {
 async fn status_snapshot_includes_credits_and_limits() {
     let temp_home = TempDir::new().expect("temp home");
     let mut config = test_config(&temp_home).await;
-    config.model = Some("gpt-5.1-codex".to_string());
+    config.model = Some("gpt-5.1-rune".to_string());
     config.cwd = PathBuf::from("/workspace/tests");
 
     let auth_manager = test_auth_manager(&config);
@@ -811,7 +811,7 @@ async fn status_snapshot_shows_stale_limits_message() {
 async fn status_snapshot_cached_limits_hide_credits_without_flag() {
     let temp_home = TempDir::new().expect("temp home");
     let mut config = test_config(&temp_home).await;
-    config.model = Some("gpt-5.1-codex".to_string());
+    config.model = Some("gpt-5.1-rune".to_string());
     config.cwd = PathBuf::from("/workspace/tests");
 
     let auth_manager = test_auth_manager(&config);

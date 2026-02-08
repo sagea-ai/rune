@@ -6,7 +6,7 @@ name = "rune-windows-sandbox"
 version.workspace = true
 
 [lib]
-name = "codex_windows_sandbox"
+name = "rune_windows_sandbox"
 path = "src/lib.rs"
 
 [[bin]]

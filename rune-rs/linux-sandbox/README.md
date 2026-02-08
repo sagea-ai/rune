@@ -2,10 +2,10 @@
 
 This crate is responsible for producing:
 
-- a `rune-linux-sandbox` standalone executable for Linux that is bundled with the Node.js version of the Codex CLI
+- a `rune-linux-sandbox` standalone executable for Linux that is bundled with the Node.js version of the Rune CLI
 - a lib crate that exposes the business logic of the executable as `run_main()` so that
   - the `rune-exec` CLI can check if its arg0 is `rune-linux-sandbox` and, if so, execute as if it were `rune-linux-sandbox`
-  - this should also be true of the `codex` multitool CLI
+  - this should also be true of the `rune` multitool CLI
 
 On Linux, the bubblewrap pipeline uses the vendored bubblewrap path compiled
 into this binary.
@@ -21,7 +21,7 @@ into this binary.
 - When enabled, the filesystem is read-only by default via `--ro-bind / /`.
 - When enabled, writable roots are layered with `--bind <root> <root>`.
 - When enabled, protected subpaths under writable roots (for example `.git`,
-  resolved `gitdir:`, and `.codex`) are re-applied as read-only via `--ro-bind`.
+  resolved `gitdir:`, and `.rune`) are re-applied as read-only via `--ro-bind`.
 - When enabled, symlink-in-path and non-existent protected paths inside
   writable roots are blocked by mounting `/dev/null` on the symlink or first
   missing component.
@@ -30,4 +30,4 @@ into this binary.
   you can skip this in restrictive container environments with `--no-proc`.
 
 **Notes**
-- The CLI surface still uses legacy names like `codex debug landlock`.
+- The CLI surface still uses legacy names like `rune debug landlock`.

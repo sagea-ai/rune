@@ -10,7 +10,7 @@ use tokio::process::ChildStdin;
 use tokio::process::ChildStdout;
 
 use anyhow::Context;
-use codex_mcp_server::CodexToolCallParam;
+use rune_mcp_server::RuneToolCallParam;
 
 use pretty_assertions::assert_eq;
 use rmcp::model::CallToolRequestParam;
@@ -42,8 +42,8 @@ pub struct McpProcess {
 }
 
 impl McpProcess {
-    pub async fn new(codex_home: &Path) -> anyhow::Result<Self> {
-        Self::new_with_env(codex_home, &[]).await
+    pub async fn new(rune_home: &Path) -> anyhow::Result<Self> {
+        Self::new_with_env(rune_home, &[]).await
     }
 
     /// Creates a new MCP process, allowing tests to override or remove
@@ -52,17 +52,17 @@ impl McpProcess {
     /// Pass a tuple of (key, Some(value)) to set/override, or (key, None) to
     /// remove a variable from the child's environment.
     pub async fn new_with_env(
-        codex_home: &Path,
+        rune_home: &Path,
         env_overrides: &[(&str, Option<&str>)],
     ) -> anyhow::Result<Self> {
-        let program = codex_utils_cargo_bin::cargo_bin("rune-mcp-server")
+        let program = rune_utils_cargo_bin::cargo_bin("rune-mcp-server")
             .context("should find binary for rune-mcp-server")?;
         let mut cmd = Command::new(program);
 
         cmd.stdin(Stdio::piped());
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
-        cmd.env("CODEX_HOME", codex_home);
+        cmd.env("RUNE_HOME", rune_home);
         cmd.env("RUST_LOG", "debug");
 
         for (k, v) in env_overrides {
@@ -142,13 +142,13 @@ impl McpProcess {
         let initialized = self.read_jsonrpc_message().await?;
         let os_info = os_info::get();
         let build_version = env!("CARGO_PKG_VERSION");
-        let originator = codex_core::default_client::originator().value;
+        let originator = rune_core::default_client::originator().value;
         let user_agent = format!(
             "{originator}/{build_version} ({} {}; {}) {} (elicitation test; 0.0.0)",
             os_info.os_type(),
             os_info.version(),
             os_info.architecture().unwrap_or("unknown"),
-            codex_core::terminal::user_agent()
+            rune_core::terminal::user_agent()
         );
         let JsonRpcMessage::Response(JsonRpcResponse {
             jsonrpc,
@@ -170,7 +170,7 @@ impl McpProcess {
                 },
                 "serverInfo": {
                     "name": "rune-mcp-server",
-                    "title": "Codex",
+                    "title": "Rune",
                     "version": "0.0.0",
                     "user_agent": user_agent
                 },
@@ -190,12 +190,12 @@ impl McpProcess {
 
     /// Returns the id used to make the request so it can be used when
     /// correlating notifications.
-    pub async fn send_codex_tool_call(
+    pub async fn send_rune_tool_call(
         &mut self,
-        params: CodexToolCallParam,
+        params: RuneToolCallParam,
     ) -> anyhow::Result<i64> {
-        let codex_tool_call_params = CallToolRequestParam {
-            name: "codex".into(),
+        let rune_tool_call_params = CallToolRequestParam {
+            name: "rune".into(),
             arguments: Some(match serde_json::to_value(params)? {
                 serde_json::Value::Object(map) => map,
                 _ => unreachable!("params serialize to object"),
@@ -203,7 +203,7 @@ impl McpProcess {
         };
         self.send_request(
             "tools/call",
-            Some(serde_json::to_value(codex_tool_call_params)?),
+            Some(serde_json::to_value(rune_tool_call_params)?),
         )
         .await
     }
@@ -314,7 +314,7 @@ impl McpProcess {
     }
 
     /// Reads notifications until a legacy TurnComplete event is observed:
-    /// Method "codex/event" with params.msg.type == "task_complete".
+    /// Method "rune/event" with params.msg.type == "task_complete".
     pub async fn read_stream_until_legacy_task_complete_notification(
         &mut self,
     ) -> anyhow::Result<JsonRpcNotification<CustomNotification>> {
@@ -324,7 +324,7 @@ impl McpProcess {
             let message = self.read_jsonrpc_message().await?;
             match message {
                 JsonRpcMessage::Notification(notification) => {
-                    let is_match = if notification.notification.method == "codex/event" {
+                    let is_match = if notification.notification.method == "rune/event" {
                         if let Some(params) = &notification.notification.params {
                             params
                                 .get("msg")

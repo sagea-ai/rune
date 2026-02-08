@@ -1,19 +1,19 @@
 #![cfg(not(target_os = "windows"))]
 
 use anyhow::Ok;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ItemCompletedEvent;
-use codex_core::protocol::ItemStartedEvent;
-use codex_core::protocol::Op;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Settings;
-use codex_protocol::items::AgentMessageContent;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::WebSearchAction;
-use codex_protocol::user_input::ByteRange;
-use codex_protocol::user_input::TextElement;
-use codex_protocol::user_input::UserInput;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ItemCompletedEvent;
+use rune_core::protocol::ItemStartedEvent;
+use rune_core::protocol::Op;
+use rune_protocol::config_types::CollaborationMode;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::config_types::Settings;
+use rune_protocol::items::AgentMessageContent;
+use rune_protocol::items::TurnItem;
+use rune_protocol::models::WebSearchAction;
+use rune_protocol::user_input::ByteRange;
+use rune_protocol::user_input::TextElement;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_message_item_added;
@@ -29,8 +29,8 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRune;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
 use pretty_assertions::assert_eq;
@@ -41,7 +41,7 @@ async fn user_message_item_is_emitted() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex { codex, .. } = test_codex().build(&server).await?;
+    let TestRune { rune, .. } = test_rune().build(&server).await?;
 
     let first_response = sse(vec![ev_response_created("resp-1"), ev_completed("resp-1")]);
     mount_sse_once(&server, first_response).await;
@@ -55,14 +55,14 @@ async fn user_message_item_is_emitted() -> anyhow::Result<()> {
         text_elements: text_elements.clone(),
     };
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![expected_input.clone()],
             final_output_json_schema: None,
         })
         .await?;
 
-    let started_item = wait_for_event_match(&codex, |ev| match ev {
+    let started_item = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemStarted(ItemStartedEvent {
             item: TurnItem::UserMessage(item),
             ..
@@ -70,7 +70,7 @@ async fn user_message_item_is_emitted() -> anyhow::Result<()> {
         _ => None,
     })
     .await;
-    let completed_item = wait_for_event_match(&codex, |ev| match ev {
+    let completed_item = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemCompleted(ItemCompletedEvent {
             item: TurnItem::UserMessage(item),
             ..
@@ -83,7 +83,7 @@ async fn user_message_item_is_emitted() -> anyhow::Result<()> {
     assert_eq!(started_item.content, vec![expected_input.clone()]);
     assert_eq!(completed_item.content, vec![expected_input]);
 
-    let legacy_message = wait_for_event_match(&codex, |ev| match ev {
+    let legacy_message = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::UserMessage(event) => Some(event.clone()),
         _ => None,
     })
@@ -99,7 +99,7 @@ async fn assistant_message_item_is_emitted() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex { codex, .. } = test_codex().build(&server).await?;
+    let TestRune { rune, .. } = test_rune().build(&server).await?;
 
     let first_response = sse(vec![
         ev_response_created("resp-1"),
@@ -108,7 +108,7 @@ async fn assistant_message_item_is_emitted() -> anyhow::Result<()> {
     ]);
     mount_sse_once(&server, first_response).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "please summarize results".into(),
@@ -118,7 +118,7 @@ async fn assistant_message_item_is_emitted() -> anyhow::Result<()> {
         })
         .await?;
 
-    let started = wait_for_event_match(&codex, |ev| match ev {
+    let started = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemStarted(ItemStartedEvent {
             item: TurnItem::AgentMessage(item),
             ..
@@ -126,7 +126,7 @@ async fn assistant_message_item_is_emitted() -> anyhow::Result<()> {
         _ => None,
     })
     .await;
-    let completed = wait_for_event_match(&codex, |ev| match ev {
+    let completed = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemCompleted(ItemCompletedEvent {
             item: TurnItem::AgentMessage(item),
             ..
@@ -136,7 +136,7 @@ async fn assistant_message_item_is_emitted() -> anyhow::Result<()> {
     .await;
 
     assert_eq!(started.id, completed.id);
-    let Some(codex_protocol::items::AgentMessageContent::Text { text }) = completed.content.first()
+    let Some(rune_protocol::items::AgentMessageContent::Text { text }) = completed.content.first()
     else {
         panic!("expected agent message text content");
     };
@@ -151,7 +151,7 @@ async fn reasoning_item_is_emitted() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex { codex, .. } = test_codex().build(&server).await?;
+    let TestRune { rune, .. } = test_rune().build(&server).await?;
 
     let reasoning_item = ev_reasoning_item(
         "reasoning-1",
@@ -166,7 +166,7 @@ async fn reasoning_item_is_emitted() -> anyhow::Result<()> {
     ]);
     mount_sse_once(&server, first_response).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "explain your reasoning".into(),
@@ -176,7 +176,7 @@ async fn reasoning_item_is_emitted() -> anyhow::Result<()> {
         })
         .await?;
 
-    let started = wait_for_event_match(&codex, |ev| match ev {
+    let started = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemStarted(ItemStartedEvent {
             item: TurnItem::Reasoning(item),
             ..
@@ -184,7 +184,7 @@ async fn reasoning_item_is_emitted() -> anyhow::Result<()> {
         _ => None,
     })
     .await;
-    let completed = wait_for_event_match(&codex, |ev| match ev {
+    let completed = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemCompleted(ItemCompletedEvent {
             item: TurnItem::Reasoning(item),
             ..
@@ -212,7 +212,7 @@ async fn web_search_item_is_emitted() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex { codex, .. } = test_codex().build(&server).await?;
+    let TestRune { rune, .. } = test_rune().build(&server).await?;
 
     let web_search_added = ev_web_search_call_added_partial("web-search-1", "in_progress");
     let web_search_done = ev_web_search_call_done("web-search-1", "completed", "weather seattle");
@@ -225,7 +225,7 @@ async fn web_search_item_is_emitted() -> anyhow::Result<()> {
     ]);
     mount_sse_once(&server, first_response).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "find the weather".into(),
@@ -235,12 +235,12 @@ async fn web_search_item_is_emitted() -> anyhow::Result<()> {
         })
         .await?;
 
-    let begin = wait_for_event_match(&codex, |ev| match ev {
+    let begin = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::WebSearchBegin(event) => Some(event.clone()),
         _ => None,
     })
     .await;
-    let completed = wait_for_event_match(&codex, |ev| match ev {
+    let completed = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemCompleted(ItemCompletedEvent {
             item: TurnItem::WebSearch(item),
             ..
@@ -268,11 +268,11 @@ async fn agent_message_content_delta_has_item_metadata() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         session_configured,
         ..
-    } = test_codex().build(&server).await?;
+    } = test_rune().build(&server).await?;
 
     let stream = sse(vec![
         ev_response_created("resp-1"),
@@ -283,7 +283,7 @@ async fn agent_message_content_delta_has_item_metadata() -> anyhow::Result<()> {
     ]);
     mount_sse_once(&server, stream).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "please stream text".into(),
@@ -293,7 +293,7 @@ async fn agent_message_content_delta_has_item_metadata() -> anyhow::Result<()> {
         })
         .await?;
 
-    let (started_turn_id, started_item) = wait_for_event_match(&codex, |ev| match ev {
+    let (started_turn_id, started_item) = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemStarted(ItemStartedEvent {
             turn_id,
             item: TurnItem::AgentMessage(item),
@@ -303,17 +303,17 @@ async fn agent_message_content_delta_has_item_metadata() -> anyhow::Result<()> {
     })
     .await;
 
-    let delta_event = wait_for_event_match(&codex, |ev| match ev {
+    let delta_event = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::AgentMessageContentDelta(event) => Some(event.clone()),
         _ => None,
     })
     .await;
-    let legacy_delta = wait_for_event_match(&codex, |ev| match ev {
+    let legacy_delta = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::AgentMessageDelta(event) => Some(event.clone()),
         _ => None,
     })
     .await;
-    let completed_item = wait_for_event_match(&codex, |ev| match ev {
+    let completed_item = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemCompleted(ItemCompletedEvent {
             item: TurnItem::AgentMessage(item),
             ..
@@ -339,11 +339,11 @@ async fn plan_mode_emits_plan_item_from_proposed_plan_block() -> anyhow::Result<
 
     let server = start_mock_server().await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         session_configured,
         ..
-    } = test_codex().build(&server).await?;
+    } = test_rune().build(&server).await?;
 
     let plan_block = "<proposed_plan>\n- Step 1\n- Step 2\n</proposed_plan>\n";
     let full_message = format!("Intro\n{plan_block}Outro");
@@ -365,7 +365,7 @@ async fn plan_mode_emits_plan_item_from_proposed_plan_block() -> anyhow::Result<
         },
     };
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "please plan".into(),
@@ -373,23 +373,23 @@ async fn plan_mode_emits_plan_item_from_proposed_plan_block() -> anyhow::Result<
             }],
             final_output_json_schema: None,
             cwd: std::env::current_dir()?,
-            approval_policy: codex_core::protocol::AskForApproval::Never,
-            sandbox_policy: codex_core::protocol::SandboxPolicy::DangerFullAccess,
+            approval_policy: rune_core::protocol::AskForApproval::Never,
+            sandbox_policy: rune_core::protocol::SandboxPolicy::DangerFullAccess,
             model: session_configured.model.clone(),
             effort: None,
-            summary: codex_protocol::config_types::ReasoningSummary::Auto,
+            summary: rune_protocol::config_types::ReasoningSummary::Auto,
             collaboration_mode: Some(collaboration_mode),
             personality: None,
         })
         .await?;
 
-    let plan_delta = wait_for_event_match(&codex, |ev| match ev {
+    let plan_delta = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::PlanDelta(event) => Some(event.clone()),
         _ => None,
     })
     .await;
 
-    let plan_completed = wait_for_event_match(&codex, |ev| match ev {
+    let plan_completed = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemCompleted(ItemCompletedEvent {
             item: TurnItem::Plan(item),
             ..
@@ -414,11 +414,11 @@ async fn plan_mode_strips_plan_from_agent_messages() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         session_configured,
         ..
-    } = test_codex().build(&server).await?;
+    } = test_rune().build(&server).await?;
 
     let plan_block = "<proposed_plan>\n- Step 1\n- Step 2\n</proposed_plan>\n";
     let full_message = format!("Intro\n{plan_block}Outro");
@@ -440,7 +440,7 @@ async fn plan_mode_strips_plan_from_agent_messages() -> anyhow::Result<()> {
         },
     };
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "please plan".into(),
@@ -448,11 +448,11 @@ async fn plan_mode_strips_plan_from_agent_messages() -> anyhow::Result<()> {
             }],
             final_output_json_schema: None,
             cwd: std::env::current_dir()?,
-            approval_policy: codex_core::protocol::AskForApproval::Never,
-            sandbox_policy: codex_core::protocol::SandboxPolicy::DangerFullAccess,
+            approval_policy: rune_core::protocol::AskForApproval::Never,
+            sandbox_policy: rune_core::protocol::SandboxPolicy::DangerFullAccess,
             model: session_configured.model.clone(),
             effort: None,
-            summary: codex_protocol::config_types::ReasoningSummary::Auto,
+            summary: rune_protocol::config_types::ReasoningSummary::Auto,
             collaboration_mode: Some(collaboration_mode),
             personality: None,
         })
@@ -464,7 +464,7 @@ async fn plan_mode_strips_plan_from_agent_messages() -> anyhow::Result<()> {
     let mut plan_item = None;
 
     while plan_delta.is_none() || agent_item.is_none() || plan_item.is_none() {
-        let ev = wait_for_event(&codex, |_| true).await;
+        let ev = wait_for_event(&rune, |_| true).await;
         match ev {
             EventMsg::AgentMessageContentDelta(event) => {
                 agent_deltas.push(event.delta);
@@ -511,11 +511,11 @@ async fn plan_mode_handles_missing_plan_close_tag() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         session_configured,
         ..
-    } = test_codex().build(&server).await?;
+    } = test_rune().build(&server).await?;
 
     let full_message = "Intro\n<proposed_plan>\n- Step 1\n";
     let stream = sse(vec![
@@ -536,7 +536,7 @@ async fn plan_mode_handles_missing_plan_close_tag() -> anyhow::Result<()> {
         },
     };
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "please plan".into(),
@@ -544,11 +544,11 @@ async fn plan_mode_handles_missing_plan_close_tag() -> anyhow::Result<()> {
             }],
             final_output_json_schema: None,
             cwd: std::env::current_dir()?,
-            approval_policy: codex_core::protocol::AskForApproval::Never,
-            sandbox_policy: codex_core::protocol::SandboxPolicy::DangerFullAccess,
+            approval_policy: rune_core::protocol::AskForApproval::Never,
+            sandbox_policy: rune_core::protocol::SandboxPolicy::DangerFullAccess,
             model: session_configured.model.clone(),
             effort: None,
-            summary: codex_protocol::config_types::ReasoningSummary::Auto,
+            summary: rune_protocol::config_types::ReasoningSummary::Auto,
             collaboration_mode: Some(collaboration_mode),
             personality: None,
         })
@@ -559,7 +559,7 @@ async fn plan_mode_handles_missing_plan_close_tag() -> anyhow::Result<()> {
     let mut agent_item = None;
 
     while plan_delta.is_none() || plan_item.is_none() || agent_item.is_none() {
-        let ev = wait_for_event(&codex, |_| true).await;
+        let ev = wait_for_event(&rune, |_| true).await;
         match ev {
             EventMsg::PlanDelta(event) => {
                 plan_delta = Some(event.delta);
@@ -601,7 +601,7 @@ async fn reasoning_content_delta_has_item_metadata() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex { codex, .. } = test_codex().build(&server).await?;
+    let TestRune { rune, .. } = test_rune().build(&server).await?;
 
     let stream = sse(vec![
         ev_response_created("resp-1"),
@@ -612,7 +612,7 @@ async fn reasoning_content_delta_has_item_metadata() -> anyhow::Result<()> {
     ]);
     mount_sse_once(&server, stream).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "reason through it".into(),
@@ -622,7 +622,7 @@ async fn reasoning_content_delta_has_item_metadata() -> anyhow::Result<()> {
         })
         .await?;
 
-    let reasoning_item = wait_for_event_match(&codex, |ev| match ev {
+    let reasoning_item = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemStarted(ItemStartedEvent {
             item: TurnItem::Reasoning(item),
             ..
@@ -631,12 +631,12 @@ async fn reasoning_content_delta_has_item_metadata() -> anyhow::Result<()> {
     })
     .await;
 
-    let delta_event = wait_for_event_match(&codex, |ev| match ev {
+    let delta_event = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ReasoningContentDelta(event) => Some(event.clone()),
         _ => None,
     })
     .await;
-    let legacy_delta = wait_for_event_match(&codex, |ev| match ev {
+    let legacy_delta = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::AgentReasoningDelta(event) => Some(event.clone()),
         _ => None,
     })
@@ -655,7 +655,7 @@ async fn reasoning_raw_content_delta_respects_flag() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestRune { rune, .. } = test_rune()
         .with_config(|config| {
             config.show_raw_agent_reasoning = true;
         })
@@ -671,7 +671,7 @@ async fn reasoning_raw_content_delta_respects_flag() -> anyhow::Result<()> {
     ]);
     mount_sse_once(&server, stream).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "show raw reasoning".into(),
@@ -681,7 +681,7 @@ async fn reasoning_raw_content_delta_respects_flag() -> anyhow::Result<()> {
         })
         .await?;
 
-    let reasoning_item = wait_for_event_match(&codex, |ev| match ev {
+    let reasoning_item = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ItemStarted(ItemStartedEvent {
             item: TurnItem::Reasoning(item),
             ..
@@ -690,12 +690,12 @@ async fn reasoning_raw_content_delta_respects_flag() -> anyhow::Result<()> {
     })
     .await;
 
-    let delta_event = wait_for_event_match(&codex, |ev| match ev {
+    let delta_event = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::ReasoningRawContentDelta(event) => Some(event.clone()),
         _ => None,
     })
     .await;
-    let legacy_delta = wait_for_event_match(&codex, |ev| match ev {
+    let legacy_delta = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::AgentReasoningRawContentDelta(event) => Some(event.clone()),
         _ => None,
     })

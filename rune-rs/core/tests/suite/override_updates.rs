@@ -1,21 +1,21 @@
 use anyhow::Result;
-use codex_core::config::Constrained;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::COLLABORATION_MODE_CLOSE_TAG;
-use codex_core::protocol::COLLABORATION_MODE_OPEN_TAG;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::RolloutItem;
-use codex_core::protocol::RolloutLine;
-use codex_core::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Settings;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
+use rune_core::config::Constrained;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::COLLABORATION_MODE_CLOSE_TAG;
+use rune_core::protocol::COLLABORATION_MODE_OPEN_TAG;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::RolloutItem;
+use rune_core::protocol::RolloutLine;
+use rune_core::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
+use rune_protocol::config_types::CollaborationMode;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::config_types::Settings;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::ResponseItem;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use std::path::Path;
@@ -107,12 +107,12 @@ async fn override_turn_context_without_user_turn_does_not_record_permissions_upd
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_rune().with_config(|config| {
         config.approval_policy = Constrained::allow_any(AskForApproval::OnRequest);
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: Some(AskForApproval::Never),
@@ -126,10 +126,10 @@ async fn override_turn_context_without_user_turn_does_not_record_permissions_upd
         })
         .await?;
 
-    test.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    test.rune.submit(Op::Shutdown).await?;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.rune.rollout_path().expect("rollout path");
     let rollout_text = read_rollout_text(&rollout_path).await?;
     let developer_texts = rollout_developer_texts(&rollout_text);
     let approval_texts: Vec<&String> = developer_texts
@@ -149,10 +149,10 @@ async fn override_turn_context_without_user_turn_does_not_record_environment_upd
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let test = test_codex().build(&server).await?;
+    let test = test_rune().build(&server).await?;
     let new_cwd = TempDir::new()?;
 
-    test.codex
+    test.rune
         .submit(Op::OverrideTurnContext {
             cwd: Some(new_cwd.path().to_path_buf()),
             approval_policy: None,
@@ -166,10 +166,10 @@ async fn override_turn_context_without_user_turn_does_not_record_environment_upd
         })
         .await?;
 
-    test.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    test.rune.submit(Op::Shutdown).await?;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.rune.rollout_path().expect("rollout path");
     let rollout_text = read_rollout_text(&rollout_path).await?;
     let env_texts = rollout_environment_texts(&rollout_text);
     assert!(
@@ -185,11 +185,11 @@ async fn override_turn_context_without_user_turn_does_not_record_collaboration_u
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let test = test_codex().build(&server).await?;
+    let test = test_rune().build(&server).await?;
     let collab_text = "override collaboration instructions";
     let collaboration_mode = collab_mode_with_instructions(Some(collab_text));
 
-    test.codex
+    test.rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: None,
@@ -203,10 +203,10 @@ async fn override_turn_context_without_user_turn_does_not_record_collaboration_u
         })
         .await?;
 
-    test.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    test.rune.submit(Op::Shutdown).await?;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
+    let rollout_path = test.rune.rollout_path().expect("rollout path");
     let rollout_text = read_rollout_text(&rollout_path).await?;
     let developer_texts = rollout_developer_texts(&rollout_text);
     let collab_text = collab_xml(collab_text);

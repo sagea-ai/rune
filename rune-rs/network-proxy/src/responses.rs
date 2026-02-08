@@ -11,7 +11,7 @@ use rama_http::StatusCode;
 use serde::Serialize;
 use tracing::error;
 
-const NETWORK_POLICY_DECISION_PREFIX: &str = "CODEX_NETWORK_POLICY_DECISION";
+const NETWORK_POLICY_DECISION_PREFIX: &str = "RUNE_NETWORK_POLICY_DECISION";
 
 pub struct PolicyDecisionDetails<'a> {
     pub decision: NetworkPolicyDecision,
@@ -70,15 +70,15 @@ pub fn blocked_header_value(reason: &str) -> &'static str {
 
 pub fn blocked_message(reason: &str) -> &'static str {
     match reason {
-        REASON_NOT_ALLOWED => "Codex blocked this request: domain not in allowlist.",
+        REASON_NOT_ALLOWED => "Rune blocked this request: domain not in allowlist.",
         REASON_NOT_ALLOWED_LOCAL => {
-            "Codex blocked this request: local/private addresses not allowed."
+            "Rune blocked this request: local/private addresses not allowed."
         }
-        REASON_DENIED => "Codex blocked this request: domain denied by policy.",
+        REASON_DENIED => "Rune blocked this request: domain denied by policy.",
         REASON_METHOD_NOT_ALLOWED => {
-            "Codex blocked this request: method not allowed in limited mode."
+            "Rune blocked this request: method not allowed in limited mode."
         }
-        _ => "Codex blocked this request by network policy.",
+        _ => "Rune blocked this request by network policy.",
     }
 }
 
@@ -141,7 +141,7 @@ mod tests {
         let line = policy_decision_prefix(&details);
         assert_eq!(
             line,
-            r#"CODEX_NETWORK_POLICY_DECISION {"decision":"ask","reason":"not_allowed","source":"decider","protocol":"https_connect","host":"api.example.com","port":443}"#
+            r#"RUNE_NETWORK_POLICY_DECISION {"decision":"ask","reason":"not_allowed","source":"decider","protocol":"https_connect","host":"api.example.com","port":443}"#
         );
     }
 
@@ -159,8 +159,8 @@ mod tests {
         let message = blocked_message_with_policy(REASON_NOT_ALLOWED, &details);
         assert_eq!(
             message,
-            r#"CODEX_NETWORK_POLICY_DECISION {"decision":"deny","reason":"not_allowed","source":"baseline_policy","protocol":"http","host":"api.example.com","port":80}
-Codex blocked this request: domain not in allowlist."#
+            r#"RUNE_NETWORK_POLICY_DECISION {"decision":"deny","reason":"not_allowed","source":"baseline_policy","protocol":"http","host":"api.example.com","port":80}
+Rune blocked this request: domain not in allowlist."#
         );
     }
 }

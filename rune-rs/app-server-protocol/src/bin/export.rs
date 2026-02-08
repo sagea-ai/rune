@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(
-    about = "Generate TypeScript bindings and JSON Schemas for the Codex app-server protocol"
+    about = "Generate TypeScript bindings and JSON Schemas for the Rune app-server protocol"
 )]
 struct Args {
     /// Output directory where generated files will be written
@@ -18,5 +18,5 @@ struct Args {
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    codex_app_server_protocol::generate_types(&args.out_dir, args.prettier.as_deref())
+    rune_app_server_protocol::generate_types(&args.out_dir, args.prettier.as_deref())
 }

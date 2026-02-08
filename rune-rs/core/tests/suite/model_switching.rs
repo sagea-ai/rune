@@ -1,17 +1,17 @@
 use anyhow::Result;
-use codex_core::config::types::Personality;
-use codex_core::features::Feature;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::user_input::UserInput;
+use rune_core::config::types::Personality;
+use rune_core::features::Feature;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse_completed;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 
@@ -26,11 +26,11 @@ async fn model_change_appends_model_instructions_developer_message() -> Result<(
     )
     .await;
 
-    let mut builder = test_codex().with_model("gpt-5.2-codex");
+    let mut builder = test_rune().with_model("gpt-5.2-rune");
     let test = builder.build(&server).await?;
     let next_model = "gpt-5.1-rune-max";
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -47,9 +47,9 @@ async fn model_change_appends_model_instructions_developer_message() -> Result<(
             personality: None,
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: None,
@@ -63,7 +63,7 @@ async fn model_change_appends_model_instructions_developer_message() -> Result<(
         })
         .await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "switch models".into(),
@@ -80,7 +80,7 @@ async fn model_change_appends_model_instructions_developer_message() -> Result<(
             personality: None,
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two model requests");
@@ -110,15 +110,15 @@ async fn model_and_personality_change_only_appends_model_instructions() -> Resul
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_model("gpt-5.2-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5.2-rune")
         .with_config(|config| {
             config.features.enable(Feature::Personality);
         });
     let test = builder.build(&server).await?;
     let next_model = "exp-rune-personality";
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -135,9 +135,9 @@ async fn model_and_personality_change_only_appends_model_instructions() -> Resul
             personality: None,
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: None,
@@ -151,7 +151,7 @@ async fn model_and_personality_change_only_appends_model_instructions() -> Resul
         })
         .await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "switch model and personality".into(),
@@ -168,7 +168,7 @@ async fn model_and_personality_change_only_appends_model_instructions() -> Resul
             personality: None,
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two model requests");

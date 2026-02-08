@@ -45,7 +45,7 @@ use crate::tui::event_stream::EventBroker;
 use crate::tui::event_stream::TuiEventStream;
 #[cfg(unix)]
 use crate::tui::job_control::SuspendContext;
-use codex_core::config::types::NotificationMethod;
+use rune_core::config::types::NotificationMethod;
 
 mod event_stream;
 mod frame_rate_limiter;
@@ -321,7 +321,7 @@ impl Tui {
     /// Temporarily restore terminal state to run an external interactive program `f`.
     ///
     /// This pauses crossterm's stdin polling by dropping the underlying event stream, restores
-    /// terminal modes (optionally keeping raw mode enabled), then re-applies Codex TUI modes and
+    /// terminal modes (optionally keeping raw mode enabled), then re-applies Rune TUI modes and
     /// flushes pending stdin input before resuming events.
     pub async fn with_restored<R, F, Fut>(&mut self, mode: RestoreMode, f: F) -> R
     where

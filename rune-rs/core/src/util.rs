@@ -2,7 +2,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use codex_protocol::ThreadId;
+use rune_protocol::ThreadId;
 use rand::Rng;
 use tracing::debug;
 use tracing::error;
@@ -15,7 +15,7 @@ const BACKOFF_FACTOR: f64 = 2.0;
 /// Emit structured feedback metadata as key/value pairs.
 ///
 /// This logs a tracing event with `target: "feedback_tags"`. If
-/// `codex_feedback::CodexFeedback::metadata_layer()` is installed, these fields are captured and
+/// `rune_feedback::RuneFeedback::metadata_layer()` is installed, these fields are captured and
 /// later attached as tags when feedback is uploaded.
 ///
 /// Values are wrapped with [`tracing::field::DebugValue`], so the expression only needs to
@@ -24,8 +24,8 @@ const BACKOFF_FACTOR: f64 = 2.0;
 /// Example:
 ///
 /// ```rust
-/// codex_core::feedback_tags!(model = "gpt-5", cached = true);
-/// codex_core::feedback_tags!(provider = provider_id, request_id = request_id);
+/// rune_core::feedback_tags!(model = "gpt-5", cached = true);
+/// rune_core::feedback_tags!(provider = provider_id, request_id = request_id);
 /// ```
 #[macro_export]
 macro_rules! feedback_tags {
@@ -94,9 +94,9 @@ pub fn resume_command(thread_name: Option<&str>, thread_id: Option<ThreadId>) ->
         let needs_double_dash = target.starts_with('-');
         let escaped = shlex_join(&[target]);
         if needs_double_dash {
-            format!("codex resume -- {escaped}")
+            format!("rune resume -- {escaped}")
         } else {
-            format!("codex resume {escaped}")
+            format!("rune resume {escaped}")
         }
     })
 }
@@ -150,7 +150,7 @@ mod tests {
     fn resume_command_prefers_name_over_id() {
         let thread_id = ThreadId::from_string("123e4567-e89b-12d3-a456-426614174000").unwrap();
         let command = resume_command(Some("my-thread"), Some(thread_id));
-        assert_eq!(command, Some("codex resume my-thread".to_string()));
+        assert_eq!(command, Some("rune resume my-thread".to_string()));
     }
 
     #[test]
@@ -159,7 +159,7 @@ mod tests {
         let command = resume_command(None, Some(thread_id));
         assert_eq!(
             command,
-            Some("codex resume 123e4567-e89b-12d3-a456-426614174000".to_string())
+            Some("rune resume 123e4567-e89b-12d3-a456-426614174000".to_string())
         );
     }
 
@@ -174,13 +174,13 @@ mod tests {
         let command = resume_command(Some("-starts-with-dash"), None);
         assert_eq!(
             command,
-            Some("codex resume -- -starts-with-dash".to_string())
+            Some("rune resume -- -starts-with-dash".to_string())
         );
 
         let command = resume_command(Some("two words"), None);
-        assert_eq!(command, Some("codex resume 'two words'".to_string()));
+        assert_eq!(command, Some("rune resume 'two words'".to_string()));
 
         let command = resume_command(Some("quote'case"), None);
-        assert_eq!(command, Some("codex resume \"quote'case\"".to_string()));
+        assert_eq!(command, Some("rune resume \"quote'case\"".to_string()));
     }
 }

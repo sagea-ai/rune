@@ -5,8 +5,8 @@ use std::path::PathBuf;
 fn main() {
     // Tell rustc/clippy that this is an expected cfg value.
     println!("cargo:rustc-check-cfg=cfg(vendored_bwrap_available)");
-    println!("cargo:rerun-if-env-changed=CODEX_BWRAP_ENABLE_FFI");
-    println!("cargo:rerun-if-env-changed=CODEX_BWRAP_SOURCE_DIR");
+    println!("cargo:rerun-if-env-changed=RUNE_BWRAP_ENABLE_FFI");
+    println!("cargo:rerun-if-env-changed=RUNE_BWRAP_SOURCE_DIR");
 
     // Rebuild if the vendored bwrap sources change.
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap_or_default());
@@ -34,7 +34,7 @@ fn main() {
     }
 
     // Opt-in: do not attempt to fetch/compile bwrap unless explicitly enabled.
-    let enable_ffi = matches!(env::var("CODEX_BWRAP_ENABLE_FFI"), Ok(value) if value == "1");
+    let enable_ffi = matches!(env::var("RUNE_BWRAP_ENABLE_FFI"), Ok(value) if value == "1");
     if !enable_ffi {
         return;
     }
@@ -59,7 +59,7 @@ fn try_build_vendored_bwrap() -> Result<(), String> {
     std::fs::write(
         &config_h,
         r#"#pragma once
-#define PACKAGE_STRING "bubblewrap built at codex build-time"
+#define PACKAGE_STRING "bubblewrap built at rune build-time"
 "#,
     )
     .map_err(|err| format!("failed to write {}: {err}", config_h.display()))?;
@@ -88,16 +88,16 @@ fn try_build_vendored_bwrap() -> Result<(), String> {
 /// Resolve the bubblewrap source directory used for build-time compilation.
 ///
 /// Priority:
-/// 1. `CODEX_BWRAP_SOURCE_DIR` points at an existing bubblewrap checkout.
+/// 1. `RUNE_BWRAP_SOURCE_DIR` points at an existing bubblewrap checkout.
 /// 2. The vendored bubblewrap tree under `rune-rs/vendor/bubblewrap`.
 fn resolve_bwrap_source_dir(manifest_dir: &Path) -> Result<PathBuf, String> {
-    if let Ok(path) = env::var("CODEX_BWRAP_SOURCE_DIR") {
+    if let Ok(path) = env::var("RUNE_BWRAP_SOURCE_DIR") {
         let src_dir = PathBuf::from(path);
         if src_dir.exists() {
             return Ok(src_dir);
         }
         return Err(format!(
-            "CODEX_BWRAP_SOURCE_DIR was set but does not exist: {}",
+            "RUNE_BWRAP_SOURCE_DIR was set but does not exist: {}",
             src_dir.display()
         ));
     }
@@ -109,7 +109,7 @@ fn resolve_bwrap_source_dir(manifest_dir: &Path) -> Result<PathBuf, String> {
 
     Err(format!(
         "expected vendored bubblewrap at {}, but it was not found.\n\
-Set CODEX_BWRAP_SOURCE_DIR to an existing checkout or vendor bubblewrap under rune-rs/vendor.",
+Set RUNE_BWRAP_SOURCE_DIR to an existing checkout or vendor bubblewrap under rune-rs/vendor.",
         vendor_dir.display()
     ))
 }

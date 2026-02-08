@@ -1,4 +1,4 @@
-//! The main Codex TUI chat surface.
+//! The main Rune TUI chat surface.
 //!
 //! `ChatWidget` consumes protocol events, builds and updates history cells, and drives rendering
 //! for both the main viewport and overlay UIs.
@@ -42,92 +42,92 @@ use crate::status::RateLimitWindowDisplay;
 use crate::status::format_directory_display;
 use crate::status::format_tokens_compact;
 use crate::text_formatting::proper_join;
-use crate::version::CODEX_CLI_VERSION;
-use codex_app_server_protocol::ConfigLayerSource;
-use codex_backend_client::Client as BackendClient;
-use codex_chatgpt::connectors;
-use codex_core::config::Config;
-use codex_core::config::ConstraintResult;
-use codex_core::config::types::Notifications;
-use codex_core::config_loader::ConfigLayerStackOrdering;
-use codex_core::features::FEATURES;
-use codex_core::features::Feature;
-use codex_core::find_thread_name_by_id;
-use codex_core::git_info::current_branch_name;
-use codex_core::git_info::get_git_repo_root;
-use codex_core::git_info::local_git_branches;
-use codex_core::models_manager::manager::ModelsManager;
-use codex_core::project_doc::DEFAULT_PROJECT_DOC_FILENAME;
-use codex_core::protocol::AgentMessageDeltaEvent;
-use codex_core::protocol::AgentMessageEvent;
-use codex_core::protocol::AgentReasoningDeltaEvent;
-use codex_core::protocol::AgentReasoningEvent;
-use codex_core::protocol::AgentReasoningRawContentDeltaEvent;
-use codex_core::protocol::AgentReasoningRawContentEvent;
-use codex_core::protocol::ApplyPatchApprovalRequestEvent;
-use codex_core::protocol::BackgroundEventEvent;
-use codex_core::protocol::CodexErrorInfo;
-use codex_core::protocol::CreditsSnapshot;
-use codex_core::protocol::DeprecationNoticeEvent;
-use codex_core::protocol::ErrorEvent;
-use codex_core::protocol::Event;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ExecApprovalRequestEvent;
-use codex_core::protocol::ExecCommandBeginEvent;
-use codex_core::protocol::ExecCommandEndEvent;
-use codex_core::protocol::ExecCommandOutputDeltaEvent;
-use codex_core::protocol::ExecCommandSource;
-use codex_core::protocol::ExitedReviewModeEvent;
-use codex_core::protocol::ListCustomPromptsResponseEvent;
-use codex_core::protocol::ListSkillsResponseEvent;
-use codex_core::protocol::McpListToolsResponseEvent;
-use codex_core::protocol::McpStartupCompleteEvent;
-use codex_core::protocol::McpStartupStatus;
-use codex_core::protocol::McpStartupUpdateEvent;
-use codex_core::protocol::McpToolCallBeginEvent;
-use codex_core::protocol::McpToolCallEndEvent;
-use codex_core::protocol::Op;
-use codex_core::protocol::PatchApplyBeginEvent;
-use codex_core::protocol::RateLimitSnapshot;
-use codex_core::protocol::ReviewRequest;
-use codex_core::protocol::ReviewTarget;
-use codex_core::protocol::SkillMetadata as ProtocolSkillMetadata;
-use codex_core::protocol::StreamErrorEvent;
-use codex_core::protocol::TerminalInteractionEvent;
-use codex_core::protocol::TokenUsage;
-use codex_core::protocol::TokenUsageInfo;
-use codex_core::protocol::TurnAbortReason;
-use codex_core::protocol::TurnCompleteEvent;
-use codex_core::protocol::TurnDiffEvent;
-use codex_core::protocol::UndoCompletedEvent;
-use codex_core::protocol::UndoStartedEvent;
-use codex_core::protocol::UserMessageEvent;
-use codex_core::protocol::ViewImageToolCallEvent;
-use codex_core::protocol::WarningEvent;
-use codex_core::protocol::WebSearchBeginEvent;
-use codex_core::protocol::WebSearchEndEvent;
-use codex_core::skills::model::SkillMetadata;
+use crate::version::RUNE_CLI_VERSION;
+use rune_app_server_protocol::ConfigLayerSource;
+use rune_backend_client::Client as BackendClient;
+use rune_chatgpt::connectors;
+use rune_core::config::Config;
+use rune_core::config::ConstraintResult;
+use rune_core::config::types::Notifications;
+use rune_core::config_loader::ConfigLayerStackOrdering;
+use rune_core::features::FEATURES;
+use rune_core::features::Feature;
+use rune_core::find_thread_name_by_id;
+use rune_core::git_info::current_branch_name;
+use rune_core::git_info::get_git_repo_root;
+use rune_core::git_info::local_git_branches;
+use rune_core::models_manager::manager::ModelsManager;
+use rune_core::project_doc::DEFAULT_PROJECT_DOC_FILENAME;
+use rune_core::protocol::AgentMessageDeltaEvent;
+use rune_core::protocol::AgentMessageEvent;
+use rune_core::protocol::AgentReasoningDeltaEvent;
+use rune_core::protocol::AgentReasoningEvent;
+use rune_core::protocol::AgentReasoningRawContentDeltaEvent;
+use rune_core::protocol::AgentReasoningRawContentEvent;
+use rune_core::protocol::ApplyPatchApprovalRequestEvent;
+use rune_core::protocol::BackgroundEventEvent;
+use rune_core::protocol::RuneErrorInfo;
+use rune_core::protocol::CreditsSnapshot;
+use rune_core::protocol::DeprecationNoticeEvent;
+use rune_core::protocol::ErrorEvent;
+use rune_core::protocol::Event;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ExecApprovalRequestEvent;
+use rune_core::protocol::ExecCommandBeginEvent;
+use rune_core::protocol::ExecCommandEndEvent;
+use rune_core::protocol::ExecCommandOutputDeltaEvent;
+use rune_core::protocol::ExecCommandSource;
+use rune_core::protocol::ExitedReviewModeEvent;
+use rune_core::protocol::ListCustomPromptsResponseEvent;
+use rune_core::protocol::ListSkillsResponseEvent;
+use rune_core::protocol::McpListToolsResponseEvent;
+use rune_core::protocol::McpStartupCompleteEvent;
+use rune_core::protocol::McpStartupStatus;
+use rune_core::protocol::McpStartupUpdateEvent;
+use rune_core::protocol::McpToolCallBeginEvent;
+use rune_core::protocol::McpToolCallEndEvent;
+use rune_core::protocol::Op;
+use rune_core::protocol::PatchApplyBeginEvent;
+use rune_core::protocol::RateLimitSnapshot;
+use rune_core::protocol::ReviewRequest;
+use rune_core::protocol::ReviewTarget;
+use rune_core::protocol::SkillMetadata as ProtocolSkillMetadata;
+use rune_core::protocol::StreamErrorEvent;
+use rune_core::protocol::TerminalInteractionEvent;
+use rune_core::protocol::TokenUsage;
+use rune_core::protocol::TokenUsageInfo;
+use rune_core::protocol::TurnAbortReason;
+use rune_core::protocol::TurnCompleteEvent;
+use rune_core::protocol::TurnDiffEvent;
+use rune_core::protocol::UndoCompletedEvent;
+use rune_core::protocol::UndoStartedEvent;
+use rune_core::protocol::UserMessageEvent;
+use rune_core::protocol::ViewImageToolCallEvent;
+use rune_core::protocol::WarningEvent;
+use rune_core::protocol::WebSearchBeginEvent;
+use rune_core::protocol::WebSearchEndEvent;
+use rune_core::skills::model::SkillMetadata;
 #[cfg(target_os = "windows")]
-use codex_core::windows_sandbox::WindowsSandboxLevelExt;
-use codex_otel::OtelManager;
-use codex_otel::RuntimeMetricsSummary;
-use codex_protocol::ThreadId;
-use codex_protocol::account::PlanType;
-use codex_protocol::approvals::ElicitationRequestEvent;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::CollaborationModeMask;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::Settings;
+use rune_core::windows_sandbox::WindowsSandboxLevelExt;
+use rune_otel::OtelManager;
+use rune_otel::RuntimeMetricsSummary;
+use rune_protocol::ThreadId;
+use rune_protocol::account::PlanType;
+use rune_protocol::approvals::ElicitationRequestEvent;
+use rune_protocol::config_types::CollaborationMode;
+use rune_protocol::config_types::CollaborationModeMask;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::config_types::Personality;
+use rune_protocol::config_types::Settings;
 #[cfg(target_os = "windows")]
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::items::AgentMessageItem;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::models::local_image_label_text;
-use codex_protocol::parse_command::ParsedCommand;
-use codex_protocol::request_user_input::RequestUserInputEvent;
-use codex_protocol::user_input::TextElement;
-use codex_protocol::user_input::UserInput;
+use rune_protocol::config_types::WindowsSandboxLevel;
+use rune_protocol::items::AgentMessageItem;
+use rune_protocol::models::MessagePhase;
+use rune_protocol::models::local_image_label_text;
+use rune_protocol::parse_command::ParsedCommand;
+use rune_protocol::request_user_input::RequestUserInputEvent;
+use rune_protocol::user_input::TextElement;
+use rune_protocol::user_input::UserInput;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -227,18 +227,18 @@ use crate::streaming::controller::PlanStreamController;
 use crate::streaming::controller::StreamController;
 
 use chrono::Local;
-use codex_common::approval_presets::ApprovalPreset;
-use codex_common::approval_presets::builtin_approval_presets;
-use codex_core::AuthManager;
-use codex_core::CodexAuth;
-use codex_core::ThreadManager;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::SandboxPolicy;
-use codex_file_search::FileMatch;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
-use codex_protocol::plan_tool::UpdatePlanArgs;
+use rune_common::approval_presets::ApprovalPreset;
+use rune_common::approval_presets::builtin_approval_presets;
+use rune_core::AuthManager;
+use rune_core::RuneAuth;
+use rune_core::ThreadManager;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::SandboxPolicy;
+use rune_file_search::FileMatch;
+use rune_protocol::openai_models::InputModality;
+use rune_protocol::openai_models::ModelPreset;
+use rune_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use rune_protocol::plan_tool::UpdatePlanArgs;
 use strum::IntoEnumIterator;
 
 const USER_SHELL_COMMAND_HELP_TITLE: &str = "Prefix a command with ! to run it locally";
@@ -408,7 +408,7 @@ pub(crate) struct ChatWidgetInit {
     pub(crate) enhanced_keys_supported: bool,
     pub(crate) auth_manager: Arc<AuthManager>,
     pub(crate) models_manager: Arc<ModelsManager>,
-    pub(crate) feedback: codex_feedback::CodexFeedback,
+    pub(crate) feedback: rune_feedback::RuneFeedback,
     pub(crate) is_first_run: bool,
     pub(crate) feedback_audience: FeedbackAudience,
     pub(crate) model: Option<String>,
@@ -444,17 +444,17 @@ enum RateLimitErrorKind {
     Generic,
 }
 
-fn rate_limit_error_kind(info: &CodexErrorInfo) -> Option<RateLimitErrorKind> {
+fn rate_limit_error_kind(info: &RuneErrorInfo) -> Option<RateLimitErrorKind> {
     match info {
-        CodexErrorInfo::ModelCap {
+        RuneErrorInfo::ModelCap {
             model,
             reset_after_seconds,
         } => Some(RateLimitErrorKind::ModelCap {
             model: model.clone(),
             reset_after_seconds: *reset_after_seconds,
         }),
-        CodexErrorInfo::UsageLimitExceeded => Some(RateLimitErrorKind::UsageLimit),
-        CodexErrorInfo::ResponseTooManyFailedAttempts {
+        RuneErrorInfo::UsageLimitExceeded => Some(RateLimitErrorKind::UsageLimit),
+        RuneErrorInfo::ResponseTooManyFailedAttempts {
             http_status_code: Some(429),
         } => Some(RateLimitErrorKind::Generic),
         _ => None,
@@ -483,7 +483,7 @@ pub(crate) enum ExternalEditorState {
 /// active work, arming the double-press quit shortcut, and requesting shutdown-first exit.
 pub(crate) struct ChatWidget {
     app_event_tx: AppEventSender,
-    codex_op_tx: UnboundedSender<Op>,
+    rune_op_tx: UnboundedSender<Op>,
     bottom_pane: BottomPane,
     active_cell: Option<Box<dyn HistoryCell>>,
     /// Monotonic-ish counter used to invalidate transcript overlay caching.
@@ -604,7 +604,7 @@ pub(crate) struct ChatWidget {
     turn_runtime_metrics: RuntimeMetricsSummary,
     last_rendered_width: std::cell::Cell<Option<usize>>,
     // Feedback sink for /feedback
-    feedback: codex_feedback::CodexFeedback,
+    feedback: rune_feedback::RuneFeedback,
     feedback_audience: FeedbackAudience,
     // Current session rollout path (if known)
     current_rollout_path: Option<PathBuf>,
@@ -1009,7 +1009,7 @@ impl ChatWidget {
     }
 
     // --- Small event handlers ---
-    fn on_session_configured(&mut self, event: codex_core::protocol::SessionConfiguredEvent) {
+    fn on_session_configured(&mut self, event: rune_core::protocol::SessionConfiguredEvent) {
         self.bottom_pane
             .set_history_metadata(event.history_log_id, event.history_entry_count);
         self.set_skills(None);
@@ -1066,7 +1066,7 @@ impl ChatWidget {
 
     fn emit_forked_thread_event(&self, forked_from_id: ThreadId) {
         let app_event_tx = self.app_event_tx.clone();
-        let codex_home = self.config.codex_home.clone();
+        let rune_home = self.config.rune_home.clone();
         tokio::spawn(async move {
             let forked_from_id_text = forked_from_id.to_string();
             let send_name_and_id = |name: String| {
@@ -1095,7 +1095,7 @@ impl ChatWidget {
                 )));
             };
 
-            match find_thread_name_by_id(&codex_home, &forked_from_id).await {
+            match find_thread_name_by_id(&rune_home, &forked_from_id).await {
                 Ok(Some(name)) if !name.trim().is_empty() => {
                     send_name_and_id(name);
                 }
@@ -1108,7 +1108,7 @@ impl ChatWidget {
         });
     }
 
-    fn on_thread_name_updated(&mut self, event: codex_core::protocol::ThreadNameUpdatedEvent) {
+    fn on_thread_name_updated(&mut self, event: rune_core::protocol::ThreadNameUpdatedEvent) {
         if self.thread_id == Some(event.thread_id) {
             self.thread_name = event.thread_name;
             self.request_redraw();
@@ -1913,7 +1913,7 @@ impl ChatWidget {
         self.request_redraw();
     }
 
-    fn on_patch_apply_end(&mut self, event: codex_core::protocol::PatchApplyEndEvent) {
+    fn on_patch_apply_end(&mut self, event: rune_core::protocol::PatchApplyEndEvent) {
         let ev2 = event.clone();
         self.defer_or_handle(
             |q| q.push_patch_end(event),
@@ -2075,9 +2075,9 @@ impl ChatWidget {
 
     fn on_get_history_entry_response(
         &mut self,
-        event: codex_core::protocol::GetHistoryEntryResponseEvent,
+        event: rune_core::protocol::GetHistoryEntryResponseEvent,
     ) {
-        let codex_core::protocol::GetHistoryEntryResponseEvent {
+        let rune_core::protocol::GetHistoryEntryResponseEvent {
             offset,
             log_id,
             entry,
@@ -2343,7 +2343,7 @@ impl ChatWidget {
 
     pub(crate) fn handle_patch_apply_end_now(
         &mut self,
-        event: codex_core::protocol::PatchApplyEndEvent,
+        event: rune_core::protocol::PatchApplyEndEvent,
     ) {
         // If the patch was successful, just let the "Edited" block stand.
         // Otherwise, add a failure block.
@@ -2549,7 +2549,7 @@ impl ChatWidget {
         config.model = model.clone();
         let mut rng = rand::rng();
         let placeholder = PLACEHOLDERS[rng.random_range(0..PLACEHOLDERS.len())].to_string();
-        let codex_op_tx = spawn_agent(config.clone(), app_event_tx.clone(), thread_manager);
+        let rune_op_tx = spawn_agent(config.clone(), app_event_tx.clone(), thread_manager);
 
         let model_override = model.as_deref();
         let model_for_header = model
@@ -2578,7 +2578,7 @@ impl ChatWidget {
         let mut widget = Self {
             app_event_tx: app_event_tx.clone(),
             frame_requester: frame_requester.clone(),
-            codex_op_tx,
+            rune_op_tx,
             bottom_pane: BottomPane::new(BottomPaneParams {
                 frame_requester,
                 app_event_tx,
@@ -2674,7 +2674,7 @@ impl ChatWidget {
         widget.sync_personality_command_enabled();
         #[cfg(target_os = "windows")]
         widget.bottom_pane.set_windows_degraded_sandbox_active(
-            codex_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
+            rune_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
                 && matches!(
                     WindowsSandboxLevel::from_config(&widget.config),
                     WindowsSandboxLevel::RestrictedToken
@@ -2691,7 +2691,7 @@ impl ChatWidget {
 
     pub(crate) fn new_with_op_sender(
         common: ChatWidgetInit,
-        codex_op_tx: UnboundedSender<Op>,
+        rune_op_tx: UnboundedSender<Op>,
     ) -> Self {
         let ChatWidgetInit {
             config,
@@ -2741,7 +2741,7 @@ impl ChatWidget {
         let mut widget = Self {
             app_event_tx: app_event_tx.clone(),
             frame_requester: frame_requester.clone(),
-            codex_op_tx,
+            rune_op_tx,
             bottom_pane: BottomPane::new(BottomPaneParams {
                 frame_requester,
                 app_event_tx,
@@ -2842,8 +2842,8 @@ impl ChatWidget {
     /// Create a ChatWidget attached to an existing conversation (e.g., a fork).
     pub(crate) fn new_from_existing(
         common: ChatWidgetInit,
-        conversation: std::sync::Arc<codex_core::CodexThread>,
-        session_configured: codex_core::protocol::SessionConfiguredEvent,
+        conversation: std::sync::Arc<rune_core::RuneThread>,
+        session_configured: rune_core::protocol::SessionConfiguredEvent,
     ) -> Self {
         let ChatWidgetInit {
             config,
@@ -2876,7 +2876,7 @@ impl ChatWidget {
             .unwrap_or(header_model);
 
         let current_cwd = Some(session_configured.cwd.clone());
-        let codex_op_tx =
+        let rune_op_tx =
             spawn_agent_from_existing(conversation, session_configured, app_event_tx.clone());
 
         let fallback_default = Settings {
@@ -2893,7 +2893,7 @@ impl ChatWidget {
         let mut widget = Self {
             app_event_tx: app_event_tx.clone(),
             frame_requester: frame_requester.clone(),
-            codex_op_tx,
+            rune_op_tx,
             bottom_pane: BottomPane::new(BottomPaneParams {
                 frame_requester,
                 app_event_tx,
@@ -2989,7 +2989,7 @@ impl ChatWidget {
         widget.sync_personality_command_enabled();
         #[cfg(target_os = "windows")]
         widget.bottom_pane.set_windows_degraded_sandbox_active(
-            codex_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
+            rune_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
                 && matches!(
                     WindowsSandboxLevel::from_config(&widget.config),
                     WindowsSandboxLevel::RestrictedToken
@@ -3231,13 +3231,13 @@ impl ChatWidget {
             }
             SlashCommand::Compact => {
                 self.clear_token_usage();
-                self.app_event_tx.send(AppEvent::CodexOp(Op::Compact));
+                self.app_event_tx.send(AppEvent::RuneOp(Op::Compact));
             }
             SlashCommand::Review => {
                 self.open_review_popup();
             }
             SlashCommand::Rename => {
-                self.otel_manager.counter("codex.thread.rename", 1, &[]);
+                self.otel_manager.counter("rune.thread.rename", 1, &[]);
                 self.show_rename_prompt();
             }
             SlashCommand::Model => {
@@ -3286,7 +3286,7 @@ impl ChatWidget {
                     let windows_degraded_sandbox_enabled =
                         matches!(windows_sandbox_level, WindowsSandboxLevel::RestrictedToken);
                     if !windows_degraded_sandbox_enabled
-                        || !codex_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
+                        || !rune_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
                     {
                         // This command should not be visible/recognized outside degraded mode,
                         // but guard anyway in case something dispatches it directly.
@@ -3311,7 +3311,7 @@ impl ChatWidget {
                     }
 
                     self.otel_manager.counter(
-                        "codex.windows_sandbox.setup_elevated_sandbox_command",
+                        "rune.windows_sandbox.setup_elevated_sandbox_command",
                         1,
                         &[],
                     );
@@ -3331,8 +3331,8 @@ impl ChatWidget {
                 self.request_quit_without_confirmation();
             }
             SlashCommand::Logout => {
-                if let Err(e) = codex_core::auth::logout(
-                    &self.config.codex_home,
+                if let Err(e) = rune_core::auth::logout(
+                    &self.config.rune_home,
                     self.config.cli_auth_credentials_store_mode,
                 ) {
                     tracing::error!("failed to logout: {e}");
@@ -3340,7 +3340,7 @@ impl ChatWidget {
                 self.request_quit_without_confirmation();
             }
             // SlashCommand::Undo => {
-            //     self.app_event_tx.send(AppEvent::CodexOp(Op::Undo));
+            //     self.app_event_tx.send(AppEvent::RuneOp(Op::Undo));
             // }
             SlashCommand::Diff => {
                 self.add_diff_in_progress();
@@ -3394,13 +3394,13 @@ impl ChatWidget {
                 }
             }
             SlashCommand::TestApproval => {
-                use codex_core::protocol::EventMsg;
+                use rune_core::protocol::EventMsg;
                 use std::collections::HashMap;
 
-                use codex_core::protocol::ApplyPatchApprovalRequestEvent;
-                use codex_core::protocol::FileChange;
+                use rune_core::protocol::ApplyPatchApprovalRequestEvent;
+                use rune_core::protocol::FileChange;
 
-                self.app_event_tx.send(AppEvent::CodexEvent(Event {
+                self.app_event_tx.send(AppEvent::RuneEvent(Event {
                     id: "1".to_string(),
                     // msg: EventMsg::ExecApprovalRequest(ExecApprovalRequestEvent {
                     //     call_id: "1".to_string(),
@@ -3457,13 +3457,13 @@ impl ChatWidget {
         let trimmed = args.trim();
         match cmd {
             SlashCommand::Rename if !trimmed.is_empty() => {
-                self.otel_manager.counter("codex.thread.rename", 1, &[]);
+                self.otel_manager.counter("rune.thread.rename", 1, &[]);
                 let Some((prepared_args, _prepared_elements)) =
                     self.bottom_pane.prepare_inline_args_submission(false)
                 else {
                     return;
                 };
-                let Some(name) = codex_core::util::normalize_thread_name(&prepared_args) else {
+                let Some(name) = rune_core::util::normalize_thread_name(&prepared_args) else {
                     self.add_error_message("Thread name cannot be empty.".to_string());
                     return;
                 };
@@ -3471,7 +3471,7 @@ impl ChatWidget {
                 self.add_boxed_history(Box::new(cell));
                 self.request_redraw();
                 self.app_event_tx
-                    .send(AppEvent::CodexOp(Op::SetThreadName { name }));
+                    .send(AppEvent::RuneOp(Op::SetThreadName { name }));
                 self.bottom_pane.drain_pending_submission_state();
             }
             SlashCommand::Plan if !trimmed.is_empty() => {
@@ -3538,7 +3538,7 @@ impl ChatWidget {
             "Type a name and press Enter".to_string(),
             None,
             Box::new(move |name: String| {
-                let Some(name) = codex_core::util::normalize_thread_name(&name) else {
+                let Some(name) = rune_core::util::normalize_thread_name(&name) else {
                     tx.send(AppEvent::InsertHistoryCell(Box::new(
                         history_cell::new_error_event("Thread name cannot be empty.".to_string()),
                     )));
@@ -3546,7 +3546,7 @@ impl ChatWidget {
                 };
                 let cell = Self::rename_confirmation_cell(&name, thread_id);
                 tx.send(AppEvent::InsertHistoryCell(Box::new(cell)));
-                tx.send(AppEvent::CodexOp(Op::SetThreadName { name }));
+                tx.send(AppEvent::RuneOp(Op::SetThreadName { name }));
             }),
         );
 
@@ -3742,7 +3742,7 @@ impl ChatWidget {
 
             let app_mentions = find_app_mentions(&mentions, apps, &skill_names_lower);
             for app in app_mentions {
-                let slug = codex_core::connectors::connector_mention_slug(&app);
+                let slug = rune_core::connectors::connector_mention_slug(&app);
                 if bound_names.contains(&slug) || !selected_app_ids.insert(app.id.clone()) {
                     continue;
                 }
@@ -3780,7 +3780,7 @@ impl ChatWidget {
             personality,
         };
 
-        self.codex_op_tx.send(op).unwrap_or_else(|e| {
+        self.rune_op_tx.send(op).unwrap_or_else(|e| {
             tracing::error!("failed to send message: {e}");
         });
 
@@ -3794,7 +3794,7 @@ impl ChatWidget {
                 })
                 .collect::<Vec<_>>();
             let history_text = encode_history_mentions(&text, &encoded_mentions);
-            self.codex_op_tx
+            self.rune_op_tx
                 .send(Op::AddToHistory { text: history_text })
                 .unwrap_or_else(|e| {
                     tracing::error!("failed to send AddHistory op: {e}");
@@ -3860,12 +3860,12 @@ impl ChatWidget {
         }
     }
 
-    pub(crate) fn handle_codex_event(&mut self, event: Event) {
+    pub(crate) fn handle_rune_event(&mut self, event: Event) {
         let Event { id, msg } = event;
         self.dispatch_event_msg(Some(id), msg, false);
     }
 
-    pub(crate) fn handle_codex_event_replay(&mut self, event: Event) {
+    pub(crate) fn handle_rune_event_replay(&mut self, event: Event) {
         let Event { msg, .. } = event;
         if matches!(msg, EventMsg::ShutdownComplete) {
             return;
@@ -3891,7 +3891,7 @@ impl ChatWidget {
             | EventMsg::TerminalInteraction(_)
             | EventMsg::ExecCommandOutputDelta(_) => {}
             _ => {
-                tracing::trace!("handle_codex_event: {:?}", msg);
+                tracing::trace!("handle_rune_event: {:?}", msg);
             }
         }
 
@@ -3924,9 +3924,9 @@ impl ChatWidget {
             EventMsg::Warning(WarningEvent { message }) => self.on_warning(message),
             EventMsg::Error(ErrorEvent {
                 message,
-                codex_error_info,
+                rune_error_info,
             }) => {
-                if let Some(info) = codex_error_info
+                if let Some(info) = rune_error_info
                     && let Some(kind) = rate_limit_error_kind(&info)
                 {
                     match kind {
@@ -4035,10 +4035,10 @@ impl ChatWidget {
             | EventMsg::DynamicToolCallRequest(_) => {}
             EventMsg::ItemCompleted(event) => {
                 let item = event.item;
-                if let codex_protocol::items::TurnItem::Plan(plan_item) = &item {
+                if let rune_protocol::items::TurnItem::Plan(plan_item) = &item {
                     self.on_plan_item_completed(plan_item.text.clone());
                 }
-                if let codex_protocol::items::TurnItem::AgentMessage(item) = item {
+                if let rune_protocol::items::TurnItem::AgentMessage(item) = item {
                     self.on_agent_message_item_completed(item);
                 }
             }
@@ -4061,7 +4061,7 @@ impl ChatWidget {
         self.is_review_mode = true;
         let hint = review
             .user_facing_hint
-            .unwrap_or_else(|| codex_core::review_prompts::user_facing_hint(&review.target));
+            .unwrap_or_else(|| rune_core::review_prompts::user_facing_hint(&review.target));
         let banner = format!(">> Code review started: {hint} <<");
         self.add_to_history(history_cell::new_review_status_line(banner));
         self.request_redraw();
@@ -4274,8 +4274,8 @@ impl ChatWidget {
             .get_layers(ConfigLayerStackOrdering::LowestPrecedenceFirst, true)
             .iter()
             .find_map(|layer| match &layer.name {
-                ConfigLayerSource::Project { dot_codex_folder } => {
-                    dot_codex_folder.as_path().parent().map(Path::to_path_buf)
+                ConfigLayerSource::Project { dot_rune_folder } => {
+                    dot_rune_folder.as_path().parent().map(Path::to_path_buf)
                 }
                 _ => None,
             })
@@ -4378,7 +4378,7 @@ impl ChatWidget {
                     .unwrap_or_else(|| "weekly".to_string());
                 self.status_line_limit_display(window, &label)
             }
-            StatusLineItem::CodexVersion => Some(CODEX_CLI_VERSION.to_string()),
+            StatusLineItem::RuneVersion => Some(RUNE_CLI_VERSION.to_string()),
             StatusLineItem::ContextWindowSize => self
                 .status_line_context_window_size()
                 .map(|cws| format!("{} window", format_tokens_compact(cws))),
@@ -4527,7 +4527,7 @@ impl ChatWidget {
         self.auth_manager
             .auth_cached()
             .as_ref()
-            .is_some_and(CodexAuth::is_chatgpt_auth)
+            .is_some_and(RuneAuth::is_chatgpt_auth)
     }
 
     fn lower_cost_preset(&self) -> Option<ModelPreset> {
@@ -4570,7 +4570,7 @@ impl ChatWidget {
         let default_effort: ReasoningEffortConfig = preset.default_reasoning_effort;
 
         let switch_actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
-            tx.send(AppEvent::CodexOp(Op::OverrideTurnContext {
+            tx.send(AppEvent::RuneOp(Op::OverrideTurnContext {
                 cwd: None,
                 approval_policy: None,
                 sandbox_policy: None,
@@ -4690,7 +4690,7 @@ impl ChatWidget {
                 let name = Self::personality_label(personality).to_string();
                 let description = Some(Self::personality_description(personality).to_string());
                 let actions: Vec<SelectionAction> = vec![Box::new(move |tx| {
-                    tx.send(AppEvent::CodexOp(Op::OverrideTurnContext {
+                    tx.send(AppEvent::RuneOp(Op::OverrideTurnContext {
                         cwd: None,
                         approval_policy: None,
                         sandbox_policy: None,
@@ -4718,7 +4718,7 @@ impl ChatWidget {
 
         let mut header = ColumnRenderable::new();
         header.push(Line::from("Select Personality".bold()));
-        header.push(Line::from("Choose a communication style for Codex.".dim()));
+        header.push(Line::from("Choose a communication style for Rune.".dim()));
 
         self.bottom_pane.show_selection_view(SelectionViewParams {
             header: Box::new(header),
@@ -4896,7 +4896,7 @@ impl ChatWidget {
 
         let header = self.model_menu_header(
             "Select Model and Effort",
-            "Access legacy models by running codex -m <model_name> or in your config.toml",
+            "Access legacy models by running rune -m <model_name> or in your config.toml",
         );
         self.bottom_pane.show_selection_view(SelectionViewParams {
             footer_hint: Some("Press enter to select reasoning effort, or esc to dismiss.".into()),
@@ -4959,7 +4959,7 @@ impl ChatWidget {
             let effort_label = effort_for_action
                 .map(|effort| effort.to_string())
                 .unwrap_or_else(|| "default".to_string());
-            tx.send(AppEvent::CodexOp(Op::OverrideTurnContext {
+            tx.send(AppEvent::RuneOp(Op::OverrideTurnContext {
                 cwd: None,
                 approval_policy: None,
                 sandbox_policy: None,
@@ -5006,7 +5006,7 @@ impl ChatWidget {
             let effort_label = Self::reasoning_effort_label(effort);
             format!("⚠ {effort_label} reasoning effort can quickly consume Plus plan rate limits.")
         });
-        let warn_for_model = preset.model.starts_with("gpt-5.1-codex")
+        let warn_for_model = preset.model.starts_with("gpt-5.1-rune")
             || preset.model.starts_with("gpt-5.1-rune-max")
             || preset.model.starts_with("gpt-5.2");
 
@@ -5133,7 +5133,7 @@ impl ChatWidget {
 
     fn apply_model_and_effort(&self, model: String, effort: Option<ReasoningEffortConfig>) {
         self.app_event_tx
-            .send(AppEvent::CodexOp(Op::OverrideTurnContext {
+            .send(AppEvent::RuneOp(Op::OverrideTurnContext {
                 cwd: None,
                 approval_policy: None,
                 sandbox_policy: None,
@@ -5185,7 +5185,7 @@ impl ChatWidget {
         #[cfg(not(target_os = "windows"))]
         let windows_degraded_sandbox_enabled = false;
 
-        let show_elevate_sandbox_hint = codex_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
+        let show_elevate_sandbox_hint = rune_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
             && windows_degraded_sandbox_enabled
             && presets.iter().any(|preset| preset.id == "auto");
 
@@ -5226,9 +5226,9 @@ impl ChatWidget {
                         == WindowsSandboxLevel::Disabled
                     {
                         let preset_clone = preset.clone();
-                        if codex_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
-                            && codex_core::windows_sandbox::sandbox_setup_is_complete(
-                                self.config.codex_home.as_path(),
+                        if rune_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
+                            && rune_core::windows_sandbox::sandbox_setup_is_complete(
+                                self.config.rune_home.as_path(),
                             )
                         {
                             vec![Box::new(move |tx| {
@@ -5322,7 +5322,7 @@ impl ChatWidget {
     ) -> Vec<SelectionAction> {
         vec![Box::new(move |tx| {
             let sandbox_clone = sandbox.clone();
-            tx.send(AppEvent::CodexOp(Op::OverrideTurnContext {
+            tx.send(AppEvent::RuneOp(Op::OverrideTurnContext {
                 cwd: None,
                 approval_policy: Some(approval),
                 sandbox_policy: Some(sandbox_clone.clone()),
@@ -5372,12 +5372,12 @@ impl ChatWidget {
         }
         let cwd = self.config.cwd.clone();
         let env_map: std::collections::HashMap<String, String> = std::env::vars().collect();
-        match codex_windows_sandbox::apply_world_writable_scan_and_denies(
-            self.config.codex_home.as_path(),
+        match rune_windows_sandbox::apply_world_writable_scan_and_denies(
+            self.config.rune_home.as_path(),
             cwd.as_path(),
             &env_map,
             self.config.sandbox_policy.get(),
-            Some(self.config.codex_home.as_path()),
+            Some(self.config.rune_home.as_path()),
         ) {
             Ok(_) => None,
             Err(_) => Some((Vec::new(), 0, true)),
@@ -5400,7 +5400,7 @@ impl ChatWidget {
         let mut header_children: Vec<Box<dyn Renderable>> = Vec::new();
         let title_line = Line::from("Enable full access?").bold();
         let info_line = Line::from(vec![
-            "When Codex runs with full access, it can edit any file on your computer and run commands with network, without your approval. "
+            "When Rune runs with full access, it can edit any file on your computer and run commands with network, without your approval. "
                 .into(),
             "Exercise caution when enabling full access. This significantly increases the risk of data loss, leaks, or unexpected behavior."
                 .fg(Color::Red),
@@ -5577,14 +5577,14 @@ impl ChatWidget {
     pub(crate) fn open_windows_sandbox_enable_prompt(&mut self, preset: ApprovalPreset) {
         use ratatui_macros::line;
 
-        if !codex_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED {
+        if !rune_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED {
             // Legacy flow (pre-NUX): explain the experimental sandbox and let the user enable it
             // directly (no elevation prompts).
             let mut header = ColumnRenderable::new();
             header.push(*Box::new(
                 Paragraph::new(vec![
                     line!["Agent mode on Windows uses an experimental sandbox to limit network and filesystem access.".bold()],
-                    line!["Learn more: https://developers.openai.com/codex/windows"],
+                    line!["Learn more: https://developers.openai.com/rune/windows"],
                 ])
                 .wrap(Wrap { trim: false }),
             ));
@@ -5634,7 +5634,7 @@ impl ChatWidget {
                 Self::preset_matches_current(current_approval, current_sandbox, preset)
             });
         self.otel_manager
-            .counter("codex.windows_sandbox.elevated_prompt_shown", 1, &[]);
+            .counter("rune.windows_sandbox.elevated_prompt_shown", 1, &[]);
 
         let mut header = ColumnRenderable::new();
         header.push(*Box::new(
@@ -5642,7 +5642,7 @@ impl ChatWidget {
                 line!["Set Up Agent Sandbox".bold()],
                 line![""],
                 line!["Agent mode uses an experimental Windows sandbox that protects your files and prevents network access by default."],
-                line!["Learn more: https://developers.openai.com/codex/windows"],
+                line!["Learn more: https://developers.openai.com/rune/windows"],
             ])
             .wrap(Wrap { trim: false }),
         ));
@@ -5668,7 +5668,7 @@ impl ChatWidget {
             Box::new({
                 let otel = self.otel_manager.clone();
                 move |_tx| {
-                    otel.counter("codex.windows_sandbox.elevated_prompt_decline", 1, &[]);
+                    otel.counter("rune.windows_sandbox.elevated_prompt_decline", 1, &[]);
                 }
             }),
         );
@@ -5679,7 +5679,7 @@ impl ChatWidget {
                 name: "Set up agent sandbox (requires elevation)".to_string(),
                 description: None,
                 actions: vec![Box::new(move |tx| {
-                    accept_otel.counter("codex.windows_sandbox.elevated_prompt_accept", 1, &[]);
+                    accept_otel.counter("rune.windows_sandbox.elevated_prompt_accept", 1, &[]);
                     tx.send(AppEvent::BeginWindowsSandboxElevatedSetup {
                         preset: preset.clone(),
                     });
@@ -5734,7 +5734,7 @@ impl ChatWidget {
             "Elevation failed. You can also use a non-elevated sandbox, which protects your files and prevents network access under most circumstances. However, it carries greater risk if prompt injected."
         ]);
         lines.push(line![
-            "Learn more: https://developers.openai.com/codex/windows"
+            "Learn more: https://developers.openai.com/rune/windows"
         ]);
 
         let mut header = ColumnRenderable::new();
@@ -5763,7 +5763,7 @@ impl ChatWidget {
             Box::new({
                 let otel = self.otel_manager.clone();
                 move |_tx| {
-                    otel.counter("codex.windows_sandbox.fallback_stay_current", 1, &[]);
+                    otel.counter("rune.windows_sandbox.fallback_stay_current", 1, &[]);
                 }
             }),
         );
@@ -5775,7 +5775,7 @@ impl ChatWidget {
                     let otel = self.otel_manager.clone();
                     let preset = elevated_preset;
                     move |tx| {
-                        otel.counter("codex.windows_sandbox.fallback_retry_elevated", 1, &[]);
+                        otel.counter("rune.windows_sandbox.fallback_retry_elevated", 1, &[]);
                         tx.send(AppEvent::BeginWindowsSandboxElevatedSetup {
                             preset: preset.clone(),
                         });
@@ -5791,7 +5791,7 @@ impl ChatWidget {
                     let otel = self.otel_manager.clone();
                     let preset = legacy_preset;
                     move |tx| {
-                        otel.counter("codex.windows_sandbox.fallback_use_legacy", 1, &[]);
+                        otel.counter("rune.windows_sandbox.fallback_use_legacy", 1, &[]);
                         tx.send(AppEvent::EnableWindowsSandboxForAgentMode {
                             preset: preset.clone(),
                             mode: WindowsSandboxEnableMode::Legacy,
@@ -5937,7 +5937,7 @@ impl ChatWidget {
             Feature::WindowsSandbox | Feature::WindowsSandboxElevated
         ) {
             self.bottom_pane.set_windows_degraded_sandbox_active(
-                codex_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
+                rune_core::windows_sandbox::ELEVATED_SANDBOX_NUX_ENABLED
                     && matches!(
                         WindowsSandboxLevel::from_config(&self.config),
                         WindowsSandboxLevel::RestrictedToken
@@ -6236,7 +6236,7 @@ impl ChatWidget {
             placeholder_style,
             None,
             config.cwd.clone(),
-            CODEX_CLI_VERSION,
+            RUNE_CLI_VERSION,
         ))
     }
 
@@ -6284,8 +6284,8 @@ impl ChatWidget {
     }
 
     fn rename_confirmation_cell(name: &str, thread_id: Option<ThreadId>) -> PlainHistoryCell {
-        let resume_cmd = codex_core::util::resume_command(Some(name), thread_id)
-            .unwrap_or_else(|| format!("codex resume {name}"));
+        let resume_cmd = rune_core::util::resume_command(Some(name), thread_id)
+            .unwrap_or_else(|| format!("rune resume {name}"));
         let name = name.to_string();
         let line = vec![
             "• ".into(),
@@ -6382,7 +6382,7 @@ impl ChatWidget {
                 (
                     "Press Enter to view the install link.",
                     "Install link unavailable.",
-                    "Install this app in your browser, then reload Codex.",
+                    "Install this app in your browser, then reload Rune.",
                 )
             };
             if let Some(install_url) = connector.install_url.clone() {
@@ -6626,14 +6626,14 @@ impl ChatWidget {
     pub(crate) fn clear_esc_backtrack_hint(&mut self) {
         self.bottom_pane.clear_esc_backtrack_hint();
     }
-    /// Forward an `Op` directly to codex.
+    /// Forward an `Op` directly to rune.
     pub(crate) fn submit_op(&mut self, op: Op) {
         // Record outbound operation for session replay fidelity.
         crate::session_log::log_outbound_op(&op);
         if matches!(&op, Op::Review { .. }) && !self.bottom_pane.is_task_running() {
             self.bottom_pane.set_task_running(true);
         }
-        if let Err(e) = self.codex_op_tx.send(op) {
+        if let Err(e) = self.rune_op_tx.send(op) {
             tracing::error!("failed to submit op: {e}");
         }
     }
@@ -6691,7 +6691,7 @@ impl ChatWidget {
         items.push(SelectionItem {
             name: "Review uncommitted changes".to_string(),
             actions: vec![Box::new(move |tx: &AppEventSender| {
-                tx.send(AppEvent::CodexOp(Op::Review {
+                tx.send(AppEvent::RuneOp(Op::Review {
                     review_request: ReviewRequest {
                         target: ReviewTarget::UncommittedChanges,
                         user_facing_hint: None,
@@ -6744,7 +6744,7 @@ impl ChatWidget {
             items.push(SelectionItem {
                 name: format!("{current_branch} -> {branch}"),
                 actions: vec![Box::new(move |tx3: &AppEventSender| {
-                    tx3.send(AppEvent::CodexOp(Op::Review {
+                    tx3.send(AppEvent::RuneOp(Op::Review {
                         review_request: ReviewRequest {
                             target: ReviewTarget::BaseBranch {
                                 branch: branch.clone(),
@@ -6770,7 +6770,7 @@ impl ChatWidget {
     }
 
     pub(crate) async fn show_review_commit_picker(&mut self, cwd: &Path) {
-        let commits = codex_core::git_info::recent_commits(cwd, 100).await;
+        let commits = rune_core::git_info::recent_commits(cwd, 100).await;
 
         let mut items: Vec<SelectionItem> = Vec::with_capacity(commits.len());
         for entry in commits {
@@ -6781,7 +6781,7 @@ impl ChatWidget {
             items.push(SelectionItem {
                 name: subject.clone(),
                 actions: vec![Box::new(move |tx3: &AppEventSender| {
-                    tx3.send(AppEvent::CodexOp(Op::Review {
+                    tx3.send(AppEvent::RuneOp(Op::Review {
                         review_request: ReviewRequest {
                             target: ReviewTarget::Commit {
                                 sha: sha.clone(),
@@ -6818,7 +6818,7 @@ impl ChatWidget {
                 if trimmed.is_empty() {
                     return;
                 }
-                tx.send(AppEvent::CodexOp(Op::Review {
+                tx.send(AppEvent::RuneOp(Op::Review {
                     review_request: ReviewRequest {
                         target: ReviewTarget::Custom {
                             instructions: trimmed,
@@ -6960,7 +6960,7 @@ impl Notification {
             }
             Notification::EditApprovalRequested { cwd, changes } => {
                 format!(
-                    "Codex wants to edit {}",
+                    "Rune wants to edit {}",
                     if changes.len() == 1 {
                         #[allow(clippy::unwrap_used)]
                         display_path_for(changes.first().unwrap(), cwd)
@@ -7051,7 +7051,7 @@ fn extract_first_bold(s: &str) -> Option<String> {
     None
 }
 
-async fn fetch_rate_limits(base_url: String, auth: CodexAuth) -> Option<RateLimitSnapshot> {
+async fn fetch_rate_limits(base_url: String, auth: RuneAuth) -> Option<RateLimitSnapshot> {
     match BackendClient::from_auth(base_url, &auth) {
         Ok(client) => match client.get_rate_limits().await {
             Ok(snapshot) => Some(snapshot),
@@ -7070,7 +7070,7 @@ async fn fetch_rate_limits(base_url: String, auth: CodexAuth) -> Option<RateLimi
 #[cfg(test)]
 pub(crate) fn show_review_commit_picker_with_entries(
     chat: &mut ChatWidget,
-    entries: Vec<codex_core::git_info::CommitLogEntry>,
+    entries: Vec<rune_core::git_info::CommitLogEntry>,
 ) {
     let mut items: Vec<SelectionItem> = Vec::with_capacity(entries.len());
     for entry in entries {
@@ -7081,7 +7081,7 @@ pub(crate) fn show_review_commit_picker_with_entries(
         items.push(SelectionItem {
             name: subject.clone(),
             actions: vec![Box::new(move |tx3: &AppEventSender| {
-                tx3.send(AppEvent::CodexOp(Op::Review {
+                tx3.send(AppEvent::RuneOp(Op::Review {
                     review_request: ReviewRequest {
                         target: ReviewTarget::Commit {
                             sha: sha.clone(),

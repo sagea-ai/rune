@@ -18,11 +18,11 @@ use crate::seatbelt::MACOS_PATH_TO_SEATBELT_EXECUTABLE;
 #[cfg(target_os = "macos")]
 use crate::seatbelt::create_seatbelt_command_args;
 #[cfg(target_os = "macos")]
-use crate::spawn::CODEX_SANDBOX_ENV_VAR;
-use crate::spawn::CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR;
+use crate::spawn::RUNE_SANDBOX_ENV_VAR;
+use crate::spawn::RUNE_SANDBOX_NETWORK_DISABLED_ENV_VAR;
 use crate::tools::sandboxing::SandboxablePreference;
-use codex_protocol::config_types::WindowsSandboxLevel;
-pub use codex_protocol::models::SandboxPermissions;
+use rune_protocol::config_types::WindowsSandboxLevel;
+pub use rune_protocol::models::SandboxPermissions;
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
@@ -59,7 +59,7 @@ pub(crate) struct SandboxTransformRequest<'a> {
     pub policy: &'a SandboxPolicy,
     pub sandbox: SandboxType,
     pub sandbox_policy_cwd: &'a Path,
-    pub codex_linux_sandbox_exe: Option<&'a PathBuf>,
+    pub rune_linux_sandbox_exe: Option<&'a PathBuf>,
     pub use_linux_sandbox_bwrap: bool,
     pub windows_sandbox_level: WindowsSandboxLevel,
 }
@@ -124,14 +124,14 @@ impl SandboxManager {
             policy,
             sandbox,
             sandbox_policy_cwd,
-            codex_linux_sandbox_exe,
+            rune_linux_sandbox_exe,
             use_linux_sandbox_bwrap,
             windows_sandbox_level,
         } = request;
         let mut env = spec.env;
         if !policy.has_full_network_access() {
             env.insert(
-                CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR.to_string(),
+                RUNE_SANDBOX_NETWORK_DISABLED_ENV_VAR.to_string(),
                 "1".to_string(),
             );
         }
@@ -145,7 +145,7 @@ impl SandboxManager {
             #[cfg(target_os = "macos")]
             SandboxType::MacosSeatbelt => {
                 let mut seatbelt_env = HashMap::new();
-                seatbelt_env.insert(CODEX_SANDBOX_ENV_VAR.to_string(), "seatbelt".to_string());
+                seatbelt_env.insert(RUNE_SANDBOX_ENV_VAR.to_string(), "seatbelt".to_string());
                 let mut args =
                     create_seatbelt_command_args(command.clone(), policy, sandbox_policy_cwd);
                 let mut full_command = Vec::with_capacity(1 + args.len());
@@ -156,7 +156,7 @@ impl SandboxManager {
             #[cfg(not(target_os = "macos"))]
             SandboxType::MacosSeatbelt => return Err(SandboxTransformError::SeatbeltUnavailable),
             SandboxType::LinuxSeccomp => {
-                let exe = codex_linux_sandbox_exe
+                let exe = rune_linux_sandbox_exe
                     .ok_or(SandboxTransformError::MissingLinuxSandboxExecutable)?;
                 let mut args = create_linux_sandbox_command_args(
                     command.clone(),

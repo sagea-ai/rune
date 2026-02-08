@@ -16,7 +16,7 @@ use tokio::process::Child;
 /// the equivalent CLI options.
 #[allow(clippy::too_many_arguments)]
 pub async fn spawn_command_under_linux_sandbox<P>(
-    codex_linux_sandbox_exe: P,
+    rune_linux_sandbox_exe: P,
     command: Vec<String>,
     command_cwd: PathBuf,
     sandbox_policy: &SandboxPolicy,
@@ -36,7 +36,7 @@ where
     );
     let arg0 = Some("rune-linux-sandbox");
     spawn_child_async(
-        codex_linux_sandbox_exe.as_ref().to_path_buf(),
+        rune_linux_sandbox_exe.as_ref().to_path_buf(),
         args,
         arg0,
         command_cwd,

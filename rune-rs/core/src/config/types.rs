@@ -4,11 +4,11 @@
 // definitions that do not contain business logic.
 
 use crate::config_loader::RequirementSource;
-pub use codex_protocol::config_types::AltScreenMode;
-pub use codex_protocol::config_types::ModeKind;
-pub use codex_protocol::config_types::Personality;
-pub use codex_protocol::config_types::WebSearchMode;
-use codex_utils_absolute_path::AbsolutePathBuf;
+pub use rune_protocol::config_types::AltScreenMode;
+pub use rune_protocol::config_types::ModeKind;
+pub use rune_protocol::config_types::Personality;
+pub use rune_protocol::config_types::WebSearchMode;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use std::fmt;
@@ -46,11 +46,11 @@ pub struct McpServerConfig {
     #[serde(flatten)]
     pub transport: McpServerTransportConfig,
 
-    /// When `false`, Codex skips initializing this MCP server.
+    /// When `false`, Rune skips initializing this MCP server.
     #[serde(default = "default_enabled")]
     pub enabled: bool,
 
-    /// When `true`, `codex exec` exits with an error if this MCP server fails to initialize.
+    /// When `true`, `rune exec` exits with an error if this MCP server fails to initialize.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub required: bool,
 
@@ -301,7 +301,7 @@ impl UriBasedFileOpener {
     }
 }
 
-/// Settings that govern if and what will be written to `~/.codex/history.jsonl`.
+/// Settings that govern if and what will be written to `~/.rune/history.jsonl`.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct History {
@@ -329,14 +329,14 @@ pub enum HistoryPersistence {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct AnalyticsConfigToml {
-    /// When `false`, disables analytics across Codex product surfaces in this profile.
+    /// When `false`, disables analytics across Rune product surfaces in this profile.
     pub enabled: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct FeedbackConfigToml {
-    /// When `false`, disables the feedback flow across Codex product surfaces.
+    /// When `false`, disables the feedback flow across Rune product surfaces.
     pub enabled: Option<bool>,
 }
 
@@ -360,7 +360,7 @@ impl fmt::Display for AppDisabledReason {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct AppConfig {
-    /// When `false`, Codex does not surface this app.
+    /// When `false`, Rune does not surface this app.
     #[serde(default = "default_enabled")]
     pub enabled: bool,
 
@@ -545,7 +545,7 @@ const fn default_true() -> bool {
 }
 
 /// Settings for notices we display to users via the tui and app-server clients
-/// (primarily the Codex IDE extension). NOTE: these are different from
+/// (primarily the Rune IDE extension). NOTE: these are different from
 /// notifications - notices are warnings, NUX screens, acknowledgements, etc.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default, JsonSchema)]
 pub struct Notice {
@@ -559,7 +559,7 @@ pub struct Notice {
     pub hide_gpt5_1_migration_prompt: Option<bool>,
     /// Tracks whether the user has seen the gpt-5.1-rune-max migration prompt
     #[serde(rename = "hide_gpt-5.1-rune-max_migration_prompt")]
-    pub hide_gpt_5_1_codex_max_migration_prompt: Option<bool>,
+    pub hide_gpt_5_1_rune_max_migration_prompt: Option<bool>,
     /// Tracks acknowledged model migrations as old->new model slug mappings.
     #[serde(default)]
     pub model_migrations: BTreeMap<String, String>,
@@ -597,7 +597,7 @@ pub struct SandboxWorkspaceWrite {
     pub exclude_slash_tmp: bool,
 }
 
-impl From<SandboxWorkspaceWrite> for codex_app_server_protocol::SandboxSettings {
+impl From<SandboxWorkspaceWrite> for rune_app_server_protocol::SandboxSettings {
     fn from(sandbox_workspace_write: SandboxWorkspaceWrite) -> Self {
         Self {
             writable_roots: sandbox_workspace_write.writable_roots,

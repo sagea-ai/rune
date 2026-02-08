@@ -5,4 +5,4 @@ fn main() {
 }
 
 #[cfg(unix)]
-pub use codex_exec_server::main_execve_wrapper as main;
+pub use rune_exec_server::main_execve_wrapper as main;

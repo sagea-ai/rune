@@ -5,15 +5,15 @@ mod seatbelt;
 
 use std::path::PathBuf;
 
-use codex_common::CliConfigOverrides;
-use codex_core::config::Config;
-use codex_core::config::ConfigOverrides;
-use codex_core::exec_env::create_env;
-use codex_core::landlock::spawn_command_under_linux_sandbox;
+use rune_common::CliConfigOverrides;
+use rune_core::config::Config;
+use rune_core::config::ConfigOverrides;
+use rune_core::exec_env::create_env;
+use rune_core::landlock::spawn_command_under_linux_sandbox;
 #[cfg(target_os = "macos")]
-use codex_core::seatbelt::spawn_command_under_seatbelt;
-use codex_core::spawn::StdioPolicy;
-use codex_protocol::config_types::SandboxMode;
+use rune_core::seatbelt::spawn_command_under_seatbelt;
+use rune_core::spawn::StdioPolicy;
+use rune_protocol::config_types::SandboxMode;
 
 use crate::LandlockCommand;
 use crate::SeatbeltCommand;
@@ -26,7 +26,7 @@ use seatbelt::DenialLogger;
 #[cfg(target_os = "macos")]
 pub async fn run_command_under_seatbelt(
     command: SeatbeltCommand,
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     let SeatbeltCommand {
         full_auto,
@@ -38,7 +38,7 @@ pub async fn run_command_under_seatbelt(
         full_auto,
         command,
         config_overrides,
-        codex_linux_sandbox_exe,
+        rune_linux_sandbox_exe,
         SandboxType::Seatbelt,
         log_denials,
     )
@@ -48,14 +48,14 @@ pub async fn run_command_under_seatbelt(
 #[cfg(not(target_os = "macos"))]
 pub async fn run_command_under_seatbelt(
     _command: SeatbeltCommand,
-    _codex_linux_sandbox_exe: Option<PathBuf>,
+    _rune_linux_sandbox_exe: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     anyhow::bail!("Seatbelt sandbox is only available on macOS");
 }
 
 pub async fn run_command_under_landlock(
     command: LandlockCommand,
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     let LandlockCommand {
         full_auto,
@@ -66,7 +66,7 @@ pub async fn run_command_under_landlock(
         full_auto,
         command,
         config_overrides,
-        codex_linux_sandbox_exe,
+        rune_linux_sandbox_exe,
         SandboxType::Landlock,
         false,
     )
@@ -75,7 +75,7 @@ pub async fn run_command_under_landlock(
 
 pub async fn run_command_under_windows(
     command: WindowsCommand,
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
 ) -> anyhow::Result<()> {
     let WindowsCommand {
         full_auto,
@@ -86,7 +86,7 @@ pub async fn run_command_under_windows(
         full_auto,
         command,
         config_overrides,
-        codex_linux_sandbox_exe,
+        rune_linux_sandbox_exe,
         SandboxType::Windows,
         false,
     )
@@ -104,7 +104,7 @@ async fn run_command_under_sandbox(
     full_auto: bool,
     command: Vec<String>,
     config_overrides: CliConfigOverrides,
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
     sandbox_type: SandboxType,
     log_denials: bool,
 ) -> anyhow::Result<()> {
@@ -115,7 +115,7 @@ async fn run_command_under_sandbox(
             .map_err(anyhow::Error::msg)?,
         ConfigOverrides {
             sandbox_mode: Some(sandbox_mode),
-            codex_linux_sandbox_exe,
+            rune_linux_sandbox_exe,
             ..Default::default()
         },
     )
@@ -136,10 +136,10 @@ async fn run_command_under_sandbox(
     if let SandboxType::Windows = sandbox_type {
         #[cfg(target_os = "windows")]
         {
-            use codex_core::windows_sandbox::WindowsSandboxLevelExt;
-            use codex_protocol::config_types::WindowsSandboxLevel;
-            use codex_windows_sandbox::run_windows_sandbox_capture;
-            use codex_windows_sandbox::run_windows_sandbox_capture_elevated;
+            use rune_core::windows_sandbox::WindowsSandboxLevelExt;
+            use rune_protocol::config_types::WindowsSandboxLevel;
+            use rune_windows_sandbox::run_windows_sandbox_capture;
+            use rune_windows_sandbox::run_windows_sandbox_capture_elevated;
 
             let policy_str = serde_json::to_string(config.sandbox_policy.get())?;
 
@@ -147,7 +147,7 @@ async fn run_command_under_sandbox(
             let cwd_clone = cwd.clone();
             let env_map = env.clone();
             let command_vec = command.clone();
-            let base_dir = config.codex_home.clone();
+            let base_dir = config.rune_home.clone();
             let use_elevated = matches!(
                 WindowsSandboxLevel::from_config(&config),
                 WindowsSandboxLevel::Elevated
@@ -227,14 +227,14 @@ async fn run_command_under_sandbox(
             .await?
         }
         SandboxType::Landlock => {
-            use codex_core::features::Feature;
+            use rune_core::features::Feature;
             #[expect(clippy::expect_used)]
-            let codex_linux_sandbox_exe = config
-                .codex_linux_sandbox_exe
+            let rune_linux_sandbox_exe = config
+                .rune_linux_sandbox_exe
                 .expect("rune-linux-sandbox executable not found");
             let use_bwrap_sandbox = config.features.enabled(Feature::UseLinuxSandboxBwrap);
             spawn_command_under_linux_sandbox(
-                codex_linux_sandbox_exe,
+                rune_linux_sandbox_exe,
                 command,
                 cwd,
                 config.sandbox_policy.get(),

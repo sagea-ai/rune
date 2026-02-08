@@ -1,15 +1,15 @@
 use chrono::DateTime;
 use chrono::Utc;
-use codex_api::AuthProvider as ApiAuthProvider;
-use codex_api::TransportError;
-use codex_api::error::ApiError;
-use codex_api::rate_limits::parse_promo_message;
-use codex_api::rate_limits::parse_rate_limit;
+use rune_api::AuthProvider as ApiAuthProvider;
+use rune_api::TransportError;
+use rune_api::error::ApiError;
+use rune_api::rate_limits::parse_promo_message;
+use rune_api::rate_limits::parse_rate_limit;
 use http::HeaderMap;
 use serde::Deserialize;
 
-use crate::auth::CodexAuth;
-use crate::error::CodexErr;
+use crate::auth::RuneAuth;
+use crate::error::RuneErr;
 use crate::error::ModelCapError;
 use crate::error::RetryLimitReachedError;
 use crate::error::UnexpectedResponseError;
@@ -17,21 +17,21 @@ use crate::error::UsageLimitReachedError;
 use crate::model_provider_info::ModelProviderInfo;
 use crate::token_data::PlanType;
 
-pub(crate) fn map_api_error(err: ApiError) -> CodexErr {
+pub(crate) fn map_api_error(err: ApiError) -> RuneErr {
     match err {
-        ApiError::ContextWindowExceeded => CodexErr::ContextWindowExceeded,
-        ApiError::QuotaExceeded => CodexErr::QuotaExceeded,
-        ApiError::UsageNotIncluded => CodexErr::UsageNotIncluded,
-        ApiError::Retryable { message, delay } => CodexErr::Stream(message, delay),
-        ApiError::Stream(msg) => CodexErr::Stream(msg, None),
-        ApiError::Api { status, message } => CodexErr::UnexpectedStatus(UnexpectedResponseError {
+        ApiError::ContextWindowExceeded => RuneErr::ContextWindowExceeded,
+        ApiError::QuotaExceeded => RuneErr::QuotaExceeded,
+        ApiError::UsageNotIncluded => RuneErr::UsageNotIncluded,
+        ApiError::Retryable { message, delay } => RuneErr::Stream(message, delay),
+        ApiError::Stream(msg) => RuneErr::Stream(msg, None),
+        ApiError::Api { status, message } => RuneErr::UnexpectedStatus(UnexpectedResponseError {
             status,
             body: message,
             url: None,
             cf_ray: None,
             request_id: None,
         }),
-        ApiError::InvalidRequest { message } => CodexErr::InvalidRequest(message),
+        ApiError::InvalidRequest { message } => RuneErr::InvalidRequest(message),
         ApiError::Transport(transport) => match transport {
             TransportError::Http {
                 status,
@@ -45,12 +45,12 @@ pub(crate) fn map_api_error(err: ApiError) -> CodexErr {
                     if body_text
                         .contains("The image data you provided does not represent a valid image")
                     {
-                        CodexErr::InvalidImageRequest()
+                        RuneErr::InvalidImageRequest()
                     } else {
-                        CodexErr::InvalidRequest(body_text)
+                        RuneErr::InvalidRequest(body_text)
                     }
                 } else if status == http::StatusCode::INTERNAL_SERVER_ERROR {
-                    CodexErr::InternalServerError
+                    RuneErr::InternalServerError
                 } else if status == http::StatusCode::TOO_MANY_REQUESTS {
                     if let Some(model) = headers
                         .as_ref()
@@ -63,7 +63,7 @@ pub(crate) fn map_api_error(err: ApiError) -> CodexErr {
                             .and_then(|map| map.get(MODEL_CAP_RESET_AFTER_HEADER))
                             .and_then(|value| value.to_str().ok())
                             .and_then(|value| value.parse::<u64>().ok());
-                        return CodexErr::ModelCap(ModelCapError {
+                        return RuneErr::ModelCap(ModelCapError {
                             model,
                             reset_after_seconds,
                         });
@@ -77,23 +77,23 @@ pub(crate) fn map_api_error(err: ApiError) -> CodexErr {
                                 .error
                                 .resets_at
                                 .and_then(|seconds| DateTime::<Utc>::from_timestamp(seconds, 0));
-                            return CodexErr::UsageLimitReached(UsageLimitReachedError {
+                            return RuneErr::UsageLimitReached(UsageLimitReachedError {
                                 plan_type: err.error.plan_type,
                                 resets_at,
                                 rate_limits,
                                 promo_message,
                             });
                         } else if err.error.error_type.as_deref() == Some("usage_not_included") {
-                            return CodexErr::UsageNotIncluded;
+                            return RuneErr::UsageNotIncluded;
                         }
                     }
 
-                    CodexErr::RetryLimit(RetryLimitReachedError {
+                    RuneErr::RetryLimit(RetryLimitReachedError {
                         status,
                         request_id: extract_request_tracking_id(headers.as_ref()),
                     })
                 } else {
-                    CodexErr::UnexpectedStatus(UnexpectedResponseError {
+                    RuneErr::UnexpectedStatus(UnexpectedResponseError {
                         status,
                         body: body_text,
                         url,
@@ -102,16 +102,16 @@ pub(crate) fn map_api_error(err: ApiError) -> CodexErr {
                     })
                 }
             }
-            TransportError::RetryLimit => CodexErr::RetryLimit(RetryLimitReachedError {
+            TransportError::RetryLimit => RuneErr::RetryLimit(RetryLimitReachedError {
                 status: http::StatusCode::INTERNAL_SERVER_ERROR,
                 request_id: None,
             }),
-            TransportError::Timeout => CodexErr::Timeout,
+            TransportError::Timeout => RuneErr::Timeout,
             TransportError::Network(msg) | TransportError::Build(msg) => {
-                CodexErr::Stream(msg, None)
+                RuneErr::Stream(msg, None)
             }
         },
-        ApiError::RateLimit(msg) => CodexErr::Stream(msg, None),
+        ApiError::RateLimit(msg) => RuneErr::Stream(msg, None),
     }
 }
 
@@ -124,7 +124,7 @@ const CF_RAY_HEADER: &str = "cf-ray";
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_api::TransportError;
+    use rune_api::TransportError;
     use http::HeaderMap;
     use http::StatusCode;
 
@@ -146,8 +146,8 @@ mod tests {
             body: Some(String::new()),
         }));
 
-        let CodexErr::ModelCap(model_cap) = err else {
-            panic!("expected CodexErr::ModelCap, got {err:?}");
+        let RuneErr::ModelCap(model_cap) = err else {
+            panic!("expected RuneErr::ModelCap, got {err:?}");
         };
         assert_eq!(model_cap.model, "boomslang");
         assert_eq!(model_cap.reset_after_seconds, Some(120));
@@ -172,7 +172,7 @@ fn extract_header(headers: Option<&HeaderMap>, name: &str) -> Option<String> {
 }
 
 pub(crate) fn auth_provider_from_auth(
-    auth: Option<CodexAuth>,
+    auth: Option<RuneAuth>,
     provider: &ModelProviderInfo,
 ) -> crate::error::Result<CoreAuthProvider> {
     if let Some(api_key) = provider.api_key()? {

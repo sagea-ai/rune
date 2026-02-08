@@ -1,4 +1,4 @@
-use crate::codex::TurnContext;
+use crate::rune::TurnContext;
 use crate::context_manager::normalize;
 use crate::instructions::SkillInstructions;
 use crate::instructions::UserInstructions;
@@ -9,14 +9,14 @@ use crate::truncate::approx_tokens_from_byte_count;
 use crate::truncate::truncate_function_output_items_with_policy;
 use crate::truncate::truncate_text;
 use crate::user_shell_command::is_user_shell_command_text;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::FunctionCallOutputContentItem;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::TokenUsage;
-use codex_protocol::protocol::TokenUsageInfo;
+use rune_protocol::models::BaseInstructions;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputContentItem;
+use rune_protocol::models::FunctionCallOutputPayload;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::protocol::TokenUsage;
+use rune_protocol::protocol::TokenUsageInfo;
 use std::ops::Deref;
 
 /// Transcript of thread history
@@ -236,10 +236,10 @@ impl ContextManager {
             })
     }
 
-    fn get_trailing_codex_generated_items_tokens(&self) -> i64 {
+    fn get_trailing_rune_generated_items_tokens(&self) -> i64 {
         let mut total = 0i64;
         for item in self.items.iter().rev() {
-            if !is_codex_generated_item(item) {
+            if !is_rune_generated_item(item) {
                 break;
             }
             total = total.saturating_add(estimate_item_token_count(item));
@@ -255,13 +255,13 @@ impl ContextManager {
             .as_ref()
             .map(|info| info.last_token_usage.total_tokens)
             .unwrap_or(0);
-        let trailing_codex_generated_tokens = self.get_trailing_codex_generated_items_tokens();
+        let trailing_rune_generated_tokens = self.get_trailing_rune_generated_items_tokens();
         if server_reasoning_included {
-            last_tokens.saturating_add(trailing_codex_generated_tokens)
+            last_tokens.saturating_add(trailing_rune_generated_tokens)
         } else {
             last_tokens
                 .saturating_add(self.get_non_last_reasoning_items_tokens())
-                .saturating_add(trailing_codex_generated_tokens)
+                .saturating_add(trailing_rune_generated_tokens)
         }
     }
 
@@ -367,7 +367,7 @@ fn estimate_item_token_count(item: &ResponseItem) -> i64 {
     }
 }
 
-pub(crate) fn is_codex_generated_item(item: &ResponseItem) -> bool {
+pub(crate) fn is_rune_generated_item(item: &ResponseItem) -> bool {
     matches!(
         item,
         ResponseItem::FunctionCallOutput { .. } | ResponseItem::CustomToolCallOutput { .. }

@@ -1,8 +1,8 @@
 use std::time::Duration;
 use std::time::Instant;
 
-use codex_core::protocol::ExecCommandSource;
-use codex_protocol::parse_command::ParsedCommand;
+use rune_core::protocol::ExecCommandSource;
+use rune_protocol::parse_command::ParsedCommand;
 
 #[derive(Clone, Debug, Default)]
 pub(crate) struct CommandOutput {

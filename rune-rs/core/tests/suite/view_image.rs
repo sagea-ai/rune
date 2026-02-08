@@ -2,12 +2,12 @@
 
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::user_input::UserInput;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -16,8 +16,8 @@ use core_test_support::responses::ev_response_created;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRune;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_with_timeout;
 use image::GenericImageView;
@@ -52,12 +52,12 @@ async fn user_turn_with_local_image_attaches_image() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         cwd,
         session_configured,
         ..
-    } = test_codex().build(&server).await?;
+    } = test_rune().build(&server).await?;
 
     let rel_path = "user-turn/example.png";
     let abs_path = cwd.path().join(rel_path);
@@ -78,7 +78,7 @@ async fn user_turn_with_local_image_attaches_image() -> anyhow::Result<()> {
 
     let session_model = session_configured.model.clone();
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::LocalImage {
                 path: abs_path.clone(),
@@ -96,7 +96,7 @@ async fn user_turn_with_local_image_attaches_image() -> anyhow::Result<()> {
         .await?;
 
     wait_for_event_with_timeout(
-        &codex,
+        &rune,
         |event| matches!(event, EventMsg::TurnComplete(_)),
         // Empirically, image attachment can be slow under Bazel/RBE.
         Duration::from_secs(10),
@@ -144,12 +144,12 @@ async fn view_image_tool_attaches_local_image() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         cwd,
         session_configured,
         ..
-    } = test_codex().build(&server).await?;
+    } = test_rune().build(&server).await?;
 
     let rel_path = "assets/example.png";
     let abs_path = cwd.path().join(rel_path);
@@ -179,7 +179,7 @@ async fn view_image_tool_attaches_local_image() -> anyhow::Result<()> {
 
     let session_model = session_configured.model.clone();
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "please add the screenshot".into(),
@@ -199,7 +199,7 @@ async fn view_image_tool_attaches_local_image() -> anyhow::Result<()> {
 
     let mut tool_event = None;
     wait_for_event_with_timeout(
-        &codex,
+        &rune,
         |event| match event {
             EventMsg::ViewImageToolCall(_) => {
                 tool_event = Some(event.clone());
@@ -283,12 +283,12 @@ async fn view_image_tool_errors_when_path_is_directory() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         cwd,
         session_configured,
         ..
-    } = test_codex().build(&server).await?;
+    } = test_rune().build(&server).await?;
 
     let rel_path = "assets";
     let abs_path = cwd.path().join(rel_path);
@@ -312,7 +312,7 @@ async fn view_image_tool_errors_when_path_is_directory() -> anyhow::Result<()> {
 
     let session_model = session_configured.model.clone();
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "please attach the folder".into(),
@@ -330,7 +330,7 @@ async fn view_image_tool_errors_when_path_is_directory() -> anyhow::Result<()> {
         })
         .await?;
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let req = mock.single_request();
     let body_with_tool_output = req.body_json();
@@ -355,12 +355,12 @@ async fn view_image_tool_placeholder_for_non_image_files() -> anyhow::Result<()>
 
     let server = start_mock_server().await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         cwd,
         session_configured,
         ..
-    } = test_codex().build(&server).await?;
+    } = test_rune().build(&server).await?;
 
     let rel_path = "assets/example.json";
     let abs_path = cwd.path().join(rel_path);
@@ -387,7 +387,7 @@ async fn view_image_tool_placeholder_for_non_image_files() -> anyhow::Result<()>
 
     let session_model = session_configured.model.clone();
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "please use the view_image tool to read the json file".into(),
@@ -405,7 +405,7 @@ async fn view_image_tool_placeholder_for_non_image_files() -> anyhow::Result<()>
         })
         .await?;
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let request = mock.single_request();
     assert!(
@@ -421,7 +421,7 @@ async fn view_image_tool_placeholder_for_non_image_files() -> anyhow::Result<()>
             content.iter().find_map(|span| {
                 if span.get("type").and_then(Value::as_str) == Some("input_text") {
                     let text = span.get("text").and_then(Value::as_str)?;
-                    if text.contains("Codex could not read the local image at")
+                    if text.contains("Rune could not read the local image at")
                         && text.contains("unsupported MIME type `application/json`")
                     {
                         return Some(text.to_string());
@@ -453,12 +453,12 @@ async fn view_image_tool_errors_when_file_missing() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         cwd,
         session_configured,
         ..
-    } = test_codex().build(&server).await?;
+    } = test_rune().build(&server).await?;
 
     let rel_path = "missing/example.png";
     let abs_path = cwd.path().join(rel_path);
@@ -481,7 +481,7 @@ async fn view_image_tool_errors_when_file_missing() -> anyhow::Result<()> {
 
     let session_model = session_configured.model.clone();
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "please attach the missing image".into(),
@@ -499,7 +499,7 @@ async fn view_image_tool_errors_when_file_missing() -> anyhow::Result<()> {
         })
         .await?;
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let req = mock.single_request();
     let body_with_tool_output = req.body_json();
@@ -548,12 +548,12 @@ async fn replaces_invalid_local_image_after_bad_request() -> anyhow::Result<()> 
 
     let completion_mock = responses::mount_sse_once(&server, success_response).await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         cwd,
         session_configured,
         ..
-    } = test_codex().build(&server).await?;
+    } = test_rune().build(&server).await?;
 
     let rel_path = "assets/poisoned.png";
     let abs_path = cwd.path().join(rel_path);
@@ -565,7 +565,7 @@ async fn replaces_invalid_local_image_after_bad_request() -> anyhow::Result<()> 
 
     let session_model = session_configured.model.clone();
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::LocalImage {
                 path: abs_path.clone(),
@@ -582,7 +582,7 @@ async fn replaces_invalid_local_image_after_bad_request() -> anyhow::Result<()> 
         })
         .await?;
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let first_body = invalid_image_mock.single_request().body_json();
     assert!(

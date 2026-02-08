@@ -1,12 +1,12 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use anyhow::Result;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::user_input::UserInput;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_function_call;
@@ -14,7 +14,7 @@ use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use serde_json::json;
 use std::fs;
@@ -26,8 +26,8 @@ async fn execpolicy_blocks_shell_invocation() -> Result<()> {
         return Ok(());
     }
 
-    let mut builder = test_codex().with_config(|config| {
-        let policy_path = config.codex_home.join("rules").join("policy.rules");
+    let mut builder = test_rune().with_config(|config| {
+        let policy_path = config.rune_home.join("rules").join("policy.rules");
         fs::create_dir_all(
             policy_path
                 .parent()
@@ -68,7 +68,7 @@ async fn execpolicy_blocks_shell_invocation() -> Result<()> {
     .await;
 
     let session_model = test.session_configured.model.clone();
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "run shell command".into(),
@@ -86,14 +86,14 @@ async fn execpolicy_blocks_shell_invocation() -> Result<()> {
         })
         .await?;
 
-    let EventMsg::ExecCommandEnd(end) = wait_for_event(&test.codex, |event| {
+    let EventMsg::ExecCommandEnd(end) = wait_for_event(&test.rune, |event| {
         matches!(event, EventMsg::ExecCommandEnd(_))
     })
     .await
     else {
         unreachable!()
     };
-    wait_for_event(&test.codex, |event| {
+    wait_for_event(&test.rune, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;

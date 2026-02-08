@@ -1,6 +1,6 @@
-use crate::codex::Session;
-use crate::codex::TurnContext;
-use crate::error::CodexErr;
+use crate::rune::Session;
+use crate::rune::TurnContext;
+use crate::error::RuneErr;
 use crate::error::SandboxErr;
 use crate::exec::ExecToolCallOutput;
 use crate::function_tool::FunctionCallError;
@@ -15,7 +15,7 @@ use crate::protocol::PatchApplyEndEvent;
 use crate::protocol::TurnDiffEvent;
 use crate::tools::context::SharedTurnDiffTracker;
 use crate::tools::sandboxing::ToolError;
-use codex_protocol::parse_command::ParsedCommand;
+use rune_protocol::parse_command::ParsedCommand;
 use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
@@ -285,14 +285,14 @@ impl ToolEmitter {
                 };
                 (event, result)
             }
-            Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Timeout { output })))
-            | Err(ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied { output }))) => {
+            Err(ToolError::Rune(RuneErr::Sandbox(SandboxErr::Timeout { output })))
+            | Err(ToolError::Rune(RuneErr::Sandbox(SandboxErr::Denied { output }))) => {
                 let response = self.format_exec_output_for_model(&output, ctx);
                 let event = ToolEventStage::Failure(ToolEventFailure::Output(*output));
                 let result = Err(FunctionCallError::RespondToModel(response));
                 (event, result)
             }
-            Err(ToolError::Codex(err)) => {
+            Err(ToolError::Rune(err)) => {
                 let message = format!("execution error: {err:?}");
                 let event = ToolEventStage::Failure(ToolEventFailure::Message(message.clone()));
                 let result = Err(FunctionCallError::RespondToModel(message));

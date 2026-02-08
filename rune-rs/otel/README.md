@@ -1,10 +1,10 @@
 # rune-otel
 
-`rune-otel` is the OpenTelemetry integration crate for Codex. It provides:
+`rune-otel` is the OpenTelemetry integration crate for Rune. It provides:
 
-- Trace/log/metrics exporters and tracing subscriber layers (`codex_otel::otel_provider`).
-- A structured event helper (`codex_otel::OtelManager`).
-- OpenTelemetry metrics support via OTLP exporters (`codex_otel::metrics`).
+- Trace/log/metrics exporters and tracing subscriber layers (`rune_otel::otel_provider`).
+- A structured event helper (`rune_otel::OtelManager`).
+- OpenTelemetry metrics support via OTLP exporters (`rune_otel::metrics`).
 - A metrics facade on `OtelManager` so tracing + metrics share metadata.
 
 ## Tracing and logs
@@ -14,17 +14,17 @@ metrics (when enabled), then attach its layers to your `tracing_subscriber`
 registry:
 
 ```rust
-use codex_otel::config::OtelExporter;
-use codex_otel::config::OtelHttpProtocol;
-use codex_otel::config::OtelSettings;
-use codex_otel::otel_provider::OtelProvider;
+use rune_otel::config::OtelExporter;
+use rune_otel::config::OtelHttpProtocol;
+use rune_otel::config::OtelSettings;
+use rune_otel::otel_provider::OtelProvider;
 use tracing_subscriber::prelude::*;
 
 let settings = OtelSettings {
     environment: "dev".to_string(),
     service_name: "rune-cli".to_string(),
     service_version: env!("CARGO_PKG_VERSION").to_string(),
-    codex_home: std::path::PathBuf::from("/tmp"),
+    rune_home: std::path::PathBuf::from("/tmp"),
     exporter: OtelExporter::OtlpHttp {
         endpoint: "https://otlp.example.com".to_string(),
         headers: std::collections::HashMap::new(),
@@ -51,10 +51,10 @@ if let Some(provider) = OtelProvider::from(&settings)? {
 ## OtelManager (events)
 
 `OtelManager` adds consistent metadata to tracing events and helps record
-Codex-specific events.
+Rune-specific events.
 
 ```rust
-use codex_otel::OtelManager;
+use rune_otel::OtelManager;
 
 let manager = OtelManager::new(
     conversation_id,
@@ -79,12 +79,12 @@ Modes:
 - In-memory: records via `opentelemetry_sdk::metrics::InMemoryMetricExporter` for tests/assertions; call `shutdown()` to flush.
 
 `rune-otel` also provides `OtelExporter::Statsig`, a shorthand for exporting OTLP/HTTP JSON metrics
-to Statsig using Codex-internal defaults.
+to Statsig using Rune-internal defaults.
 
 Statsig ingestion (OTLP/HTTP JSON) example:
 
 ```rust
-use codex_otel::config::{OtelExporter, OtelHttpProtocol};
+use rune_otel::config::{OtelExporter, OtelHttpProtocol};
 
 let metrics = MetricsClient::new(MetricsConfig::otlp(
     "dev",
@@ -101,8 +101,8 @@ let metrics = MetricsClient::new(MetricsConfig::otlp(
     },
 ))?;
 
-metrics.counter("codex.session_started", 1, &[("source", "tui")])?;
-metrics.histogram("codex.request_latency", 83, &[("route", "chat")])?;
+metrics.counter("rune.session_started", 1, &[("source", "tui")])?;
+metrics.histogram("rune.request_latency", 83, &[("route", "chat")])?;
 ```
 
 In-memory (tests):
@@ -115,7 +115,7 @@ let metrics = MetricsClient::new(MetricsConfig::in_memory(
     env!("CARGO_PKG_VERSION"),
     exporter.clone(),
 ))?;
-metrics.counter("codex.turns", 1, &[("model", "gpt-5.1")])?;
+metrics.counter("rune.turns", 1, &[("model", "gpt-5.1")])?;
 metrics.shutdown()?; // flushes in-memory exporter
 ```
 

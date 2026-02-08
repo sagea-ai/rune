@@ -1,6 +1,6 @@
 # rune-network-proxy
 
-`rune-network-proxy` is Codex's local network policy enforcement proxy. It runs:
+`rune-network-proxy` is Rune's local network policy enforcement proxy. It runs:
 
 - an HTTP proxy (default `127.0.0.1:3128`)
 - an optional SOCKS5 proxy (default `127.0.0.1:8081`, disabled by default)
@@ -12,7 +12,7 @@ It enforces an allow/deny policy and a "limited" mode intended for read-only net
 
 ### 1) Configure
 
-`rune-network-proxy` reads from Codex's merged `config.toml` (via `rune-core` config loading).
+`rune-network-proxy` reads from Rune's merged `config.toml` (via `rune-core` config loading).
 
 Example config:
 
@@ -88,7 +88,7 @@ blocked because they would bypass method enforcement.
 `rune-network-proxy` can be embedded as a library with a thin API:
 
 ```rust
-use codex_network_proxy::{NetworkProxy, NetworkDecision, NetworkPolicyRequest};
+use rune_network_proxy::{NetworkProxy, NetworkDecision, NetworkPolicyRequest};
 
 let proxy = NetworkProxy::builder()
     .http_addr("127.0.0.1:8080".parse()?)

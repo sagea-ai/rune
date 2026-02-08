@@ -82,7 +82,7 @@ pub async fn list_remote_skills(config: &Config) -> Result<Vec<RemoteSkillSummar
     let response = client
         .get(&url)
         .timeout(REMOTE_SKILLS_API_TIMEOUT)
-        .query(&[("product_surface", "codex")])
+        .query(&[("product_surface", "rune")])
         .send()
         .await
         .with_context(|| format!("Failed to send request to {url}"))?;
@@ -147,13 +147,13 @@ pub async fn download_remote_skill(
         .ok_or_else(|| anyhow::anyhow!("Remote skill has no valid directory name"))?;
     let output_root = if is_preload {
         config
-            .codex_home
+            .rune_home
             .join("vendor_imports")
             .join("skills")
             .join("skills")
             .join(".curated")
     } else {
-        config.codex_home.join("skills").join("downloaded")
+        config.rune_home.join("skills").join("downloaded")
     };
     let output_dir = output_root.join(dir_name);
     tokio::fs::create_dir_all(&output_dir)
@@ -274,7 +274,7 @@ async fn fetch_remote_skill(config: &Config, hazelnut_id: &str) -> Result<Remote
     let response = client
         .get(&url)
         .timeout(REMOTE_SKILLS_API_TIMEOUT)
-        .query(&[("product_surface", "codex")])
+        .query(&[("product_surface", "rune")])
         .send()
         .await
         .with_context(|| format!("Failed to send request to {url}"))?;

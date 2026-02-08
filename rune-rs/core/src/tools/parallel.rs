@@ -9,17 +9,17 @@ use tracing::Instrument;
 use tracing::instrument;
 use tracing::trace_span;
 
-use crate::codex::Session;
-use crate::codex::TurnContext;
-use crate::error::CodexErr;
+use crate::rune::Session;
+use crate::rune::TurnContext;
+use crate::error::RuneErr;
 use crate::function_tool::FunctionCallError;
 use crate::tools::context::SharedTurnDiffTracker;
 use crate::tools::context::ToolPayload;
 use crate::tools::router::ToolCall;
 use crate::tools::router::ToolRouter;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::ResponseInputItem;
+use rune_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputPayload;
+use rune_protocol::models::ResponseInputItem;
 
 #[derive(Clone)]
 pub(crate) struct ToolCallRuntime {
@@ -51,7 +51,7 @@ impl ToolCallRuntime {
         self,
         call: ToolCall,
         cancellation_token: CancellationToken,
-    ) -> impl std::future::Future<Output = Result<ResponseInputItem, CodexErr>> {
+    ) -> impl std::future::Future<Output = Result<ResponseInputItem, RuneErr>> {
         let supports_parallel = self.router.tool_supports_parallel(&call.tool_name);
 
         let router = Arc::clone(&self.router);
@@ -95,9 +95,9 @@ impl ToolCallRuntime {
         async move {
             match handle.await {
                 Ok(Ok(response)) => Ok(response),
-                Ok(Err(FunctionCallError::Fatal(message))) => Err(CodexErr::Fatal(message)),
-                Ok(Err(other)) => Err(CodexErr::Fatal(other.to_string())),
-                Err(err) => Err(CodexErr::Fatal(format!(
+                Ok(Err(FunctionCallError::Fatal(message))) => Err(RuneErr::Fatal(message)),
+                Ok(Err(other)) => Err(RuneErr::Fatal(other.to_string())),
+                Err(err) => Err(RuneErr::Fatal(format!(
                     "tool task failed to receive: {err:?}"
                 ))),
             }

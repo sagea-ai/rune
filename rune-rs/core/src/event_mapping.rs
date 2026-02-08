@@ -1,20 +1,20 @@
-use codex_protocol::items::AgentMessageContent;
-use codex_protocol::items::AgentMessageItem;
-use codex_protocol::items::ReasoningItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::items::UserMessageItem;
-use codex_protocol::items::WebSearchItem;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::models::ReasoningItemContent;
-use codex_protocol::models::ReasoningItemReasoningSummary;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::models::WebSearchAction;
-use codex_protocol::models::is_image_close_tag_text;
-use codex_protocol::models::is_image_open_tag_text;
-use codex_protocol::models::is_local_image_close_tag_text;
-use codex_protocol::models::is_local_image_open_tag_text;
-use codex_protocol::user_input::UserInput;
+use rune_protocol::items::AgentMessageContent;
+use rune_protocol::items::AgentMessageItem;
+use rune_protocol::items::ReasoningItem;
+use rune_protocol::items::TurnItem;
+use rune_protocol::items::UserMessageItem;
+use rune_protocol::items::WebSearchItem;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::MessagePhase;
+use rune_protocol::models::ReasoningItemContent;
+use rune_protocol::models::ReasoningItemReasoningSummary;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::models::WebSearchAction;
+use rune_protocol::models::is_image_close_tag_text;
+use rune_protocol::models::is_image_open_tag_text;
+use rune_protocol::models::is_local_image_close_tag_text;
+use rune_protocol::models::is_local_image_open_tag_text;
+use rune_protocol::user_input::UserInput;
 use tracing::warn;
 use uuid::Uuid;
 
@@ -156,15 +156,15 @@ pub fn parse_turn_item(item: &ResponseItem) -> Option<TurnItem> {
 #[cfg(test)]
 mod tests {
     use super::parse_turn_item;
-    use codex_protocol::items::AgentMessageContent;
-    use codex_protocol::items::TurnItem;
-    use codex_protocol::items::WebSearchItem;
-    use codex_protocol::models::ContentItem;
-    use codex_protocol::models::ReasoningItemContent;
-    use codex_protocol::models::ReasoningItemReasoningSummary;
-    use codex_protocol::models::ResponseItem;
-    use codex_protocol::models::WebSearchAction;
-    use codex_protocol::user_input::UserInput;
+    use rune_protocol::items::AgentMessageContent;
+    use rune_protocol::items::TurnItem;
+    use rune_protocol::items::WebSearchItem;
+    use rune_protocol::models::ContentItem;
+    use rune_protocol::models::ReasoningItemContent;
+    use rune_protocol::models::ReasoningItemReasoningSummary;
+    use rune_protocol::models::ResponseItem;
+    use rune_protocol::models::WebSearchAction;
+    use rune_protocol::user_input::UserInput;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -211,7 +211,7 @@ mod tests {
     #[test]
     fn skips_local_image_label_text() {
         let image_url = "data:image/png;base64,abc".to_string();
-        let label = codex_protocol::models::local_image_open_tag_text(1);
+        let label = rune_protocol::models::local_image_open_tag_text(1);
         let user_text = "Please review this image.".to_string();
 
         let item = ResponseItem::Message {
@@ -253,7 +253,7 @@ mod tests {
     #[test]
     fn skips_unnamed_image_label_text() {
         let image_url = "data:image/png;base64,abc".to_string();
-        let label = codex_protocol::models::image_open_tag_text();
+        let label = rune_protocol::models::image_open_tag_text();
         let user_text = "Please review this image.".to_string();
 
         let item = ResponseItem::Message {
@@ -265,7 +265,7 @@ mod tests {
                     image_url: image_url.clone(),
                 },
                 ContentItem::InputText {
-                    text: codex_protocol::models::image_close_tag_text(),
+                    text: rune_protocol::models::image_close_tag_text(),
                 },
                 ContentItem::InputText {
                     text: user_text.clone(),
@@ -355,7 +355,7 @@ mod tests {
             id: Some("msg-1".to_string()),
             role: "assistant".to_string(),
             content: vec![ContentItem::OutputText {
-                text: "Hello from Codex".to_string(),
+                text: "Hello from Rune".to_string(),
             }],
             end_turn: None,
             phase: None,
@@ -368,7 +368,7 @@ mod tests {
                 let Some(AgentMessageContent::Text { text }) = message.content.first() else {
                     panic!("expected agent message text content");
                 };
-                assert_eq!(text, "Hello from Codex");
+                assert_eq!(text, "Hello from Rune");
             }
             other => panic!("expected TurnItem::AgentMessage, got {other:?}"),
         }

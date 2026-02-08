@@ -5,23 +5,23 @@ use app_test_support::create_mock_responses_server_repeating_assistant;
 use app_test_support::rollout_path;
 use app_test_support::to_response;
 use chrono::Utc;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SessionSource;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadResumeParams;
-use codex_app_server_protocol::ThreadResumeResponse;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::UserInput;
-use codex_protocol::config_types::Personality;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::user_input::ByteRange;
-use codex_protocol::user_input::TextElement;
+use rune_app_server_protocol::JSONRPCError;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::SessionSource;
+use rune_app_server_protocol::ThreadItem;
+use rune_app_server_protocol::ThreadResumeParams;
+use rune_app_server_protocol::ThreadResumeResponse;
+use rune_app_server_protocol::ThreadStartParams;
+use rune_app_server_protocol::ThreadStartResponse;
+use rune_app_server_protocol::TurnStartParams;
+use rune_app_server_protocol::TurnStatus;
+use rune_app_server_protocol::UserInput;
+use rune_protocol::config_types::Personality;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::user_input::ByteRange;
+use rune_protocol::user_input::TextElement;
 use core_test_support::responses;
 use core_test_support::skip_if_no_network;
 use pretty_assertions::assert_eq;
@@ -32,15 +32,15 @@ use tempfile::TempDir;
 use tokio::time::timeout;
 
 const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
-const CODEX_5_2_INSTRUCTIONS_TEMPLATE_DEFAULT: &str = "You are Codex, a coding agent based on GPT-5. You and the user share the same workspace and collaborate to achieve the user's goals.";
+const RUNE_5_2_INSTRUCTIONS_TEMPLATE_DEFAULT: &str = "You are Rune, a coding agent based on GPT-5. You and the user share the same workspace and collaborate to achieve the user's goals.";
 
 #[tokio::test]
 async fn thread_resume_rejects_unmaterialized_thread() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // Start a thread.
@@ -84,8 +84,8 @@ async fn thread_resume_rejects_unmaterialized_thread() -> Result<()> {
 #[tokio::test]
 async fn thread_resume_returns_rollout_history() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
     let preview = "Saved user message";
     let text_elements = vec![TextElement::new(
@@ -93,7 +93,7 @@ async fn thread_resume_returns_rollout_history() -> Result<()> {
         Some("<note>".into()),
     )];
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home.path(),
+        rune_home.path(),
         "2025-01-05T12-00-00",
         "2025-01-05T12:00:00Z",
         preview,
@@ -105,7 +105,7 @@ async fn thread_resume_returns_rollout_history() -> Result<()> {
         None,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let resume_id = mcp
@@ -157,11 +157,11 @@ async fn thread_resume_returns_rollout_history() -> Result<()> {
 #[tokio::test]
 async fn thread_resume_without_overrides_does_not_change_updated_at_or_mtime() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    let rollout = setup_rollout_fixture(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    let rollout = setup_rollout_fixture(rune_home.path(), &server.uri())?;
     let thread_id = rollout.conversation_id.clone();
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let resume_id = mcp
@@ -212,10 +212,10 @@ async fn thread_resume_without_overrides_does_not_change_updated_at_or_mtime() -
 #[tokio::test]
 async fn thread_resume_with_overrides_defers_updated_at_until_turn_start() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    let rollout = setup_rollout_fixture(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    let rollout = setup_rollout_fixture(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let resume_id = mcp
@@ -267,11 +267,11 @@ async fn thread_resume_with_overrides_defers_updated_at_until_turn_start() -> Re
 #[tokio::test]
 async fn thread_resume_fails_when_required_mcp_server_fails_to_initialize() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    let rollout = setup_rollout_fixture(codex_home.path(), &server.uri())?;
-    create_config_toml_with_required_broken_mcp(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    let rollout = setup_rollout_fixture(rune_home.path(), &server.uri())?;
+    create_config_toml_with_required_broken_mcp(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let resume_id = mcp
@@ -305,10 +305,10 @@ async fn thread_resume_fails_when_required_mcp_server_fails_to_initialize() -> R
 #[tokio::test]
 async fn thread_resume_prefers_path_over_thread_id() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
@@ -371,10 +371,10 @@ async fn thread_resume_prefers_path_over_thread_id() -> Result<()> {
 #[tokio::test]
 async fn thread_resume_supports_history_and_overrides() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // Start a thread.
@@ -446,15 +446,15 @@ async fn thread_resume_accepts_personality_override() -> Result<()> {
     ]);
     let response_mock = responses::mount_sse_sequence(&server, vec![first_body, second_body]).await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let start_id = mcp
         .send_thread_start_request(ThreadStartParams {
-            model: Some("gpt-5.2-codex".to_string()),
+            model: Some("gpt-5.2-rune".to_string()),
             ..Default::default()
         })
         .await?;
@@ -489,7 +489,7 @@ async fn thread_resume_accepts_personality_override() -> Result<()> {
     let resume_id = mcp
         .send_thread_resume_request(ThreadResumeParams {
             thread_id: thread.id,
-            model: Some("gpt-5.2-codex".to_string()),
+            model: Some("gpt-5.2-rune".to_string()),
             personality: Some(Personality::Friendly),
             ..Default::default()
         })
@@ -536,7 +536,7 @@ async fn thread_resume_accepts_personality_override() -> Result<()> {
     );
     let instructions_text = request.instructions_text();
     assert!(
-        instructions_text.contains(CODEX_5_2_INSTRUCTIONS_TEMPLATE_DEFAULT),
+        instructions_text.contains(RUNE_5_2_INSTRUCTIONS_TEMPLATE_DEFAULT),
         "expected default base instructions from history, got {instructions_text:?}"
     );
 
@@ -544,13 +544,13 @@ async fn thread_resume_accepts_personality_override() -> Result<()> {
 }
 
 // Helper to create a config.toml pointing at the mock model server.
-fn create_config_toml(codex_home: &std::path::Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &std::path::Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(
             r#"
-model = "gpt-5.2-codex"
+model = "gpt-5.2-rune"
 approval_policy = "never"
 sandbox_mode = "read-only"
 
@@ -572,15 +572,15 @@ stream_max_retries = 0
 }
 
 fn create_config_toml_with_required_broken_mcp(
-    codex_home: &std::path::Path,
+    rune_home: &std::path::Path,
     server_uri: &str,
 ) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(
             r#"
-model = "gpt-5.2-codex"
+model = "gpt-5.2-rune"
 approval_policy = "never"
 sandbox_mode = "read-only"
 
@@ -622,15 +622,15 @@ struct RolloutFixture {
     expected_updated_at: i64,
 }
 
-fn setup_rollout_fixture(codex_home: &Path, server_uri: &str) -> Result<RolloutFixture> {
-    create_config_toml(codex_home, server_uri)?;
+fn setup_rollout_fixture(rune_home: &Path, server_uri: &str) -> Result<RolloutFixture> {
+    create_config_toml(rune_home, server_uri)?;
 
     let preview = "Saved user message";
     let filename_ts = "2025-01-05T12-00-00";
     let meta_rfc3339 = "2025-01-05T12:00:00Z";
     let expected_updated_at_rfc3339 = "2025-01-07T00:00:00Z";
     let conversation_id = create_fake_rollout_with_text_elements(
-        codex_home,
+        rune_home,
         filename_ts,
         meta_rfc3339,
         preview,
@@ -638,7 +638,7 @@ fn setup_rollout_fixture(codex_home: &Path, server_uri: &str) -> Result<RolloutF
         Some("mock_provider"),
         None,
     )?;
-    let rollout_file_path = rollout_path(codex_home, filename_ts, &conversation_id);
+    let rollout_file_path = rollout_path(rune_home, filename_ts, &conversation_id);
     set_rollout_mtime(rollout_file_path.as_path(), expected_updated_at_rfc3339)?;
     let before_modified = std::fs::metadata(&rollout_file_path)?.modified()?;
     let expected_updated_at = chrono::DateTime::parse_from_rfc3339(expected_updated_at_rfc3339)?

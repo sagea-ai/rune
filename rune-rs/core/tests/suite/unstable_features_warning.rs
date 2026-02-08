@@ -1,15 +1,15 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use codex_core::AuthManager;
-use codex_core::CodexAuth;
-use codex_core::NewThread;
-use codex_core::ThreadManager;
-use codex_core::config::CONFIG_TOML_FILE;
-use codex_core::features::Feature;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::InitialHistory;
-use codex_core::protocol::WarningEvent;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_core::AuthManager;
+use rune_core::RuneAuth;
+use rune_core::NewThread;
+use rune_core::ThreadManager;
+use rune_core::config::CONFIG_TOML_FILE;
+use rune_core::features::Feature;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::InitialHistory;
+use rune_core::protocol::WarningEvent;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use core::time::Duration;
 use core_test_support::load_default_config_for_test;
 use core_test_support::wait_for_event;
@@ -23,7 +23,7 @@ async fn emits_warning_when_unstable_features_enabled_via_config() {
     let mut config = load_default_config_for_test(&home).await;
     config.features.enable(Feature::ChildAgentsMd);
     let user_config_path =
-        AbsolutePathBuf::from_absolute_path(config.codex_home.join(CONFIG_TOML_FILE))
+        AbsolutePathBuf::from_absolute_path(config.rune_home.join(CONFIG_TOML_FILE))
             .expect("absolute user config path");
     config.config_layer_stack = config.config_layer_stack.with_user_config(
         &user_config_path,
@@ -31,10 +31,10 @@ async fn emits_warning_when_unstable_features_enabled_via_config() {
     );
 
     let thread_manager = ThreadManager::with_models_provider(
-        CodexAuth::from_api_key("test"),
+        RuneAuth::from_api_key("test"),
         config.model_provider.clone(),
     );
-    let auth_manager = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("test"));
+    let auth_manager = AuthManager::from_auth_for_testing(RuneAuth::from_api_key("test"));
 
     let NewThread {
         thread: conversation,
@@ -60,7 +60,7 @@ async fn suppresses_warning_when_configured() {
     config.features.enable(Feature::ChildAgentsMd);
     config.suppress_unstable_features_warning = true;
     let user_config_path =
-        AbsolutePathBuf::from_absolute_path(config.codex_home.join(CONFIG_TOML_FILE))
+        AbsolutePathBuf::from_absolute_path(config.rune_home.join(CONFIG_TOML_FILE))
             .expect("absolute user config path");
     config.config_layer_stack = config.config_layer_stack.with_user_config(
         &user_config_path,
@@ -68,10 +68,10 @@ async fn suppresses_warning_when_configured() {
     );
 
     let thread_manager = ThreadManager::with_models_provider(
-        CodexAuth::from_api_key("test"),
+        RuneAuth::from_api_key("test"),
         config.model_provider.clone(),
     );
-    let auth_manager = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("test"));
+    let auth_manager = AuthManager::from_auth_for_testing(RuneAuth::from_api_key("test"));
 
     let NewThread {
         thread: conversation,

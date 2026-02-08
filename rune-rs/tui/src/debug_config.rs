@@ -1,13 +1,13 @@
 use crate::history_cell::PlainHistoryCell;
-use codex_app_server_protocol::ConfigLayerSource;
-use codex_core::config::Config;
-use codex_core::config_loader::ConfigLayerStack;
-use codex_core::config_loader::ConfigLayerStackOrdering;
-use codex_core::config_loader::NetworkConstraints;
-use codex_core::config_loader::RequirementSource;
-use codex_core::config_loader::ResidencyRequirement;
-use codex_core::config_loader::SandboxModeRequirement;
-use codex_core::config_loader::WebSearchModeRequirement;
+use rune_app_server_protocol::ConfigLayerSource;
+use rune_core::config::Config;
+use rune_core::config_loader::ConfigLayerStack;
+use rune_core::config_loader::ConfigLayerStackOrdering;
+use rune_core::config_loader::NetworkConstraints;
+use rune_core::config_loader::RequirementSource;
+use rune_core::config_loader::ResidencyRequirement;
+use rune_core::config_loader::SandboxModeRequirement;
+use rune_core::config_loader::WebSearchModeRequirement;
 use ratatui::style::Stylize;
 use ratatui::text::Line;
 
@@ -177,10 +177,10 @@ fn format_config_layer_source(source: &ConfigLayerSource) -> String {
         ConfigLayerSource::User { file } => {
             format!("user ({})", file.as_path().display())
         }
-        ConfigLayerSource::Project { dot_codex_folder } => {
+        ConfigLayerSource::Project { dot_rune_folder } => {
             format!(
                 "project ({}/config.toml)",
-                dot_codex_folder.as_path().display()
+                dot_rune_folder.as_path().display()
             )
         }
         ConfigLayerSource::SessionFlags => "session-flags".to_string(),
@@ -268,25 +268,25 @@ fn format_network_constraints(network: &NetworkConstraints) -> String {
 #[cfg(test)]
 mod tests {
     use super::render_debug_config_lines;
-    use codex_app_server_protocol::ConfigLayerSource;
-    use codex_core::config::Constrained;
-    use codex_core::config_loader::ConfigLayerEntry;
-    use codex_core::config_loader::ConfigLayerStack;
-    use codex_core::config_loader::ConfigRequirements;
-    use codex_core::config_loader::ConfigRequirementsToml;
-    use codex_core::config_loader::ConstrainedWithSource;
-    use codex_core::config_loader::McpServerIdentity;
-    use codex_core::config_loader::McpServerRequirement;
-    use codex_core::config_loader::NetworkConstraints;
-    use codex_core::config_loader::RequirementSource;
-    use codex_core::config_loader::ResidencyRequirement;
-    use codex_core::config_loader::SandboxModeRequirement;
-    use codex_core::config_loader::Sourced;
-    use codex_core::config_loader::WebSearchModeRequirement;
-    use codex_core::protocol::AskForApproval;
-    use codex_core::protocol::SandboxPolicy;
-    use codex_protocol::config_types::WebSearchMode;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use rune_app_server_protocol::ConfigLayerSource;
+    use rune_core::config::Constrained;
+    use rune_core::config_loader::ConfigLayerEntry;
+    use rune_core::config_loader::ConfigLayerStack;
+    use rune_core::config_loader::ConfigRequirements;
+    use rune_core::config_loader::ConfigRequirementsToml;
+    use rune_core::config_loader::ConstrainedWithSource;
+    use rune_core::config_loader::McpServerIdentity;
+    use rune_core::config_loader::McpServerRequirement;
+    use rune_core::config_loader::NetworkConstraints;
+    use rune_core::config_loader::RequirementSource;
+    use rune_core::config_loader::ResidencyRequirement;
+    use rune_core::config_loader::SandboxModeRequirement;
+    use rune_core::config_loader::Sourced;
+    use rune_core::config_loader::WebSearchModeRequirement;
+    use rune_core::protocol::AskForApproval;
+    use rune_core::protocol::SandboxPolicy;
+    use rune_protocol::config_types::WebSearchMode;
+    use rune_utils_absolute_path::AbsolutePathBuf;
     use ratatui::text::Line;
     use std::collections::BTreeMap;
     use toml::Value as TomlValue;
@@ -315,14 +315,14 @@ mod tests {
     #[test]
     fn debug_config_output_lists_all_layers_including_disabled() {
         let system_file = if cfg!(windows) {
-            absolute_path("C:\\etc\\codex\\config.toml")
+            absolute_path("C:\\etc\\rune\\config.toml")
         } else {
-            absolute_path("/etc/codex/config.toml")
+            absolute_path("/etc/rune/config.toml")
         };
         let project_folder = if cfg!(windows) {
-            absolute_path("C:\\repo\\.codex")
+            absolute_path("C:\\repo\\.rune")
         } else {
-            absolute_path("/repo/.codex")
+            absolute_path("/repo/.rune")
         };
 
         let layers = vec![
@@ -332,7 +332,7 @@ mod tests {
             ),
             ConfigLayerEntry::new_disabled(
                 ConfigLayerSource::Project {
-                    dot_codex_folder: project_folder,
+                    dot_rune_folder: project_folder,
                 },
                 empty_toml_table(),
                 "project is untrusted",
@@ -356,9 +356,9 @@ mod tests {
     #[test]
     fn debug_config_output_lists_requirement_sources() {
         let requirements_file = if cfg!(windows) {
-            absolute_path("C:\\etc\\codex\\requirements.toml")
+            absolute_path("C:\\etc\\rune\\requirements.toml")
         } else {
-            absolute_path("/etc/codex/requirements.toml")
+            absolute_path("/etc/rune/requirements.toml")
         };
         let mut requirements = ConfigRequirements::default();
         requirements.approval_policy = ConstrainedWithSource::new(
@@ -417,9 +417,9 @@ mod tests {
         };
 
         let user_file = if cfg!(windows) {
-            absolute_path("C:\\users\\alice\\.codex\\config.toml")
+            absolute_path("C:\\users\\alice\\.rune\\config.toml")
         } else {
-            absolute_path("/home/alice/.codex/config.toml")
+            absolute_path("/home/alice/.rune/config.toml")
         };
         let stack = ConfigLayerStack::new(
             vec![ConfigLayerEntry::new(

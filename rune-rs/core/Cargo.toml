@@ -7,7 +7,7 @@ build = "build.rs"
 
 [lib]
 doctest = false
-name = "codex_core"
+name = "rune_core"
 path = "src/lib.rs"
 
 [[bin]]
@@ -26,11 +26,9 @@ base64 = { workspace = true }
 chardetng = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 clap = { workspace = true, features = ["derive"] }
-rune-api = { workspace = true }
 rune-app-server-protocol = { workspace = true }
 rune-apply-patch = { workspace = true }
 rune-async-utils = { workspace = true }
-rune-client = { workspace = true }
 rune-execpolicy = { workspace = true }
 rune-file-search = { workspace = true }
 rune-git = { workspace = true }

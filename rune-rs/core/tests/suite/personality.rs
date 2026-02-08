@@ -1,23 +1,23 @@
-use codex_core::config::types::Personality;
-use codex_core::features::Feature;
-use codex_core::models_manager::manager::ModelsManager;
-use codex_core::models_manager::manager::RefreshStrategy;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelInstructionsVariables;
-use codex_protocol::openai_models::ModelMessages;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_protocol::openai_models::TruncationPolicyConfig;
-use codex_protocol::openai_models::default_input_modalities;
-use codex_protocol::user_input::UserInput;
+use rune_core::config::types::Personality;
+use rune_core::features::Feature;
+use rune_core::models_manager::manager::ModelsManager;
+use rune_core::models_manager::manager::RefreshStrategy;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::openai_models::ConfigShellToolType;
+use rune_protocol::openai_models::ModelInfo;
+use rune_protocol::openai_models::ModelInstructionsVariables;
+use rune_protocol::openai_models::ModelMessages;
+use rune_protocol::openai_models::ModelVisibility;
+use rune_protocol::openai_models::ModelsResponse;
+use rune_protocol::openai_models::ReasoningEffort;
+use rune_protocol::openai_models::ReasoningEffortPreset;
+use rune_protocol::openai_models::TruncationPolicyConfig;
+use rune_protocol::openai_models::default_input_modalities;
+use rune_protocol::user_input::UserInput;
 use core_test_support::load_default_config_for_test;
 use core_test_support::responses::mount_models_once;
 use core_test_support::responses::mount_sse_once;
@@ -25,7 +25,7 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse_completed;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use std::sync::Arc;
@@ -42,8 +42,8 @@ const LOCAL_PRAGMATIC_TEMPLATE: &str = "You are a deeply pragmatic, effective so
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn personality_does_not_mutate_base_instructions_without_template() {
-    let codex_home = TempDir::new().expect("create temp dir");
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new().expect("create temp dir");
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.features.enable(Feature::Personality);
     config.personality = Some(Personality::Friendly);
 
@@ -56,13 +56,13 @@ async fn personality_does_not_mutate_base_instructions_without_template() {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn base_instructions_override_disables_personality_template() {
-    let codex_home = TempDir::new().expect("create temp dir");
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new().expect("create temp dir");
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.features.enable(Feature::Personality);
     config.personality = Some(Personality::Friendly);
     config.base_instructions = Some("override instructions".to_string());
 
-    let model_info = ModelsManager::construct_model_info_offline("gpt-5.2-codex", &config);
+    let model_info = ModelsManager::construct_model_info_offline("gpt-5.2-rune", &config);
 
     assert_eq!(model_info.base_instructions, "override instructions");
     assert_eq!(
@@ -77,15 +77,15 @@ async fn user_turn_personality_none_does_not_add_update_message() -> anyhow::Res
 
     let server = start_mock_server().await;
     let resp_mock = mount_sse_once(&server, sse_completed("resp-1")).await;
-    let mut builder = test_codex()
-        .with_model("gpt-5.2-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5.2-rune")
         .with_config(|config| {
             config.features.disable(Feature::RemoteModels);
             config.features.enable(Feature::Personality);
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -103,7 +103,7 @@ async fn user_turn_personality_none_does_not_add_update_message() -> anyhow::Res
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let developer_texts = request.message_input_texts("developer");
@@ -123,8 +123,8 @@ async fn config_personality_some_sets_instructions_template() -> anyhow::Result<
 
     let server = start_mock_server().await;
     let resp_mock = mount_sse_once(&server, sse_completed("resp-1")).await;
-    let mut builder = test_codex()
-        .with_model("gpt-5.2-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5.2-rune")
         .with_config(|config| {
             config.features.disable(Feature::RemoteModels);
             config.features.enable(Feature::Personality);
@@ -132,7 +132,7 @@ async fn config_personality_some_sets_instructions_template() -> anyhow::Result<
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -150,7 +150,7 @@ async fn config_personality_some_sets_instructions_template() -> anyhow::Result<
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let instructions_text = request.instructions_text();
@@ -177,8 +177,8 @@ async fn config_personality_none_sends_no_personality() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
     let resp_mock = mount_sse_once(&server, sse_completed("resp-1")).await;
-    let mut builder = test_codex()
-        .with_model("gpt-5.2-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5.2-rune")
         .with_config(|config| {
             config.features.disable(Feature::RemoteModels);
             config.features.enable(Feature::Personality);
@@ -186,7 +186,7 @@ async fn config_personality_none_sends_no_personality() -> anyhow::Result<()> {
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -204,7 +204,7 @@ async fn config_personality_none_sends_no_personality() -> anyhow::Result<()> {
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let instructions_text = request.instructions_text();
@@ -238,15 +238,15 @@ async fn default_personality_is_pragmatic_without_config_toml() -> anyhow::Resul
 
     let server = start_mock_server().await;
     let resp_mock = mount_sse_once(&server, sse_completed("resp-1")).await;
-    let mut builder = test_codex()
-        .with_model("gpt-5.2-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5.2-rune")
         .with_config(|config| {
             config.features.disable(Feature::RemoteModels);
             config.features.enable(Feature::Personality);
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -264,7 +264,7 @@ async fn default_personality_is_pragmatic_without_config_toml() -> anyhow::Resul
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let instructions_text = request.instructions_text();
@@ -286,7 +286,7 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
         vec![sse_completed("resp-1"), sse_completed("resp-2")],
     )
     .await;
-    let mut builder = test_codex()
+    let mut builder = test_rune()
         .with_model("exp-rune-personality")
         .with_config(|config| {
             config.features.disable(Feature::RemoteModels);
@@ -294,7 +294,7 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -312,9 +312,9 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: None,
@@ -328,7 +328,7 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
         })
         .await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -346,7 +346,7 @@ async fn user_turn_personality_some_adds_update_message() -> anyhow::Result<()> 
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two requests");
@@ -382,7 +382,7 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
         vec![sse_completed("resp-1"), sse_completed("resp-2")],
     )
     .await;
-    let mut builder = test_codex()
+    let mut builder = test_rune()
         .with_model("exp-rune-personality")
         .with_config(|config| {
             config.features.disable(Feature::RemoteModels);
@@ -391,7 +391,7 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -409,9 +409,9 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: None,
@@ -425,7 +425,7 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
         })
         .await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -443,7 +443,7 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two requests");
@@ -465,12 +465,12 @@ async fn user_turn_personality_same_value_does_not_add_update_message() -> anyho
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn instructions_uses_base_if_feature_disabled() -> anyhow::Result<()> {
-    let codex_home = TempDir::new().expect("create temp dir");
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new().expect("create temp dir");
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.features.disable(Feature::Personality);
     config.personality = Some(Personality::Friendly);
 
-    let model_info = ModelsManager::construct_model_info_offline("gpt-5.2-codex", &config);
+    let model_info = ModelsManager::construct_model_info_offline("gpt-5.2-rune", &config);
     assert_eq!(
         model_info.get_model_instructions(config.personality),
         model_info.base_instructions
@@ -489,7 +489,7 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
         vec![sse_completed("resp-1"), sse_completed("resp-2")],
     )
     .await;
-    let mut builder = test_codex()
+    let mut builder = test_rune()
         .with_model("exp-rune-personality")
         .with_config(|config| {
             config.features.disable(Feature::RemoteModels);
@@ -497,7 +497,7 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
         });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -515,9 +515,9 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: None,
@@ -531,7 +531,7 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
         })
         .await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -549,7 +549,7 @@ async fn user_turn_personality_skips_if_feature_disabled() -> anyhow::Result<()>
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two requests");
@@ -577,7 +577,7 @@ async fn ignores_remote_personality_if_remote_models_disabled() -> anyhow::Resul
         .start()
         .await;
 
-    let remote_slug = "gpt-5.2-codex";
+    let remote_slug = "gpt-5.2-rune";
     let remote_personality_message = "Friendly from remote template";
     let remote_model = ModelInfo {
         slug: remote_slug.to_string(),
@@ -625,8 +625,8 @@ async fn ignores_remote_personality_if_remote_models_disabled() -> anyhow::Resul
 
     let resp_mock = mount_sse_once(&server, sse_completed("resp-1")).await;
 
-    let mut builder = test_codex()
-        .with_auth(codex_core::CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_rune()
+        .with_auth(rune_core::RuneAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.features.disable(Feature::RemoteModels);
             config.features.enable(Feature::Personality);
@@ -642,7 +642,7 @@ async fn ignores_remote_personality_if_remote_models_disabled() -> anyhow::Resul
     )
     .await;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -660,13 +660,13 @@ async fn ignores_remote_personality_if_remote_models_disabled() -> anyhow::Resul
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let instructions_text = request.instructions_text();
 
     assert!(
-        instructions_text.contains("You are Codex, a coding agent based on GPT-5. You and the user share the same workspace and collaborate to achieve the user's goals."),
+        instructions_text.contains("You are Rune, a coding agent based on GPT-5. You and the user share the same workspace and collaborate to achieve the user's goals."),
         "expected instructions to use the template instructions, got: {instructions_text:?}"
     );
     assert!(
@@ -741,8 +741,8 @@ async fn remote_model_friendly_personality_instructions_with_feature() -> anyhow
 
     let resp_mock = mount_sse_once(&server, sse_completed("resp-1")).await;
 
-    let mut builder = test_codex()
-        .with_auth(codex_core::CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_rune()
+        .with_auth(rune_core::RuneAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.features.enable(Feature::RemoteModels);
             config.features.enable(Feature::Personality);
@@ -758,7 +758,7 @@ async fn remote_model_friendly_personality_instructions_with_feature() -> anyhow
     )
     .await;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -776,7 +776,7 @@ async fn remote_model_friendly_personality_instructions_with_feature() -> anyhow
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let instructions_text = request.instructions_text();
@@ -856,12 +856,12 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(codex_core::CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_rune()
+        .with_auth(rune_core::RuneAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.features.enable(Feature::RemoteModels);
             config.features.enable(Feature::Personality);
-            config.model = Some("gpt-5.2-codex".to_string());
+            config.model = Some("gpt-5.2-rune".to_string());
         });
     let test = builder.build(&server).await?;
 
@@ -872,7 +872,7 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
     )
     .await;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -890,9 +890,9 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: None,
@@ -906,7 +906,7 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
         })
         .await?;
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -924,7 +924,7 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
         })
         .await?;
 
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = resp_mock.requests();
     assert_eq!(requests.len(), 2, "expected two requests");
@@ -952,7 +952,7 @@ async fn user_turn_personality_remote_model_template_includes_update_message() -
 async fn wait_for_model_available(
     manager: &Arc<ModelsManager>,
     slug: &str,
-    config: &codex_core::config::Config,
+    config: &rune_core::config::Config,
 ) {
     let deadline = Instant::now() + Duration::from_secs(2);
     loop {

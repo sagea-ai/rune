@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use codex_execpolicy::execpolicycheck::ExecPolicyCheckCommand;
+use rune_execpolicy::execpolicycheck::ExecPolicyCheckCommand;
 
 /// CLI for evaluating exec policies
 #[derive(Parser)]

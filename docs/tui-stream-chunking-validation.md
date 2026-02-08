@@ -14,7 +14,7 @@ The goal is to verify two properties from runtime traces:
 
 Chunking observability is emitted by:
 
-- `codex_tui::streaming::commit_tick`
+- `rune_tui::streaming::commit_tick`
 
 Two trace messages are used:
 
@@ -23,18 +23,18 @@ Two trace messages are used:
 
 ## Runtime command
 
-Run Codex with chunking traces enabled:
+Run Rune with chunking traces enabled:
 
 ```bash
-RUST_LOG='codex_tui::streaming::commit_tick=trace,codex_tui=info,codex_core=info,codex_rmcp_client=info' \
-  just codex --enable=responses_websockets
+RUST_LOG='rune_tui::streaming::commit_tick=trace,rune_tui=info,rune_core=info,rune_rmcp_client=info' \
+  just rune --enable=responses_websockets
 ```
 
 ## Log capture process
 
 Tip: for one-off measurements, run with `-c log_dir=...` to direct logs to a fresh directory and avoid mixing sessions.
 
-1. Record the current size of `~/.codex/log/codex-tui.log` as a start offset.
+1. Record the current size of `~/.rune/log/rune-tui.log` as a start offset.
 2. Run an interactive prompt that produces sustained streamed output.
 3. Stop the run.
 4. Parse only log bytes written after the recorded offset.

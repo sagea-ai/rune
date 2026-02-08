@@ -5,18 +5,18 @@ use app_test_support::McpProcess;
 use app_test_support::create_mock_responses_server_sequence;
 use app_test_support::create_shell_command_sse_response;
 use app_test_support::to_response;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnCompletedNotification;
-use codex_app_server_protocol::TurnInterruptParams;
-use codex_app_server_protocol::TurnInterruptResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::UserInput as V2UserInput;
+use rune_app_server_protocol::JSONRPCNotification;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::ThreadStartParams;
+use rune_app_server_protocol::ThreadStartResponse;
+use rune_app_server_protocol::TurnCompletedNotification;
+use rune_app_server_protocol::TurnInterruptParams;
+use rune_app_server_protocol::TurnInterruptResponse;
+use rune_app_server_protocol::TurnStartParams;
+use rune_app_server_protocol::TurnStartResponse;
+use rune_app_server_protocol::TurnStatus;
+use rune_app_server_protocol::UserInput as V2UserInput;
 use tempfile::TempDir;
 use tokio::time::timeout;
 
@@ -35,8 +35,8 @@ async fn turn_interrupt_aborts_running_turn() -> Result<()> {
     let shell_command = vec!["sleep".to_string(), "10".to_string()];
 
     let tmp = TempDir::new()?;
-    let codex_home = tmp.path().join("codex_home");
-    std::fs::create_dir(&codex_home)?;
+    let rune_home = tmp.path().join("rune_home");
+    std::fs::create_dir(&rune_home)?;
     let working_directory = tmp.path().join("workdir");
     std::fs::create_dir(&working_directory)?;
 
@@ -48,9 +48,9 @@ async fn turn_interrupt_aborts_running_turn() -> Result<()> {
         "call_sleep",
     )?])
     .await;
-    create_config_toml(&codex_home, &server.uri())?;
+    create_config_toml(&rune_home, &server.uri())?;
 
-    let mut mcp = McpProcess::new(&codex_home).await?;
+    let mut mcp = McpProcess::new(&rune_home).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // Start a v2 thread and capture its id.
@@ -121,8 +121,8 @@ async fn turn_interrupt_aborts_running_turn() -> Result<()> {
 }
 
 // Helper to create a config.toml pointing at the mock model server.
-fn create_config_toml(codex_home: &std::path::Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &std::path::Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

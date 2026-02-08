@@ -15,9 +15,9 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::RwLock;
 
-use codex_app_server_protocol::AuthMode as ApiAuthMode;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::config_types::ForcedLoginMethod;
+use rune_app_server_protocol::AuthMode as ApiAuthMode;
+use rune_otel::TelemetryAuthMode;
+use rune_protocol::config_types::ForcedLoginMethod;
 
 pub use crate::auth::storage::AuthCredentialsStoreMode;
 pub use crate::auth::storage::AuthDotJson;
@@ -32,8 +32,8 @@ use crate::token_data::PlanType as InternalPlanType;
 use crate::token_data::TokenData;
 use crate::token_data::parse_id_token;
 use crate::util::try_parse_error_message;
-use codex_client::CodexHttpClient;
-use codex_protocol::account::PlanType as AccountPlanType;
+use rune_client::RuneHttpClient;
+use rune_protocol::account::PlanType as AccountPlanType;
 use serde_json::Value;
 use thiserror::Error;
 
@@ -59,7 +59,7 @@ impl From<AuthMode> for TelemetryAuthMode {
 
 /// Authentication mechanism used by the current user.
 #[derive(Debug, Clone)]
-pub enum CodexAuth {
+pub enum RuneAuth {
     ApiKey(ApiKeyAuth),
     Chatgpt(ChatgptAuth),
     ChatgptAuthTokens(ChatgptAuthTokens),
@@ -84,10 +84,10 @@ pub struct ChatgptAuthTokens {
 #[derive(Debug, Clone)]
 struct ChatgptAuthState {
     auth_dot_json: Arc<Mutex<Option<AuthDotJson>>>,
-    client: CodexHttpClient,
+    client: RuneHttpClient,
 }
 
-impl PartialEq for CodexAuth {
+impl PartialEq for RuneAuth {
     fn eq(&self, other: &Self) -> bool {
         self.api_auth_mode() == other.api_auth_mode()
     }
@@ -102,7 +102,7 @@ const REFRESH_TOKEN_INVALIDATED_MESSAGE: &str = "Your access token could not be 
 const REFRESH_TOKEN_UNKNOWN_MESSAGE: &str =
     "Your access token could not be refreshed. Please log out and sign in again.";
 const REFRESH_TOKEN_URL: &str = "https://auth.openai.com/oauth/token";
-pub const REFRESH_TOKEN_URL_OVERRIDE_ENV_VAR: &str = "CODEX_REFRESH_TOKEN_URL_OVERRIDE";
+pub const REFRESH_TOKEN_URL_OVERRIDE_ENV_VAR: &str = "RUNE_REFRESH_TOKEN_URL_OVERRIDE";
 
 #[derive(Debug, Error)]
 pub enum RefreshTokenError {
@@ -155,19 +155,19 @@ impl From<RefreshTokenError> for std::io::Error {
     }
 }
 
-impl CodexAuth {
+impl RuneAuth {
     fn from_auth_dot_json(
-        codex_home: &Path,
+        rune_home: &Path,
         auth_dot_json: AuthDotJson,
         auth_credentials_store_mode: AuthCredentialsStoreMode,
-        client: CodexHttpClient,
+        client: RuneHttpClient,
     ) -> std::io::Result<Self> {
         let auth_mode = auth_dot_json.resolved_mode();
         if auth_mode == ApiAuthMode::ApiKey {
             let Some(api_key) = auth_dot_json.openai_api_key.as_deref() else {
                 return Err(std::io::Error::other("API key auth is missing a key."));
             };
-            return Ok(CodexAuth::from_api_key_with_client(api_key, client));
+            return Ok(RuneAuth::from_api_key_with_client(api_key, client));
         }
 
         let storage_mode = auth_dot_json.storage_mode(auth_credentials_store_mode);
@@ -178,7 +178,7 @@ impl CodexAuth {
 
         match auth_mode {
             ApiAuthMode::Chatgpt => {
-                let storage = create_auth_storage(codex_home.to_path_buf(), storage_mode);
+                let storage = create_auth_storage(rune_home.to_path_buf(), storage_mode);
                 Ok(Self::Chatgpt(ChatgptAuth { state, storage }))
             }
             ApiAuthMode::ChatgptAuthTokens => {
@@ -190,10 +190,10 @@ impl CodexAuth {
 
     /// Loads the available auth information from auth storage.
     pub fn from_auth_storage(
-        codex_home: &Path,
+        rune_home: &Path,
         auth_credentials_store_mode: AuthCredentialsStoreMode,
     ) -> std::io::Result<Option<Self>> {
-        load_auth(codex_home, false, auth_credentials_store_mode)
+        load_auth(rune_home, false, auth_credentials_store_mode)
     }
 
     pub fn auth_mode(&self) -> AuthMode {
@@ -324,7 +324,7 @@ impl CodexAuth {
         Self::Chatgpt(ChatgptAuth { state, storage })
     }
 
-    fn from_api_key_with_client(api_key: &str, _client: CodexHttpClient) -> Self {
+    fn from_api_key_with_client(api_key: &str, _client: RuneHttpClient) -> Self {
         Self::ApiKey(ApiKeyAuth {
             api_key: api_key.to_owned(),
         })
@@ -349,13 +349,13 @@ impl ChatgptAuth {
         &self.storage
     }
 
-    fn client(&self) -> &CodexHttpClient {
+    fn client(&self) -> &RuneHttpClient {
         &self.state.client
     }
 }
 
 pub const OPENAI_API_KEY_ENV_VAR: &str = "OPENAI_API_KEY";
-pub const CODEX_API_KEY_ENV_VAR: &str = "CODEX_API_KEY";
+pub const RUNE_API_KEY_ENV_VAR: &str = "RUNE_API_KEY";
 
 pub fn read_openai_api_key_from_env() -> Option<String> {
     env::var(OPENAI_API_KEY_ENV_VAR)
@@ -364,26 +364,26 @@ pub fn read_openai_api_key_from_env() -> Option<String> {
         .filter(|value| !value.is_empty())
 }
 
-pub fn read_codex_api_key_from_env() -> Option<String> {
-    env::var(CODEX_API_KEY_ENV_VAR)
+pub fn read_rune_api_key_from_env() -> Option<String> {
+    env::var(RUNE_API_KEY_ENV_VAR)
         .ok()
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
 }
 
-/// Delete the auth.json file inside `codex_home` if it exists. Returns `Ok(true)`
+/// Delete the auth.json file inside `rune_home` if it exists. Returns `Ok(true)`
 /// if a file was removed, `Ok(false)` if no auth file was present.
 pub fn logout(
-    codex_home: &Path,
+    rune_home: &Path,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
 ) -> std::io::Result<bool> {
-    let storage = create_auth_storage(codex_home.to_path_buf(), auth_credentials_store_mode);
+    let storage = create_auth_storage(rune_home.to_path_buf(), auth_credentials_store_mode);
     storage.delete()
 }
 
 /// Writes an `auth.json` that contains only the API key.
 pub fn login_with_api_key(
-    codex_home: &Path,
+    rune_home: &Path,
     api_key: &str,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
 ) -> std::io::Result<()> {
@@ -393,18 +393,18 @@ pub fn login_with_api_key(
         tokens: None,
         last_refresh: None,
     };
-    save_auth(codex_home, &auth_dot_json, auth_credentials_store_mode)
+    save_auth(rune_home, &auth_dot_json, auth_credentials_store_mode)
 }
 
 /// Writes an in-memory auth payload for externally managed ChatGPT tokens.
 pub fn login_with_chatgpt_auth_tokens(
-    codex_home: &Path,
+    rune_home: &Path,
     id_token: &str,
     access_token: &str,
 ) -> std::io::Result<()> {
     let auth_dot_json = AuthDotJson::from_external_token_strings(id_token, access_token)?;
     save_auth(
-        codex_home,
+        rune_home,
         &auth_dot_json,
         AuthCredentialsStoreMode::Ephemeral,
     )
@@ -412,11 +412,11 @@ pub fn login_with_chatgpt_auth_tokens(
 
 /// Persist the provided auth payload using the specified backend.
 pub fn save_auth(
-    codex_home: &Path,
+    rune_home: &Path,
     auth: &AuthDotJson,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
 ) -> std::io::Result<()> {
-    let storage = create_auth_storage(codex_home.to_path_buf(), auth_credentials_store_mode);
+    let storage = create_auth_storage(rune_home.to_path_buf(), auth_credentials_store_mode);
     storage.save(auth)
 }
 
@@ -426,16 +426,16 @@ pub fn save_auth(
 /// from the auth.json storage. It should use the AuthManager abstraction
 /// instead.
 pub fn load_auth_dot_json(
-    codex_home: &Path,
+    rune_home: &Path,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
 ) -> std::io::Result<Option<AuthDotJson>> {
-    let storage = create_auth_storage(codex_home.to_path_buf(), auth_credentials_store_mode);
+    let storage = create_auth_storage(rune_home.to_path_buf(), auth_credentials_store_mode);
     storage.load()
 }
 
 pub fn enforce_login_restrictions(config: &Config) -> std::io::Result<()> {
     let Some(auth) = load_auth(
-        &config.codex_home,
+        &config.rune_home,
         true,
         config.cli_auth_credentials_store_mode,
     )?
@@ -459,7 +459,7 @@ pub fn enforce_login_restrictions(config: &Config) -> std::io::Result<()> {
 
         if let Some(message) = method_violation {
             return logout_with_message(
-                &config.codex_home,
+                &config.rune_home,
                 message,
                 config.cli_auth_credentials_store_mode,
             );
@@ -475,7 +475,7 @@ pub fn enforce_login_restrictions(config: &Config) -> std::io::Result<()> {
             Ok(data) => data,
             Err(err) => {
                 return logout_with_message(
-                    &config.codex_home,
+                    &config.rune_home,
                     format!(
                         "Failed to load ChatGPT credentials while enforcing workspace restrictions: {err}. Logging out."
                     ),
@@ -496,7 +496,7 @@ pub fn enforce_login_restrictions(config: &Config) -> std::io::Result<()> {
                 ),
             };
             return logout_with_message(
-                &config.codex_home,
+                &config.rune_home,
                 message,
                 config.cli_auth_credentials_store_mode,
             );
@@ -507,13 +507,13 @@ pub fn enforce_login_restrictions(config: &Config) -> std::io::Result<()> {
 }
 
 fn logout_with_message(
-    codex_home: &Path,
+    rune_home: &Path,
     message: String,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
 ) -> std::io::Result<()> {
     // External auth tokens live in the ephemeral store, but persistent auth may still exist
     // from earlier logins. Clear both so a forced logout truly removes all active auth.
-    let removal_result = logout_all_stores(codex_home, auth_credentials_store_mode);
+    let removal_result = logout_all_stores(rune_home, auth_credentials_store_mode);
     let error_message = match removal_result {
         Ok(_) => message,
         Err(err) => format!("{message}. Failed to remove auth.json: {err}"),
@@ -522,31 +522,31 @@ fn logout_with_message(
 }
 
 fn logout_all_stores(
-    codex_home: &Path,
+    rune_home: &Path,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
 ) -> std::io::Result<bool> {
     if auth_credentials_store_mode == AuthCredentialsStoreMode::Ephemeral {
-        return logout(codex_home, AuthCredentialsStoreMode::Ephemeral);
+        return logout(rune_home, AuthCredentialsStoreMode::Ephemeral);
     }
-    let removed_ephemeral = logout(codex_home, AuthCredentialsStoreMode::Ephemeral)?;
-    let removed_managed = logout(codex_home, auth_credentials_store_mode)?;
+    let removed_ephemeral = logout(rune_home, AuthCredentialsStoreMode::Ephemeral)?;
+    let removed_managed = logout(rune_home, auth_credentials_store_mode)?;
     Ok(removed_ephemeral || removed_managed)
 }
 
 fn load_auth(
-    codex_home: &Path,
-    enable_codex_api_key_env: bool,
+    rune_home: &Path,
+    enable_rune_api_key_env: bool,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
-) -> std::io::Result<Option<CodexAuth>> {
+) -> std::io::Result<Option<RuneAuth>> {
     let build_auth = |auth_dot_json: AuthDotJson, storage_mode| {
         let client = crate::default_client::create_client();
-        CodexAuth::from_auth_dot_json(codex_home, auth_dot_json, storage_mode, client)
+        RuneAuth::from_auth_dot_json(rune_home, auth_dot_json, storage_mode, client)
     };
 
     // API key via env var takes precedence over any other auth method.
-    if enable_codex_api_key_env && let Some(api_key) = read_codex_api_key_from_env() {
+    if enable_rune_api_key_env && let Some(api_key) = read_rune_api_key_from_env() {
         let client = crate::default_client::create_client();
-        return Ok(Some(CodexAuth::from_api_key_with_client(
+        return Ok(Some(RuneAuth::from_api_key_with_client(
             api_key.as_str(),
             client,
         )));
@@ -555,7 +555,7 @@ fn load_auth(
     // External ChatGPT auth tokens live in the in-memory (ephemeral) store. Always check this
     // first so external auth takes precedence over any persisted credentials.
     let ephemeral_storage = create_auth_storage(
-        codex_home.to_path_buf(),
+        rune_home.to_path_buf(),
         AuthCredentialsStoreMode::Ephemeral,
     );
     if let Some(auth_dot_json) = ephemeral_storage.load()? {
@@ -569,7 +569,7 @@ fn load_auth(
     }
 
     // Fall back to the configured persistent store (file/keyring/auto) for managed auth.
-    let storage = create_auth_storage(codex_home.to_path_buf(), auth_credentials_store_mode);
+    let storage = create_auth_storage(rune_home.to_path_buf(), auth_credentials_store_mode);
     let auth_dot_json = match storage.load()? {
         Some(auth) => auth,
         None => return Ok(None),
@@ -606,7 +606,7 @@ fn update_tokens(
 
 async fn try_refresh_token(
     refresh_token: String,
-    client: &CodexHttpClient,
+    client: &RuneHttpClient,
 ) -> Result<RefreshResponse, RefreshTokenError> {
     let refresh_request = RefreshRequest {
         client_id: CLIENT_ID,
@@ -778,7 +778,7 @@ impl AuthDotJson {
 /// Internal cached auth state.
 #[derive(Clone)]
 struct CachedAuth {
-    auth: Option<CodexAuth>,
+    auth: Option<RuneAuth>,
     /// Callback used to refresh external auth by asking the parent app for new tokens.
     external_refresher: Option<Arc<dyn ExternalAuthRefresher>>,
 }
@@ -788,7 +788,7 @@ impl Debug for CachedAuth {
         f.debug_struct("CachedAuth")
             .field(
                 "auth_mode",
-                &self.auth.as_ref().map(CodexAuth::api_auth_mode),
+                &self.auth.as_ref().map(RuneAuth::api_auth_mode),
             )
             .field(
                 "external_refresher",
@@ -839,10 +839,10 @@ pub struct UnauthorizedRecovery {
 impl UnauthorizedRecovery {
     fn new(manager: Arc<AuthManager>) -> Self {
         let cached_auth = manager.auth_cached();
-        let expected_account_id = cached_auth.as_ref().and_then(CodexAuth::get_account_id);
+        let expected_account_id = cached_auth.as_ref().and_then(RuneAuth::get_account_id);
         let mode = if cached_auth
             .as_ref()
-            .is_some_and(CodexAuth::is_external_chatgpt_tokens)
+            .is_some_and(RuneAuth::is_external_chatgpt_tokens)
         {
             UnauthorizedRecoveryMode::External
         } else {
@@ -865,7 +865,7 @@ impl UnauthorizedRecovery {
             .manager
             .auth_cached()
             .as_ref()
-            .is_some_and(CodexAuth::is_chatgpt_auth)
+            .is_some_and(RuneAuth::is_chatgpt_auth)
         {
             return false;
         }
@@ -920,7 +920,7 @@ impl UnauthorizedRecovery {
 
 /// Central manager providing a single source of truth for auth.json derived
 /// authentication data. It loads once (or on preference change) and then
-/// hands out cloned `CodexAuth` values so the rest of the program has a
+/// hands out cloned `RuneAuth` values so the rest of the program has a
 /// consistent snapshot.
 ///
 /// External modifications to `auth.json` will NOT be observed until
@@ -928,9 +928,9 @@ impl UnauthorizedRecovery {
 /// different parts of the program seeing inconsistent auth data mid‑run.
 #[derive(Debug)]
 pub struct AuthManager {
-    codex_home: PathBuf,
+    rune_home: PathBuf,
     inner: RwLock<CachedAuth>,
-    enable_codex_api_key_env: bool,
+    enable_rune_api_key_env: bool,
     auth_credentials_store_mode: AuthCredentialsStoreMode,
     forced_chatgpt_workspace_id: RwLock<Option<String>>,
 }
@@ -941,70 +941,70 @@ impl AuthManager {
     /// simply return `None` in that case so callers can treat it as an
     /// unauthenticated state.
     pub fn new(
-        codex_home: PathBuf,
-        enable_codex_api_key_env: bool,
+        rune_home: PathBuf,
+        enable_rune_api_key_env: bool,
         auth_credentials_store_mode: AuthCredentialsStoreMode,
     ) -> Self {
         let managed_auth = load_auth(
-            &codex_home,
-            enable_codex_api_key_env,
+            &rune_home,
+            enable_rune_api_key_env,
             auth_credentials_store_mode,
         )
         .ok()
         .flatten();
         Self {
-            codex_home,
+            rune_home,
             inner: RwLock::new(CachedAuth {
                 auth: managed_auth,
                 external_refresher: None,
             }),
-            enable_codex_api_key_env,
+            enable_rune_api_key_env,
             auth_credentials_store_mode,
             forced_chatgpt_workspace_id: RwLock::new(None),
         }
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    /// Create an AuthManager with a specific CodexAuth, for testing only.
-    pub fn from_auth_for_testing(auth: CodexAuth) -> Arc<Self> {
+    /// Create an AuthManager with a specific RuneAuth, for testing only.
+    pub fn from_auth_for_testing(auth: RuneAuth) -> Arc<Self> {
         let cached = CachedAuth {
             auth: Some(auth),
             external_refresher: None,
         };
 
         Arc::new(Self {
-            codex_home: PathBuf::from("non-existent"),
+            rune_home: PathBuf::from("non-existent"),
             inner: RwLock::new(cached),
-            enable_codex_api_key_env: false,
+            enable_rune_api_key_env: false,
             auth_credentials_store_mode: AuthCredentialsStoreMode::File,
             forced_chatgpt_workspace_id: RwLock::new(None),
         })
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    /// Create an AuthManager with a specific CodexAuth and codex home, for testing only.
-    pub fn from_auth_for_testing_with_home(auth: CodexAuth, codex_home: PathBuf) -> Arc<Self> {
+    /// Create an AuthManager with a specific RuneAuth and rune home, for testing only.
+    pub fn from_auth_for_testing_with_home(auth: RuneAuth, rune_home: PathBuf) -> Arc<Self> {
         let cached = CachedAuth {
             auth: Some(auth),
             external_refresher: None,
         };
         Arc::new(Self {
-            codex_home,
+            rune_home,
             inner: RwLock::new(cached),
-            enable_codex_api_key_env: false,
+            enable_rune_api_key_env: false,
             auth_credentials_store_mode: AuthCredentialsStoreMode::File,
             forced_chatgpt_workspace_id: RwLock::new(None),
         })
     }
 
     /// Current cached auth (clone) without attempting a refresh.
-    pub fn auth_cached(&self) -> Option<CodexAuth> {
+    pub fn auth_cached(&self) -> Option<RuneAuth> {
         self.inner.read().ok().and_then(|c| c.auth.clone())
     }
 
     /// Current cached auth (clone). May be `None` if not logged in or load failed.
     /// Refreshes cached ChatGPT tokens if they are stale before returning.
-    pub async fn auth(&self) -> Option<CodexAuth> {
+    pub async fn auth(&self) -> Option<RuneAuth> {
         let auth = self.auth_cached()?;
         if let Err(err) = self.refresh_if_stale(&auth).await {
             tracing::error!("Failed to refresh token: {}", err);
@@ -1031,7 +1031,7 @@ impl AuthManager {
         };
 
         let new_auth = self.load_auth_from_storage();
-        let new_account_id = new_auth.as_ref().and_then(CodexAuth::get_account_id);
+        let new_account_id = new_auth.as_ref().and_then(RuneAuth::get_account_id);
 
         if new_account_id.as_deref() != Some(expected_account_id) {
             let found_account_id = new_account_id.as_deref().unwrap_or("unknown");
@@ -1046,7 +1046,7 @@ impl AuthManager {
         ReloadOutcome::Reloaded
     }
 
-    fn auths_equal(a: Option<&CodexAuth>, b: Option<&CodexAuth>) -> bool {
+    fn auths_equal(a: Option<&RuneAuth>, b: Option<&RuneAuth>) -> bool {
         match (a, b) {
             (None, None) => true,
             (Some(a), Some(b)) => a == b,
@@ -1054,17 +1054,17 @@ impl AuthManager {
         }
     }
 
-    fn load_auth_from_storage(&self) -> Option<CodexAuth> {
+    fn load_auth_from_storage(&self) -> Option<RuneAuth> {
         load_auth(
-            &self.codex_home,
-            self.enable_codex_api_key_env,
+            &self.rune_home,
+            self.enable_rune_api_key_env,
             self.auth_credentials_store_mode,
         )
         .ok()
         .flatten()
     }
 
-    fn set_cached_auth(&self, new_auth: Option<CodexAuth>) -> bool {
+    fn set_cached_auth(&self, new_auth: Option<RuneAuth>) -> bool {
         if let Ok(mut guard) = self.inner.write() {
             let previous = guard.auth.as_ref();
             let changed = !AuthManager::auths_equal(previous, new_auth.as_ref());
@@ -1106,18 +1106,18 @@ impl AuthManager {
     pub fn is_external_auth_active(&self) -> bool {
         self.auth_cached()
             .as_ref()
-            .is_some_and(CodexAuth::is_external_chatgpt_tokens)
+            .is_some_and(RuneAuth::is_external_chatgpt_tokens)
     }
 
     /// Convenience constructor returning an `Arc` wrapper.
     pub fn shared(
-        codex_home: PathBuf,
-        enable_codex_api_key_env: bool,
+        rune_home: PathBuf,
+        enable_rune_api_key_env: bool,
         auth_credentials_store_mode: AuthCredentialsStoreMode,
     ) -> Arc<Self> {
         Arc::new(Self::new(
-            codex_home,
-            enable_codex_api_key_env,
+            rune_home,
+            enable_rune_api_key_env,
             auth_credentials_store_mode,
         ))
     }
@@ -1137,11 +1137,11 @@ impl AuthManager {
             None => return Ok(()),
         };
         match auth {
-            CodexAuth::ChatgptAuthTokens(_) => {
+            RuneAuth::ChatgptAuthTokens(_) => {
                 self.refresh_external_auth(ExternalAuthRefreshReason::Unauthorized)
                     .await
             }
-            CodexAuth::Chatgpt(chatgpt_auth) => {
+            RuneAuth::Chatgpt(chatgpt_auth) => {
                 let token_data = chatgpt_auth.current_token_data().ok_or_else(|| {
                     RefreshTokenError::Transient(std::io::Error::other(
                         "Token data is not available.",
@@ -1153,7 +1153,7 @@ impl AuthManager {
                 self.reload();
                 Ok(())
             }
-            CodexAuth::ApiKey(_) => Ok(()),
+            RuneAuth::ApiKey(_) => Ok(()),
         }
     }
 
@@ -1162,23 +1162,23 @@ impl AuthManager {
     /// reloads the in‑memory auth cache so callers immediately observe the
     /// unauthenticated state.
     pub fn logout(&self) -> std::io::Result<bool> {
-        let removed = logout_all_stores(&self.codex_home, self.auth_credentials_store_mode)?;
+        let removed = logout_all_stores(&self.rune_home, self.auth_credentials_store_mode)?;
         // Always reload to clear any cached auth (even if file absent).
         self.reload();
         Ok(removed)
     }
 
     pub fn get_api_auth_mode(&self) -> Option<ApiAuthMode> {
-        self.auth_cached().as_ref().map(CodexAuth::api_auth_mode)
+        self.auth_cached().as_ref().map(RuneAuth::api_auth_mode)
     }
 
     pub fn auth_mode(&self) -> Option<AuthMode> {
-        self.auth_cached().as_ref().map(CodexAuth::auth_mode)
+        self.auth_cached().as_ref().map(RuneAuth::auth_mode)
     }
 
-    async fn refresh_if_stale(&self, auth: &CodexAuth) -> Result<bool, RefreshTokenError> {
+    async fn refresh_if_stale(&self, auth: &RuneAuth) -> Result<bool, RefreshTokenError> {
         let chatgpt_auth = match auth {
-            CodexAuth::Chatgpt(chatgpt_auth) => chatgpt_auth,
+            RuneAuth::Chatgpt(chatgpt_auth) => chatgpt_auth,
             _ => return Ok(false),
         };
 
@@ -1226,7 +1226,7 @@ impl AuthManager {
         let previous_account_id = self
             .auth_cached()
             .as_ref()
-            .and_then(CodexAuth::get_account_id);
+            .and_then(RuneAuth::get_account_id);
         let context = ExternalAuthRefreshContext {
             reason,
             previous_account_id,
@@ -1247,7 +1247,7 @@ impl AuthManager {
         }
         let auth_dot_json = AuthDotJson::from_external_tokens(&refreshed, id_token);
         save_auth(
-            &self.codex_home,
+            &self.rune_home,
             &auth_dot_json,
             AuthCredentialsStoreMode::Ephemeral,
         )
@@ -1285,10 +1285,10 @@ mod tests {
     use crate::token_data::IdTokenInfo;
     use crate::token_data::KnownPlan as InternalKnownPlan;
     use crate::token_data::PlanType as InternalPlanType;
-    use codex_protocol::account::PlanType as AccountPlanType;
+    use rune_protocol::account::PlanType as AccountPlanType;
 
     use base64::Engine;
-    use codex_protocol::config_types::ForcedLoginMethod;
+    use rune_protocol::config_types::ForcedLoginMethod;
     use pretty_assertions::assert_eq;
     use serde::Serialize;
     use serde_json::json;
@@ -1296,19 +1296,19 @@ mod tests {
 
     #[tokio::test]
     async fn refresh_without_id_token() {
-        let codex_home = tempdir().unwrap();
+        let rune_home = tempdir().unwrap();
         let fake_jwt = write_auth_file(
             AuthFileParams {
                 openai_api_key: None,
                 chatgpt_plan_type: "pro".to_string(),
                 chatgpt_account_id: None,
             },
-            codex_home.path(),
+            rune_home.path(),
         )
         .expect("failed to write auth file");
 
         let storage = create_auth_storage(
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
             AuthCredentialsStoreMode::File,
         );
         let updated = super::update_tokens(
@@ -1358,26 +1358,26 @@ mod tests {
     #[test]
     fn missing_auth_json_returns_none() {
         let dir = tempdir().unwrap();
-        let auth = CodexAuth::from_auth_storage(dir.path(), AuthCredentialsStoreMode::File)
+        let auth = RuneAuth::from_auth_storage(dir.path(), AuthCredentialsStoreMode::File)
             .expect("call should succeed");
         assert_eq!(auth, None);
     }
 
     #[tokio::test]
-    #[serial(codex_api_key)]
+    #[serial(rune_api_key)]
     async fn pro_account_with_no_api_key_uses_chatgpt_auth() {
-        let codex_home = tempdir().unwrap();
+        let rune_home = tempdir().unwrap();
         let fake_jwt = write_auth_file(
             AuthFileParams {
                 openai_api_key: None,
                 chatgpt_plan_type: "pro".to_string(),
                 chatgpt_account_id: None,
             },
-            codex_home.path(),
+            rune_home.path(),
         )
         .expect("failed to write auth file");
 
-        let auth = super::load_auth(codex_home.path(), false, AuthCredentialsStoreMode::File)
+        let auth = super::load_auth(rune_home.path(), false, AuthCredentialsStoreMode::File)
             .unwrap()
             .unwrap();
         assert_eq!(None, auth.api_key());
@@ -1413,7 +1413,7 @@ mod tests {
     }
 
     #[tokio::test]
-    #[serial(codex_api_key)]
+    #[serial(rune_api_key)]
     async fn loads_api_key_from_auth_json() {
         let dir = tempdir().unwrap();
         let auth_file = dir.path().join("auth.json");
@@ -1455,8 +1455,8 @@ mod tests {
         chatgpt_account_id: Option<String>,
     }
 
-    fn write_auth_file(params: AuthFileParams, codex_home: &Path) -> std::io::Result<String> {
-        let auth_file = get_auth_file(codex_home);
+    fn write_auth_file(params: AuthFileParams, rune_home: &Path) -> std::io::Result<String> {
+        let auth_file = get_auth_file(rune_home);
         // Create a minimal valid JWT for the id_token field.
         #[derive(Serialize)]
         struct Header {
@@ -1504,12 +1504,12 @@ mod tests {
     }
 
     async fn build_config(
-        codex_home: &Path,
+        rune_home: &Path,
         forced_login_method: Option<ForcedLoginMethod>,
         forced_chatgpt_workspace_id: Option<String>,
     ) -> Config {
         let mut config = ConfigBuilder::default()
-            .codex_home(codex_home.to_path_buf())
+            .rune_home(rune_home.to_path_buf())
             .build()
             .await
             .expect("config should load");
@@ -1551,65 +1551,65 @@ mod tests {
 
     #[tokio::test]
     async fn enforce_login_restrictions_logs_out_for_method_mismatch() {
-        let codex_home = tempdir().unwrap();
-        login_with_api_key(codex_home.path(), "sk-test", AuthCredentialsStoreMode::File)
+        let rune_home = tempdir().unwrap();
+        login_with_api_key(rune_home.path(), "sk-test", AuthCredentialsStoreMode::File)
             .expect("seed api key");
 
-        let config = build_config(codex_home.path(), Some(ForcedLoginMethod::Chatgpt), None).await;
+        let config = build_config(rune_home.path(), Some(ForcedLoginMethod::Chatgpt), None).await;
 
         let err = super::enforce_login_restrictions(&config)
             .expect_err("expected method mismatch to error");
         assert!(err.to_string().contains("ChatGPT login is required"));
         assert!(
-            !codex_home.path().join("auth.json").exists(),
+            !rune_home.path().join("auth.json").exists(),
             "auth.json should be removed on mismatch"
         );
     }
 
     #[tokio::test]
-    #[serial(codex_api_key)]
+    #[serial(rune_api_key)]
     async fn enforce_login_restrictions_logs_out_for_workspace_mismatch() {
-        let codex_home = tempdir().unwrap();
+        let rune_home = tempdir().unwrap();
         let _jwt = write_auth_file(
             AuthFileParams {
                 openai_api_key: None,
                 chatgpt_plan_type: "pro".to_string(),
                 chatgpt_account_id: Some("org_another_org".to_string()),
             },
-            codex_home.path(),
+            rune_home.path(),
         )
         .expect("failed to write auth file");
 
-        let config = build_config(codex_home.path(), None, Some("org_mine".to_string())).await;
+        let config = build_config(rune_home.path(), None, Some("org_mine".to_string())).await;
 
         let err = super::enforce_login_restrictions(&config)
             .expect_err("expected workspace mismatch to error");
         assert!(err.to_string().contains("workspace org_mine"));
         assert!(
-            !codex_home.path().join("auth.json").exists(),
+            !rune_home.path().join("auth.json").exists(),
             "auth.json should be removed on mismatch"
         );
     }
 
     #[tokio::test]
-    #[serial(codex_api_key)]
+    #[serial(rune_api_key)]
     async fn enforce_login_restrictions_allows_matching_workspace() {
-        let codex_home = tempdir().unwrap();
+        let rune_home = tempdir().unwrap();
         let _jwt = write_auth_file(
             AuthFileParams {
                 openai_api_key: None,
                 chatgpt_plan_type: "pro".to_string(),
                 chatgpt_account_id: Some("org_mine".to_string()),
             },
-            codex_home.path(),
+            rune_home.path(),
         )
         .expect("failed to write auth file");
 
-        let config = build_config(codex_home.path(), None, Some("org_mine".to_string())).await;
+        let config = build_config(rune_home.path(), None, Some("org_mine".to_string())).await;
 
         super::enforce_login_restrictions(&config).expect("matching workspace should succeed");
         assert!(
-            codex_home.path().join("auth.json").exists(),
+            rune_home.path().join("auth.json").exists(),
             "auth.json should remain when restrictions pass"
         );
     }
@@ -1617,26 +1617,26 @@ mod tests {
     #[tokio::test]
     async fn enforce_login_restrictions_allows_api_key_if_login_method_not_set_but_forced_chatgpt_workspace_id_is_set()
      {
-        let codex_home = tempdir().unwrap();
-        login_with_api_key(codex_home.path(), "sk-test", AuthCredentialsStoreMode::File)
+        let rune_home = tempdir().unwrap();
+        login_with_api_key(rune_home.path(), "sk-test", AuthCredentialsStoreMode::File)
             .expect("seed api key");
 
-        let config = build_config(codex_home.path(), None, Some("org_mine".to_string())).await;
+        let config = build_config(rune_home.path(), None, Some("org_mine".to_string())).await;
 
         super::enforce_login_restrictions(&config).expect("matching workspace should succeed");
         assert!(
-            codex_home.path().join("auth.json").exists(),
+            rune_home.path().join("auth.json").exists(),
             "auth.json should remain when restrictions pass"
         );
     }
 
     #[tokio::test]
-    #[serial(codex_api_key)]
+    #[serial(rune_api_key)]
     async fn enforce_login_restrictions_blocks_env_api_key_when_chatgpt_required() {
-        let _guard = EnvVarGuard::set(CODEX_API_KEY_ENV_VAR, "sk-env");
-        let codex_home = tempdir().unwrap();
+        let _guard = EnvVarGuard::set(RUNE_API_KEY_ENV_VAR, "sk-env");
+        let rune_home = tempdir().unwrap();
 
-        let config = build_config(codex_home.path(), Some(ForcedLoginMethod::Chatgpt), None).await;
+        let config = build_config(rune_home.path(), Some(ForcedLoginMethod::Chatgpt), None).await;
 
         let err = super::enforce_login_restrictions(&config)
             .expect_err("environment API key should not satisfy forced ChatGPT login");
@@ -1648,18 +1648,18 @@ mod tests {
 
     #[test]
     fn plan_type_maps_known_plan() {
-        let codex_home = tempdir().unwrap();
+        let rune_home = tempdir().unwrap();
         let _jwt = write_auth_file(
             AuthFileParams {
                 openai_api_key: None,
                 chatgpt_plan_type: "pro".to_string(),
                 chatgpt_account_id: None,
             },
-            codex_home.path(),
+            rune_home.path(),
         )
         .expect("failed to write auth file");
 
-        let auth = super::load_auth(codex_home.path(), false, AuthCredentialsStoreMode::File)
+        let auth = super::load_auth(rune_home.path(), false, AuthCredentialsStoreMode::File)
             .expect("load auth")
             .expect("auth available");
 
@@ -1668,18 +1668,18 @@ mod tests {
 
     #[test]
     fn plan_type_maps_unknown_to_unknown() {
-        let codex_home = tempdir().unwrap();
+        let rune_home = tempdir().unwrap();
         let _jwt = write_auth_file(
             AuthFileParams {
                 openai_api_key: None,
                 chatgpt_plan_type: "mystery-tier".to_string(),
                 chatgpt_account_id: None,
             },
-            codex_home.path(),
+            rune_home.path(),
         )
         .expect("failed to write auth file");
 
-        let auth = super::load_auth(codex_home.path(), false, AuthCredentialsStoreMode::File)
+        let auth = super::load_auth(rune_home.path(), false, AuthCredentialsStoreMode::File)
             .expect("load auth")
             .expect("auth available");
 

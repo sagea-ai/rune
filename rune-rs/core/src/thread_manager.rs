@@ -1,16 +1,16 @@
 use crate::AuthManager;
 #[cfg(any(test, feature = "test-support"))]
-use crate::CodexAuth;
+use crate::RuneAuth;
 #[cfg(any(test, feature = "test-support"))]
 use crate::ModelProviderInfo;
 use crate::agent::AgentControl;
-use crate::codex::Codex;
-use crate::codex::CodexSpawnOk;
-use crate::codex::INITIAL_SUBMIT_ID;
-use crate::codex_thread::CodexThread;
+use crate::rune::Rune;
+use crate::rune::RuneSpawnOk;
+use crate::rune::INITIAL_SUBMIT_ID;
+use crate::rune_thread::RuneThread;
 use crate::config::Config;
-use crate::error::CodexErr;
-use crate::error::Result as CodexResult;
+use crate::error::RuneErr;
+use crate::error::Result as RuneResult;
 use crate::file_watcher::FileWatcher;
 use crate::file_watcher::FileWatcherEvent;
 use crate::models_manager::manager::ModelsManager;
@@ -20,14 +20,14 @@ use crate::protocol::SessionConfiguredEvent;
 use crate::rollout::RolloutRecorder;
 use crate::rollout::truncation;
 use crate::skills::SkillsManager;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::CollaborationModeMask;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::protocol::InitialHistory;
-use codex_protocol::protocol::McpServerRefreshConfig;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SessionSource;
+use rune_protocol::ThreadId;
+use rune_protocol::config_types::CollaborationModeMask;
+use rune_protocol::openai_models::ModelPreset;
+use rune_protocol::protocol::InitialHistory;
+use rune_protocol::protocol::McpServerRefreshConfig;
+use rune_protocol::protocol::Op;
+use rune_protocol::protocol::RolloutItem;
+use rune_protocol::protocol::SessionSource;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -42,7 +42,7 @@ use tracing::warn;
 
 const THREAD_CREATED_CHANNEL_CAPACITY: usize = 1024;
 
-fn build_file_watcher(codex_home: PathBuf, skills_manager: Arc<SkillsManager>) -> Arc<FileWatcher> {
+fn build_file_watcher(rune_home: PathBuf, skills_manager: Arc<SkillsManager>) -> Arc<FileWatcher> {
     #[cfg(any(test, feature = "test-support"))]
     if let Ok(handle) = Handle::try_current()
         && handle.runtime_flavor() == RuntimeFlavor::CurrentThread
@@ -54,7 +54,7 @@ fn build_file_watcher(codex_home: PathBuf, skills_manager: Arc<SkillsManager>) -
         return Arc::new(FileWatcher::noop());
     }
 
-    let file_watcher = match FileWatcher::new(codex_home) {
+    let file_watcher = match FileWatcher::new(rune_home) {
         Ok(file_watcher) => Arc::new(file_watcher),
         Err(err) => {
             warn!("failed to initialize file watcher: {err}");
@@ -83,11 +83,11 @@ fn build_file_watcher(codex_home: PathBuf, skills_manager: Arc<SkillsManager>) -
     file_watcher
 }
 
-/// Represents a newly created Codex thread (formerly called a conversation), including the first event
+/// Represents a newly created Rune thread (formerly called a conversation), including the first event
 /// (which is [`EventMsg::SessionConfigured`]).
 pub struct NewThread {
     pub thread_id: ThreadId,
-    pub thread: Arc<CodexThread>,
+    pub thread: Arc<RuneThread>,
     pub session_configured: SessionConfiguredEvent,
 }
 
@@ -96,14 +96,14 @@ pub struct NewThread {
 pub struct ThreadManager {
     state: Arc<ThreadManagerState>,
     #[cfg(any(test, feature = "test-support"))]
-    _test_codex_home_guard: Option<TempDir>,
+    _test_rune_home_guard: Option<TempDir>,
 }
 
 /// Shared, `Arc`-owned state for [`ThreadManager`]. This `Arc` is required to have a single
 /// `Arc` reference that can be downgraded to by `AgentControl` while preventing every single
 /// function to require an `Arc<&Self>`.
 pub(crate) struct ThreadManagerState {
-    threads: Arc<RwLock<HashMap<ThreadId, Arc<CodexThread>>>>,
+    threads: Arc<RwLock<HashMap<ThreadId, Arc<RuneThread>>>>,
     thread_created_tx: broadcast::Sender<ThreadId>,
     auth_manager: Arc<AuthManager>,
     models_manager: Arc<ModelsManager>,
@@ -118,18 +118,18 @@ pub(crate) struct ThreadManagerState {
 
 impl ThreadManager {
     pub fn new(
-        codex_home: PathBuf,
+        rune_home: PathBuf,
         auth_manager: Arc<AuthManager>,
         session_source: SessionSource,
     ) -> Self {
         let (thread_created_tx, _) = broadcast::channel(THREAD_CREATED_CHANNEL_CAPACITY);
-        let skills_manager = Arc::new(SkillsManager::new(codex_home.clone()));
-        let file_watcher = build_file_watcher(codex_home.clone(), Arc::clone(&skills_manager));
+        let skills_manager = Arc::new(SkillsManager::new(rune_home.clone()));
+        let file_watcher = build_file_watcher(rune_home.clone(), Arc::clone(&skills_manager));
         Self {
             state: Arc::new(ThreadManagerState {
                 threads: Arc::new(RwLock::new(HashMap::new())),
                 thread_created_tx,
-                models_manager: Arc::new(ModelsManager::new(codex_home, auth_manager.clone())),
+                models_manager: Arc::new(ModelsManager::new(rune_home, auth_manager.clone())),
                 skills_manager,
                 file_watcher,
                 auth_manager,
@@ -138,39 +138,39 @@ impl ThreadManager {
                 ops_log: Arc::new(std::sync::Mutex::new(Vec::new())),
             }),
             #[cfg(any(test, feature = "test-support"))]
-            _test_codex_home_guard: None,
+            _test_rune_home_guard: None,
         }
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    /// Construct with a dummy AuthManager containing the provided CodexAuth.
+    /// Construct with a dummy AuthManager containing the provided RuneAuth.
     /// Used for integration tests: should not be used by ordinary business logic.
-    pub fn with_models_provider(auth: CodexAuth, provider: ModelProviderInfo) -> Self {
-        let temp_dir = tempfile::tempdir().unwrap_or_else(|err| panic!("temp codex home: {err}"));
-        let codex_home = temp_dir.path().to_path_buf();
-        let mut manager = Self::with_models_provider_and_home(auth, provider, codex_home);
-        manager._test_codex_home_guard = Some(temp_dir);
+    pub fn with_models_provider(auth: RuneAuth, provider: ModelProviderInfo) -> Self {
+        let temp_dir = tempfile::tempdir().unwrap_or_else(|err| panic!("temp rune home: {err}"));
+        let rune_home = temp_dir.path().to_path_buf();
+        let mut manager = Self::with_models_provider_and_home(auth, provider, rune_home);
+        manager._test_rune_home_guard = Some(temp_dir);
         manager
     }
 
     #[cfg(any(test, feature = "test-support"))]
-    /// Construct with a dummy AuthManager containing the provided CodexAuth and codex home.
+    /// Construct with a dummy AuthManager containing the provided RuneAuth and rune home.
     /// Used for integration tests: should not be used by ordinary business logic.
     pub fn with_models_provider_and_home(
-        auth: CodexAuth,
+        auth: RuneAuth,
         provider: ModelProviderInfo,
-        codex_home: PathBuf,
+        rune_home: PathBuf,
     ) -> Self {
         let auth_manager = AuthManager::from_auth_for_testing(auth);
         let (thread_created_tx, _) = broadcast::channel(THREAD_CREATED_CHANNEL_CAPACITY);
-        let skills_manager = Arc::new(SkillsManager::new(codex_home.clone()));
-        let file_watcher = build_file_watcher(codex_home.clone(), Arc::clone(&skills_manager));
+        let skills_manager = Arc::new(SkillsManager::new(rune_home.clone()));
+        let file_watcher = build_file_watcher(rune_home.clone(), Arc::clone(&skills_manager));
         Self {
             state: Arc::new(ThreadManagerState {
                 threads: Arc::new(RwLock::new(HashMap::new())),
                 thread_created_tx,
                 models_manager: Arc::new(ModelsManager::with_provider(
-                    codex_home,
+                    rune_home,
                     auth_manager.clone(),
                     provider,
                 )),
@@ -181,7 +181,7 @@ impl ThreadManager {
                 #[cfg(any(test, feature = "test-support"))]
                 ops_log: Arc::new(std::sync::Mutex::new(Vec::new())),
             }),
-            _test_codex_home_guard: None,
+            _test_rune_home_guard: None,
         }
     }
 
@@ -245,19 +245,19 @@ impl ThreadManager {
         self.state.thread_created_tx.subscribe()
     }
 
-    pub async fn get_thread(&self, thread_id: ThreadId) -> CodexResult<Arc<CodexThread>> {
+    pub async fn get_thread(&self, thread_id: ThreadId) -> RuneResult<Arc<RuneThread>> {
         self.state.get_thread(thread_id).await
     }
 
-    pub async fn start_thread(&self, config: Config) -> CodexResult<NewThread> {
+    pub async fn start_thread(&self, config: Config) -> RuneResult<NewThread> {
         self.start_thread_with_tools(config, Vec::new()).await
     }
 
     pub async fn start_thread_with_tools(
         &self,
         config: Config,
-        dynamic_tools: Vec<codex_protocol::dynamic_tools::DynamicToolSpec>,
-    ) -> CodexResult<NewThread> {
+        dynamic_tools: Vec<rune_protocol::dynamic_tools::DynamicToolSpec>,
+    ) -> RuneResult<NewThread> {
         self.state
             .spawn_thread(
                 config,
@@ -274,7 +274,7 @@ impl ThreadManager {
         config: Config,
         rollout_path: PathBuf,
         auth_manager: Arc<AuthManager>,
-    ) -> CodexResult<NewThread> {
+    ) -> RuneResult<NewThread> {
         let initial_history = RolloutRecorder::get_rollout_history(&rollout_path).await?;
         self.resume_thread_with_history(config, initial_history, auth_manager)
             .await
@@ -285,7 +285,7 @@ impl ThreadManager {
         config: Config,
         initial_history: InitialHistory,
         auth_manager: Arc<AuthManager>,
-    ) -> CodexResult<NewThread> {
+    ) -> RuneResult<NewThread> {
         self.state
             .spawn_thread(
                 config,
@@ -298,14 +298,14 @@ impl ThreadManager {
     }
 
     /// Removes the thread from the manager's internal map, though the thread is stored
-    /// as `Arc<CodexThread>`, it is possible that other references to it exist elsewhere.
+    /// as `Arc<RuneThread>`, it is possible that other references to it exist elsewhere.
     /// Returns the thread if the thread was found and removed.
-    pub async fn remove_thread(&self, thread_id: &ThreadId) -> Option<Arc<CodexThread>> {
+    pub async fn remove_thread(&self, thread_id: &ThreadId) -> Option<Arc<RuneThread>> {
         self.state.threads.write().await.remove(thread_id)
     }
 
     /// Closes all threads open in this ThreadManager
-    pub async fn remove_and_close_all_threads(&self) -> CodexResult<()> {
+    pub async fn remove_and_close_all_threads(&self) -> RuneResult<()> {
         for thread in self.state.threads.read().await.values() {
             thread.submit(Op::Shutdown).await?;
         }
@@ -322,7 +322,7 @@ impl ThreadManager {
         nth_user_message: usize,
         config: Config,
         path: PathBuf,
-    ) -> CodexResult<NewThread> {
+    ) -> RuneResult<NewThread> {
         let history = RolloutRecorder::get_rollout_history(&path).await?;
         let history = truncate_before_nth_user_message(history, nth_user_message);
         self.state
@@ -353,16 +353,16 @@ impl ThreadManager {
 
 impl ThreadManagerState {
     /// Fetch a thread by ID or return ThreadNotFound.
-    pub(crate) async fn get_thread(&self, thread_id: ThreadId) -> CodexResult<Arc<CodexThread>> {
+    pub(crate) async fn get_thread(&self, thread_id: ThreadId) -> RuneResult<Arc<RuneThread>> {
         let threads = self.threads.read().await;
         threads
             .get(&thread_id)
             .cloned()
-            .ok_or_else(|| CodexErr::ThreadNotFound(thread_id))
+            .ok_or_else(|| RuneErr::ThreadNotFound(thread_id))
     }
 
     /// Send an operation to a thread by ID.
-    pub(crate) async fn send_op(&self, thread_id: ThreadId, op: Op) -> CodexResult<String> {
+    pub(crate) async fn send_op(&self, thread_id: ThreadId, op: Op) -> RuneResult<String> {
         let thread = self.get_thread(thread_id).await?;
         #[cfg(any(test, feature = "test-support"))]
         {
@@ -374,7 +374,7 @@ impl ThreadManagerState {
     }
 
     /// Remove a thread from the manager by ID, returning it when present.
-    pub(crate) async fn remove_thread(&self, thread_id: &ThreadId) -> Option<Arc<CodexThread>> {
+    pub(crate) async fn remove_thread(&self, thread_id: &ThreadId) -> Option<Arc<RuneThread>> {
         self.threads.write().await.remove(thread_id)
     }
 
@@ -383,7 +383,7 @@ impl ThreadManagerState {
         &self,
         config: Config,
         agent_control: AgentControl,
-    ) -> CodexResult<NewThread> {
+    ) -> RuneResult<NewThread> {
         self.spawn_new_thread_with_source(config, agent_control, self.session_source.clone())
             .await
     }
@@ -393,7 +393,7 @@ impl ThreadManagerState {
         config: Config,
         agent_control: AgentControl,
         session_source: SessionSource,
-    ) -> CodexResult<NewThread> {
+    ) -> RuneResult<NewThread> {
         self.spawn_thread_with_source(
             config,
             InitialHistory::New,
@@ -411,7 +411,7 @@ impl ThreadManagerState {
         rollout_path: PathBuf,
         agent_control: AgentControl,
         session_source: SessionSource,
-    ) -> CodexResult<NewThread> {
+    ) -> RuneResult<NewThread> {
         let initial_history = RolloutRecorder::get_rollout_history(&rollout_path).await?;
         self.spawn_thread_with_source(
             config,
@@ -431,8 +431,8 @@ impl ThreadManagerState {
         initial_history: InitialHistory,
         auth_manager: Arc<AuthManager>,
         agent_control: AgentControl,
-        dynamic_tools: Vec<codex_protocol::dynamic_tools::DynamicToolSpec>,
-    ) -> CodexResult<NewThread> {
+        dynamic_tools: Vec<rune_protocol::dynamic_tools::DynamicToolSpec>,
+    ) -> RuneResult<NewThread> {
         self.spawn_thread_with_source(
             config,
             initial_history,
@@ -451,12 +451,12 @@ impl ThreadManagerState {
         auth_manager: Arc<AuthManager>,
         agent_control: AgentControl,
         session_source: SessionSource,
-        dynamic_tools: Vec<codex_protocol::dynamic_tools::DynamicToolSpec>,
-    ) -> CodexResult<NewThread> {
+        dynamic_tools: Vec<rune_protocol::dynamic_tools::DynamicToolSpec>,
+    ) -> RuneResult<NewThread> {
         self.file_watcher.register_config(&config);
-        let CodexSpawnOk {
-            codex, thread_id, ..
-        } = Codex::spawn(
+        let RuneSpawnOk {
+            rune, thread_id, ..
+        } = Rune::spawn(
             config,
             auth_manager,
             Arc::clone(&self.models_manager),
@@ -468,27 +468,27 @@ impl ThreadManagerState {
             dynamic_tools,
         )
         .await?;
-        self.finalize_thread_spawn(codex, thread_id).await
+        self.finalize_thread_spawn(rune, thread_id).await
     }
 
     async fn finalize_thread_spawn(
         &self,
-        codex: Codex,
+        rune: Rune,
         thread_id: ThreadId,
-    ) -> CodexResult<NewThread> {
-        let event = codex.next_event().await?;
+    ) -> RuneResult<NewThread> {
+        let event = rune.next_event().await?;
         let session_configured = match event {
             Event {
                 id,
                 msg: EventMsg::SessionConfigured(session_configured),
             } if id == INITIAL_SUBMIT_ID => session_configured,
             _ => {
-                return Err(CodexErr::SessionConfiguredNotFirstEvent);
+                return Err(RuneErr::SessionConfiguredNotFirstEvent);
             }
         };
 
-        let thread = Arc::new(CodexThread::new(
-            codex,
+        let thread = Arc::new(RuneThread::new(
+            rune,
             session_configured.rollout_path.clone(),
         ));
         let mut threads = self.threads.write().await;
@@ -522,11 +522,11 @@ fn truncate_before_nth_user_message(history: InitialHistory, n: usize) -> Initia
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codex::make_session_and_context;
+    use crate::rune::make_session_and_context;
     use assert_matches::assert_matches;
-    use codex_protocol::models::ContentItem;
-    use codex_protocol::models::ReasoningItemReasoningSummary;
-    use codex_protocol::models::ResponseItem;
+    use rune_protocol::models::ContentItem;
+    use rune_protocol::models::ReasoningItemReasoningSummary;
+    use rune_protocol::models::ResponseItem;
     use pretty_assertions::assert_eq;
 
     fn user_msg(text: &str) -> ResponseItem {

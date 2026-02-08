@@ -1,8 +1,8 @@
-use codex_app_server_protocol::DynamicToolCallResponse;
-use codex_core::CodexThread;
-use codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem as CoreDynamicToolCallOutputContentItem;
-use codex_protocol::dynamic_tools::DynamicToolResponse as CoreDynamicToolResponse;
-use codex_protocol::protocol::Op;
+use rune_app_server_protocol::DynamicToolCallResponse;
+use rune_core::RuneThread;
+use rune_protocol::dynamic_tools::DynamicToolCallOutputContentItem as CoreDynamicToolCallOutputContentItem;
+use rune_protocol::dynamic_tools::DynamicToolResponse as CoreDynamicToolResponse;
+use rune_protocol::protocol::Op;
 use std::sync::Arc;
 use tokio::sync::oneshot;
 use tracing::error;
@@ -10,7 +10,7 @@ use tracing::error;
 pub(crate) async fn on_call_response(
     call_id: String,
     receiver: oneshot::Receiver<serde_json::Value>,
-    conversation: Arc<CodexThread>,
+    conversation: Arc<RuneThread>,
 ) {
     let response = receiver.await;
     let value = match response {
@@ -40,7 +40,7 @@ pub(crate) async fn on_call_response(
         error!("failed to deserialize DynamicToolCallResponse: {err}");
         DynamicToolCallResponse {
             content_items: vec![
-                codex_app_server_protocol::DynamicToolCallOutputContentItem::InputText {
+                rune_app_server_protocol::DynamicToolCallOutputContentItem::InputText {
                     text: "dynamic tool response was invalid".to_string(),
                 },
             ],

@@ -7,15 +7,15 @@ use chrono::DateTime;
 use chrono::NaiveDateTime;
 use chrono::Timelike;
 use chrono::Utc;
-use codex_otel::OtelManager;
-use codex_protocol::ThreadId;
-use codex_protocol::dynamic_tools::DynamicToolSpec;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SessionSource;
-use codex_state::DB_METRIC_COMPARE_ERROR;
-pub use codex_state::LogEntry;
-use codex_state::STATE_DB_VERSION;
-use codex_state::ThreadMetadataBuilder;
+use rune_otel::OtelManager;
+use rune_protocol::ThreadId;
+use rune_protocol::dynamic_tools::DynamicToolSpec;
+use rune_protocol::protocol::RolloutItem;
+use rune_protocol::protocol::SessionSource;
+use rune_state::DB_METRIC_COMPARE_ERROR;
+pub use rune_state::LogEntry;
+use rune_state::STATE_DB_VERSION;
+use rune_state::ThreadMetadataBuilder;
 use serde_json::Value;
 use std::path::Path;
 use std::path::PathBuf;
@@ -24,7 +24,7 @@ use tracing::warn;
 use uuid::Uuid;
 
 /// Core-facing handle to the optional SQLite-backed state runtime.
-pub type StateDbHandle = Arc<codex_state::StateRuntime>;
+pub type StateDbHandle = Arc<rune_state::StateRuntime>;
 
 /// Initialize the state runtime when the `sqlite` feature flag is enabled. To only be used
 /// inside `core`. The initialization should not be done anywhere else.
@@ -35,8 +35,8 @@ pub(crate) async fn init_if_enabled(
     if !config.features.enabled(Feature::Sqlite) {
         return None;
     }
-    let runtime = match codex_state::StateRuntime::init(
-        config.codex_home.clone(),
+    let runtime = match rune_state::StateRuntime::init(
+        config.rune_home.clone(),
         config.model_provider_id.clone(),
         otel.cloned(),
     )
@@ -46,10 +46,10 @@ pub(crate) async fn init_if_enabled(
         Err(err) => {
             warn!(
                 "failed to initialize state runtime at {}: {err}",
-                config.codex_home.display()
+                config.rune_home.display()
             );
             if let Some(otel) = otel {
-                otel.counter("codex.db.init", 1, &[("status", "init_error")]);
+                otel.counter("rune.db.init", 1, &[("status", "init_error")]);
             }
             return None;
         }
@@ -59,12 +59,12 @@ pub(crate) async fn init_if_enabled(
         Err(err) => {
             warn!(
                 "failed to read backfill state at {}: {err}",
-                config.codex_home.display()
+                config.rune_home.display()
             );
             return None;
         }
     };
-    if backfill_state.status != codex_state::BackfillStatus::Complete {
+    if backfill_state.status != rune_state::BackfillStatus::Complete {
         let runtime_for_backfill = runtime.clone();
         let config = config.clone();
         let otel = otel.cloned();
@@ -78,50 +78,50 @@ pub(crate) async fn init_if_enabled(
 
 /// Get the DB if the feature is enabled and the DB exists.
 pub async fn get_state_db(config: &Config, otel: Option<&OtelManager>) -> Option<StateDbHandle> {
-    let state_path = codex_state::state_db_path(config.codex_home.as_path());
+    let state_path = rune_state::state_db_path(config.rune_home.as_path());
     if !config.features.enabled(Feature::Sqlite)
         || !tokio::fs::try_exists(&state_path).await.unwrap_or(false)
     {
         return None;
     }
-    let runtime = codex_state::StateRuntime::init(
-        config.codex_home.clone(),
+    let runtime = rune_state::StateRuntime::init(
+        config.rune_home.clone(),
         config.model_provider_id.clone(),
         otel.cloned(),
     )
     .await
     .ok()?;
-    require_backfill_complete(runtime, config.codex_home.as_path()).await
+    require_backfill_complete(runtime, config.rune_home.as_path()).await
 }
 
 /// Open the state runtime when the SQLite file exists, without feature gating.
 ///
 /// This is used for parity checks during the SQLite migration phase.
-pub async fn open_if_present(codex_home: &Path, default_provider: &str) -> Option<StateDbHandle> {
-    let db_path = codex_state::state_db_path(codex_home);
+pub async fn open_if_present(rune_home: &Path, default_provider: &str) -> Option<StateDbHandle> {
+    let db_path = rune_state::state_db_path(rune_home);
     if !tokio::fs::try_exists(&db_path).await.unwrap_or(false) {
         return None;
     }
-    let runtime = codex_state::StateRuntime::init(
-        codex_home.to_path_buf(),
+    let runtime = rune_state::StateRuntime::init(
+        rune_home.to_path_buf(),
         default_provider.to_string(),
         None,
     )
     .await
     .ok()?;
-    require_backfill_complete(runtime, codex_home).await
+    require_backfill_complete(runtime, rune_home).await
 }
 
 async fn require_backfill_complete(
     runtime: StateDbHandle,
-    codex_home: &Path,
+    rune_home: &Path,
 ) -> Option<StateDbHandle> {
     match runtime.get_backfill_state().await {
-        Ok(state) if state.status == codex_state::BackfillStatus::Complete => Some(runtime),
+        Ok(state) if state.status == rune_state::BackfillStatus::Complete => Some(runtime),
         Ok(state) => {
             warn!(
                 "state db backfill not complete at {} (status: {})",
-                codex_home.display(),
+                rune_home.display(),
                 state.status.as_str()
             );
             None
@@ -129,14 +129,14 @@ async fn require_backfill_complete(
         Err(err) => {
             warn!(
                 "failed to read backfill state at {}: {err}",
-                codex_home.display()
+                rune_home.display()
             );
             None
         }
     }
 }
 
-fn cursor_to_anchor(cursor: Option<&Cursor>) -> Option<codex_state::Anchor> {
+fn cursor_to_anchor(cursor: Option<&Cursor>) -> Option<rune_state::Anchor> {
     let cursor = cursor?;
     let value = serde_json::to_value(cursor).ok()?;
     let cursor_str = value.as_str()?;
@@ -153,14 +153,14 @@ fn cursor_to_anchor(cursor: Option<&Cursor>) -> Option<codex_state::Anchor> {
         return None;
     }
     .with_nanosecond(0)?;
-    Some(codex_state::Anchor { ts, id })
+    Some(rune_state::Anchor { ts, id })
 }
 
 /// List thread ids from SQLite for parity checks without rollout scanning.
 #[allow(clippy::too_many_arguments)]
 pub async fn list_thread_ids_db(
-    context: Option<&codex_state::StateRuntime>,
-    codex_home: &Path,
+    context: Option<&rune_state::StateRuntime>,
+    rune_home: &Path,
     page_size: usize,
     cursor: Option<&Cursor>,
     sort_key: ThreadSortKey,
@@ -170,11 +170,11 @@ pub async fn list_thread_ids_db(
     stage: &str,
 ) -> Option<Vec<ThreadId>> {
     let ctx = context?;
-    if ctx.codex_home() != codex_home {
+    if ctx.rune_home() != rune_home {
         warn!(
-            "state db codex_home mismatch: expected {}, got {}",
-            ctx.codex_home().display(),
-            codex_home.display()
+            "state db rune_home mismatch: expected {}, got {}",
+            ctx.rune_home().display(),
+            rune_home.display()
         );
     }
 
@@ -193,8 +193,8 @@ pub async fn list_thread_ids_db(
             page_size,
             anchor.as_ref(),
             match sort_key {
-                ThreadSortKey::CreatedAt => codex_state::SortKey::CreatedAt,
-                ThreadSortKey::UpdatedAt => codex_state::SortKey::UpdatedAt,
+                ThreadSortKey::CreatedAt => rune_state::SortKey::CreatedAt,
+                ThreadSortKey::UpdatedAt => rune_state::SortKey::UpdatedAt,
             },
             allowed_sources.as_slice(),
             model_providers.as_deref(),
@@ -213,21 +213,21 @@ pub async fn list_thread_ids_db(
 /// List thread metadata from SQLite without rollout directory traversal.
 #[allow(clippy::too_many_arguments)]
 pub async fn list_threads_db(
-    context: Option<&codex_state::StateRuntime>,
-    codex_home: &Path,
+    context: Option<&rune_state::StateRuntime>,
+    rune_home: &Path,
     page_size: usize,
     cursor: Option<&Cursor>,
     sort_key: ThreadSortKey,
     allowed_sources: &[SessionSource],
     model_providers: Option<&[String]>,
     archived: bool,
-) -> Option<codex_state::ThreadsPage> {
+) -> Option<rune_state::ThreadsPage> {
     let ctx = context?;
-    if ctx.codex_home() != codex_home {
+    if ctx.rune_home() != rune_home {
         warn!(
-            "state db codex_home mismatch: expected {}, got {}",
-            ctx.codex_home().display(),
-            codex_home.display()
+            "state db rune_home mismatch: expected {}, got {}",
+            ctx.rune_home().display(),
+            rune_home.display()
         );
     }
 
@@ -246,8 +246,8 @@ pub async fn list_threads_db(
             page_size,
             anchor.as_ref(),
             match sort_key {
-                ThreadSortKey::CreatedAt => codex_state::SortKey::CreatedAt,
-                ThreadSortKey::UpdatedAt => codex_state::SortKey::UpdatedAt,
+                ThreadSortKey::CreatedAt => rune_state::SortKey::CreatedAt,
+                ThreadSortKey::UpdatedAt => rune_state::SortKey::UpdatedAt,
             },
             allowed_sources.as_slice(),
             model_providers.as_deref(),
@@ -265,7 +265,7 @@ pub async fn list_threads_db(
 
 /// Look up the rollout path for a thread id using SQLite.
 pub async fn find_rollout_path_by_id(
-    context: Option<&codex_state::StateRuntime>,
+    context: Option<&rune_state::StateRuntime>,
     thread_id: ThreadId,
     archived_only: Option<bool>,
     stage: &str,
@@ -281,7 +281,7 @@ pub async fn find_rollout_path_by_id(
 
 /// Get dynamic tools for a thread id using SQLite.
 pub async fn get_dynamic_tools(
-    context: Option<&codex_state::StateRuntime>,
+    context: Option<&rune_state::StateRuntime>,
     thread_id: ThreadId,
     stage: &str,
 ) -> Option<Vec<DynamicToolSpec>> {
@@ -297,7 +297,7 @@ pub async fn get_dynamic_tools(
 
 /// Persist dynamic tools for a thread id using SQLite, if none exist yet.
 pub async fn persist_dynamic_tools(
-    context: Option<&codex_state::StateRuntime>,
+    context: Option<&rune_state::StateRuntime>,
     thread_id: ThreadId,
     tools: Option<&[DynamicToolSpec]>,
     stage: &str,
@@ -312,10 +312,10 @@ pub async fn persist_dynamic_tools(
 
 /// Get memory summaries for a thread id using SQLite.
 pub async fn get_thread_memory(
-    context: Option<&codex_state::StateRuntime>,
+    context: Option<&rune_state::StateRuntime>,
     thread_id: ThreadId,
     stage: &str,
-) -> Option<codex_state::ThreadMemory> {
+) -> Option<rune_state::ThreadMemory> {
     let ctx = context?;
     match ctx.get_thread_memory(thread_id).await {
         Ok(memory) => memory,
@@ -328,12 +328,12 @@ pub async fn get_thread_memory(
 
 /// Upsert memory summaries for a thread id using SQLite.
 pub async fn upsert_thread_memory(
-    context: Option<&codex_state::StateRuntime>,
+    context: Option<&rune_state::StateRuntime>,
     thread_id: ThreadId,
     trace_summary: &str,
     memory_summary: &str,
     stage: &str,
-) -> Option<codex_state::ThreadMemory> {
+) -> Option<rune_state::ThreadMemory> {
     let ctx = context?;
     match ctx
         .upsert_thread_memory(thread_id, trace_summary, memory_summary)
@@ -349,11 +349,11 @@ pub async fn upsert_thread_memory(
 
 /// Get the last N memories corresponding to a cwd using an exact path match.
 pub async fn get_last_n_thread_memories_for_cwd(
-    context: Option<&codex_state::StateRuntime>,
+    context: Option<&rune_state::StateRuntime>,
     cwd: &Path,
     n: usize,
     stage: &str,
-) -> Option<Vec<codex_state::ThreadMemory>> {
+) -> Option<Vec<rune_state::ThreadMemory>> {
     let ctx = context?;
     match ctx.get_last_n_thread_memories_for_cwd(cwd, n).await {
         Ok(memories) => Some(memories),
@@ -366,7 +366,7 @@ pub async fn get_last_n_thread_memories_for_cwd(
 
 /// Reconcile rollout items into SQLite, falling back to scanning the rollout file.
 pub async fn reconcile_rollout(
-    context: Option<&codex_state::StateRuntime>,
+    context: Option<&rune_state::StateRuntime>,
     rollout_path: &Path,
     default_provider: &str,
     builder: Option<&ThreadMetadataBuilder>,
@@ -434,7 +434,7 @@ pub async fn reconcile_rollout(
 
 /// Repair a thread's rollout path after filesystem fallback succeeds.
 pub async fn read_repair_rollout_path(
-    context: Option<&codex_state::StateRuntime>,
+    context: Option<&rune_state::StateRuntime>,
     thread_id: Option<ThreadId>,
     archived_only: Option<bool>,
     rollout_path: &Path,
@@ -484,7 +484,7 @@ pub async fn read_repair_rollout_path(
 
 /// Apply rollout items incrementally to SQLite.
 pub async fn apply_rollout_items(
-    context: Option<&codex_state::StateRuntime>,
+    context: Option<&rune_state::StateRuntime>,
     rollout_path: &Path,
     _default_provider: &str,
     builder: Option<&ThreadMetadataBuilder>,
@@ -522,7 +522,7 @@ pub fn record_discrepancy(stage: &str, reason: &str) {
     // We access the global metric because the call sites might not have access to the broader
     // OtelManager.
     tracing::warn!("state db record_discrepancy: {stage}, {reason}");
-    if let Some(metric) = codex_otel::metrics::global() {
+    if let Some(metric) = rune_otel::metrics::global() {
         let _ = metric.counter(
             DB_METRIC_COMPARE_ERROR,
             1,

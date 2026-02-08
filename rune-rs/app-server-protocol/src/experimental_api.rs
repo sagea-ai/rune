@@ -31,7 +31,7 @@ pub fn experimental_required_message(reason: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::ExperimentalApi as ExperimentalApiTrait;
-    use codex_experimental_api_macros::ExperimentalApi;
+    use rune_experimental_api_macros::ExperimentalApi;
     use pretty_assertions::assert_eq;
 
     #[allow(dead_code)]

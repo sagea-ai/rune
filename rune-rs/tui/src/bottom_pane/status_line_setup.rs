@@ -74,8 +74,8 @@ pub(crate) enum StatusLineItem {
     /// Remaining usage on the weekly rate limit.
     WeeklyLimit,
 
-    /// Codex application version.
-    CodexVersion,
+    /// Rune application version.
+    RuneVersion,
 
     /// Total context window size in tokens.
     ContextWindowSize,
@@ -114,7 +114,7 @@ impl StatusLineItem {
             StatusLineItem::WeeklyLimit => {
                 "Remaining usage on weekly usage limit (omitted when unavailable)"
             }
-            StatusLineItem::CodexVersion => "Codex application version",
+            StatusLineItem::RuneVersion => "Rune application version",
             StatusLineItem::ContextWindowSize => {
                 "Total context window size in tokens (omitted when unknown)"
             }
@@ -133,8 +133,8 @@ impl StatusLineItem {
     /// like in the status line before they confirm their selection.
     pub(crate) fn render(&self) -> &'static str {
         match self {
-            StatusLineItem::ModelName => "gpt-5.2-codex",
-            StatusLineItem::ModelWithReasoning => "gpt-5.2-codex medium",
+            StatusLineItem::ModelName => "gpt-5.2-rune",
+            StatusLineItem::ModelWithReasoning => "gpt-5.2-rune medium",
             StatusLineItem::CurrentDir => "~/project/path",
             StatusLineItem::ProjectRoot => "~/project",
             StatusLineItem::GitBranch => "feat/awesome-feature",
@@ -142,7 +142,7 @@ impl StatusLineItem {
             StatusLineItem::ContextUsed => "82% used",
             StatusLineItem::FiveHourLimit => "5h 100%",
             StatusLineItem::WeeklyLimit => "weekly 98%",
-            StatusLineItem::CodexVersion => "v0.93.0",
+            StatusLineItem::RuneVersion => "v0.93.0",
             StatusLineItem::ContextWindowSize => "258K window",
             StatusLineItem::UsedTokens => "27.3K used",
             StatusLineItem::TotalInputTokens => "17,588 in",

@@ -6,24 +6,24 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::Result;
-use codex_core::config::ProjectConfig;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::TrustLevel;
-use codex_protocol::user_input::UserInput;
+use rune_core::config::ProjectConfig;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::config_types::TrustLevel;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses;
 use core_test_support::responses::ResponsesRequest;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::start_mock_server;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRune;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use tokio::time::timeout;
 
-fn enable_trusted_project(config: &mut codex_core::config::Config) {
+fn enable_trusted_project(config: &mut rune_core::config::Config) {
     config.active_project = ProjectConfig {
         trust_level: Some(TrustLevel::Trusted),
     };
@@ -45,9 +45,9 @@ fn contains_skill_body(request: &ResponsesRequest, skill_body: &str) -> bool {
         .any(|text| text.contains(skill_body) && text.contains("<skill>"))
 }
 
-async fn submit_skill_turn(test: &TestCodex, skill_path: PathBuf, prompt: &str) -> Result<()> {
+async fn submit_skill_turn(test: &TestRune, skill_path: PathBuf, prompt: &str) -> Result<()> {
     let session_model = test.session_configured.model.clone();
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![
                 UserInput::Text {
@@ -71,7 +71,7 @@ async fn submit_skill_turn(test: &TestCodex, skill_path: PathBuf, prompt: &str) 
         })
         .await?;
 
-    wait_for_event(test.codex.as_ref(), |event| {
+    wait_for_event(test.rune.as_ref(), |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -92,7 +92,7 @@ async fn live_skills_reload_refreshes_skill_cache_after_skill_change() -> Result
 
     let skill_v1 = "skill body v1";
     let skill_v2 = "skill body v2";
-    let mut builder = test_codex()
+    let mut builder = test_rune()
         .with_pre_build_hook(move |home| {
             write_skill(home, "demo", "demo skill", skill_v1);
         })
@@ -101,7 +101,7 @@ async fn live_skills_reload_refreshes_skill_cache_after_skill_change() -> Result
         });
     let test = builder.build(&server).await?;
 
-    let skill_path = dunce::canonicalize(test.codex_home_path().join("skills/demo/SKILL.md"))?;
+    let skill_path = dunce::canonicalize(test.rune_home_path().join("skills/demo/SKILL.md"))?;
 
     submit_skill_turn(&test, skill_path.clone(), "please use $demo").await?;
     let first_request = responses
@@ -114,11 +114,11 @@ async fn live_skills_reload_refreshes_skill_cache_after_skill_change() -> Result
         "expected initial skill body in request"
     );
 
-    write_skill(test.codex_home_path(), "demo", "demo skill", skill_v2);
+    write_skill(test.rune_home_path(), "demo", "demo skill", skill_v2);
 
     let saw_skills_update = timeout(Duration::from_secs(5), async {
         loop {
-            match test.codex.next_event().await {
+            match test.rune.next_event().await {
                 Ok(event) => {
                     if matches!(event.msg, EventMsg::SkillsUpdateAvailable) {
                         break;

@@ -1,15 +1,15 @@
-use crate::error::CodexErr;
+use crate::error::RuneErr;
 use crate::error::Result;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
+use rune_protocol::ThreadId;
+use rune_protocol::protocol::SessionSource;
+use rune_protocol::protocol::SubAgentSource;
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering;
 
-/// This structure is used to add some limits on the multi-agent capabilities for Codex. In
+/// This structure is used to add some limits on the multi-agent capabilities for Rune. In
 /// the current implementation, it limits:
 /// * Total number of sub-agents (i.e. threads) per user session
 ///
@@ -47,7 +47,7 @@ impl Guards {
     ) -> Result<SpawnReservation> {
         if let Some(max_threads) = max_threads {
             if !self.try_increment_spawned(max_threads) {
-                return Err(CodexErr::AgentLimitReached { max_threads });
+                return Err(RuneErr::AgentLimitReached { max_threads });
             }
         } else {
             self.total_count.fetch_add(1, Ordering::AcqRel);
@@ -168,8 +168,8 @@ mod tests {
             Ok(_) => panic!("limit should be enforced"),
             Err(err) => err,
         };
-        let CodexErr::AgentLimitReached { max_threads } = err else {
-            panic!("expected CodexErr::AgentLimitReached");
+        let RuneErr::AgentLimitReached { max_threads } = err else {
+            panic!("expected RuneErr::AgentLimitReached");
         };
         assert_eq!(max_threads, 1);
 
@@ -193,8 +193,8 @@ mod tests {
             Ok(_) => panic!("limit should still be enforced"),
             Err(err) => err,
         };
-        let CodexErr::AgentLimitReached { max_threads } = err else {
-            panic!("expected CodexErr::AgentLimitReached");
+        let RuneErr::AgentLimitReached { max_threads } = err else {
+            panic!("expected RuneErr::AgentLimitReached");
         };
         assert_eq!(max_threads, 1);
 
@@ -224,8 +224,8 @@ mod tests {
             Ok(_) => panic!("limit should still be enforced"),
             Err(err) => err,
         };
-        let CodexErr::AgentLimitReached { max_threads } = err else {
-            panic!("expected CodexErr::AgentLimitReached");
+        let RuneErr::AgentLimitReached { max_threads } = err else {
+            panic!("expected RuneErr::AgentLimitReached");
         };
         assert_eq!(max_threads, 1);
 

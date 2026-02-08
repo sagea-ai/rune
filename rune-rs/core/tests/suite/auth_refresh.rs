@@ -3,17 +3,17 @@ use anyhow::Result;
 use base64::Engine;
 use chrono::Duration;
 use chrono::Utc;
-use codex_app_server_protocol::AuthMode;
-use codex_core::AuthManager;
-use codex_core::auth::AuthCredentialsStoreMode;
-use codex_core::auth::AuthDotJson;
-use codex_core::auth::REFRESH_TOKEN_URL_OVERRIDE_ENV_VAR;
-use codex_core::auth::RefreshTokenError;
-use codex_core::auth::load_auth_dot_json;
-use codex_core::auth::save_auth;
-use codex_core::error::RefreshTokenFailedReason;
-use codex_core::token_data::IdTokenInfo;
-use codex_core::token_data::TokenData;
+use rune_app_server_protocol::AuthMode;
+use rune_core::AuthManager;
+use rune_core::auth::AuthCredentialsStoreMode;
+use rune_core::auth::AuthDotJson;
+use rune_core::auth::REFRESH_TOKEN_URL_OVERRIDE_ENV_VAR;
+use rune_core::auth::RefreshTokenError;
+use rune_core::auth::load_auth_dot_json;
+use rune_core::auth::save_auth;
+use rune_core::error::RefreshTokenFailedReason;
+use rune_core::token_data::IdTokenInfo;
+use rune_core::token_data::TokenData;
 use core_test_support::skip_if_no_network;
 use pretty_assertions::assert_eq;
 use serde::Serialize;
@@ -335,7 +335,7 @@ async fn unauthorized_recovery_reloads_then_refreshes_tokens() -> Result<()> {
         last_refresh: Some(initial_last_refresh),
     };
     save_auth(
-        ctx.codex_home.path(),
+        ctx.rune_home.path(),
         &disk_auth,
         AuthCredentialsStoreMode::File,
     )?;
@@ -433,7 +433,7 @@ async fn unauthorized_recovery_skips_reload_on_account_mismatch() -> Result<()> 
         last_refresh: Some(initial_last_refresh),
     };
     save_auth(
-        ctx.codex_home.path(),
+        ctx.rune_home.path(),
         &disk_auth,
         AuthCredentialsStoreMode::File,
     )?;
@@ -515,40 +515,40 @@ async fn unauthorized_recovery_requires_chatgpt_auth() -> Result<()> {
 }
 
 struct RefreshTokenTestContext {
-    codex_home: TempDir,
+    rune_home: TempDir,
     auth_manager: Arc<AuthManager>,
     _env_guard: EnvGuard,
 }
 
 impl RefreshTokenTestContext {
     fn new(server: &MockServer) -> Result<Self> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
         let endpoint = format!("{}/oauth/token", server.uri());
         let env_guard = EnvGuard::set(REFRESH_TOKEN_URL_OVERRIDE_ENV_VAR, endpoint);
 
         let auth_manager = AuthManager::shared(
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
             false,
             AuthCredentialsStoreMode::File,
         );
 
         Ok(Self {
-            codex_home,
+            rune_home,
             auth_manager,
             _env_guard: env_guard,
         })
     }
 
     fn load_auth(&self) -> Result<AuthDotJson> {
-        load_auth_dot_json(self.codex_home.path(), AuthCredentialsStoreMode::File)
+        load_auth_dot_json(self.rune_home.path(), AuthCredentialsStoreMode::File)
             .context("load auth.json")?
             .context("auth.json should exist")
     }
 
     fn write_auth(&self, auth_dot_json: &AuthDotJson) -> Result<()> {
         save_auth(
-            self.codex_home.path(),
+            self.rune_home.path(),
             auth_dot_json,
             AuthCredentialsStoreMode::File,
         )?;

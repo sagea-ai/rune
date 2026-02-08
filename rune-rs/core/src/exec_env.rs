@@ -1,11 +1,11 @@
 use crate::config::types::EnvironmentVariablePattern;
 use crate::config::types::ShellEnvironmentPolicy;
 use crate::config::types::ShellEnvironmentPolicyInherit;
-use codex_protocol::ThreadId;
+use rune_protocol::ThreadId;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-pub const CODEX_THREAD_ID_ENV_VAR: &str = "CODEX_THREAD_ID";
+pub const RUNE_THREAD_ID_ENV_VAR: &str = "RUNE_THREAD_ID";
 
 /// Construct an environment map based on the rules in the specified policy. The
 /// resulting map can be passed directly to `Command::envs()` after calling
@@ -15,7 +15,7 @@ pub const CODEX_THREAD_ID_ENV_VAR: &str = "CODEX_THREAD_ID";
 /// The derivation follows the algorithm documented in the struct-level comment
 /// for [`ShellEnvironmentPolicy`].
 ///
-/// `CODEX_THREAD_ID` is injected when a thread id is provided, even when
+/// `RUNE_THREAD_ID` is injected when a thread id is provided, even when
 /// `include_only` is set.
 pub fn create_env(
     policy: &ShellEnvironmentPolicy,
@@ -87,7 +87,7 @@ where
 
     // Step 6 – Populate the thread ID environment variable when provided.
     if let Some(thread_id) = thread_id {
-        env_map.insert(CODEX_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
+        env_map.insert(RUNE_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
     }
 
     env_map
@@ -125,7 +125,7 @@ mod tests {
             "API_KEY".to_string() => "secret".to_string(),
             "SECRET_TOKEN".to_string() => "t".to_string(),
         };
-        expected.insert(CODEX_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
+        expected.insert(RUNE_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
 
         assert_eq!(result, expected);
     }
@@ -150,7 +150,7 @@ mod tests {
             "PATH".to_string() => "/usr/bin".to_string(),
             "HOME".to_string() => "/home/user".to_string(),
         };
-        expected.insert(CODEX_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
+        expected.insert(RUNE_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
 
         assert_eq!(result, expected);
     }
@@ -172,7 +172,7 @@ mod tests {
         let mut expected: HashMap<String, String> = hashmap! {
             "PATH".to_string() => "/usr/bin".to_string(),
         };
-        expected.insert(CODEX_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
+        expected.insert(RUNE_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
 
         assert_eq!(result, expected);
     }
@@ -194,7 +194,7 @@ mod tests {
             "PATH".to_string() => "/usr/bin".to_string(),
             "NEW_VAR".to_string() => "42".to_string(),
         };
-        expected.insert(CODEX_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
+        expected.insert(RUNE_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
 
         assert_eq!(result, expected);
     }
@@ -209,7 +209,7 @@ mod tests {
         let mut expected: HashMap<String, String> = hashmap! {
             "PATH".to_string() => "/usr/bin".to_string(),
         };
-        expected.insert(CODEX_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
+        expected.insert(RUNE_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
 
         assert_eq!(result, expected);
     }
@@ -240,7 +240,7 @@ mod tests {
         let thread_id = ThreadId::new();
         let result = populate_env(vars.clone(), &policy, Some(thread_id));
         let mut expected: HashMap<String, String> = vars.into_iter().collect();
-        expected.insert(CODEX_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
+        expected.insert(RUNE_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
         assert_eq!(result, expected);
     }
 
@@ -259,7 +259,7 @@ mod tests {
         let mut expected: HashMap<String, String> = hashmap! {
             "PATH".to_string() => "/usr/bin".to_string(),
         };
-        expected.insert(CODEX_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
+        expected.insert(RUNE_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
         assert_eq!(result, expected);
     }
 
@@ -284,7 +284,7 @@ mod tests {
             "Path".to_string() => "C:\\Windows\\System32".to_string(),
             "TEMP".to_string() => "C:\\Temp".to_string(),
         };
-        expected.insert(CODEX_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
+        expected.insert(RUNE_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
 
         assert_eq!(result, expected);
     }
@@ -307,7 +307,7 @@ mod tests {
         let mut expected: HashMap<String, String> = hashmap! {
             "ONLY_VAR".to_string() => "yes".to_string(),
         };
-        expected.insert(CODEX_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
+        expected.insert(RUNE_THREAD_ID_ENV_VAR.to_string(), thread_id.to_string());
         assert_eq!(result, expected);
     }
 }

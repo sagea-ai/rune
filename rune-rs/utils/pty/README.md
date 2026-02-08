@@ -19,7 +19,7 @@ Lightweight helpers for spawning interactive processes either under a PTY (pseud
 ```rust
 use std::collections::HashMap;
 use std::path::Path;
-use codex_utils_pty::spawn_pty_process;
+use rune_utils_pty::spawn_pty_process;
 
 # tokio_test::block_on(async {
 let env_map: HashMap<String, String> = std::env::vars().collect();

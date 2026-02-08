@@ -1,41 +1,41 @@
-use codex_common::elapsed::format_duration;
-use codex_common::elapsed::format_elapsed;
-use codex_core::config::Config;
-use codex_core::protocol::AgentMessageEvent;
-use codex_core::protocol::AgentReasoningRawContentEvent;
-use codex_core::protocol::AgentStatus;
-use codex_core::protocol::BackgroundEventEvent;
-use codex_core::protocol::CollabAgentInteractionBeginEvent;
-use codex_core::protocol::CollabAgentInteractionEndEvent;
-use codex_core::protocol::CollabAgentSpawnBeginEvent;
-use codex_core::protocol::CollabAgentSpawnEndEvent;
-use codex_core::protocol::CollabCloseBeginEvent;
-use codex_core::protocol::CollabCloseEndEvent;
-use codex_core::protocol::CollabWaitingBeginEvent;
-use codex_core::protocol::CollabWaitingEndEvent;
-use codex_core::protocol::DeprecationNoticeEvent;
-use codex_core::protocol::ErrorEvent;
-use codex_core::protocol::Event;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ExecCommandBeginEvent;
-use codex_core::protocol::ExecCommandEndEvent;
-use codex_core::protocol::FileChange;
-use codex_core::protocol::ItemCompletedEvent;
-use codex_core::protocol::McpInvocation;
-use codex_core::protocol::McpToolCallBeginEvent;
-use codex_core::protocol::McpToolCallEndEvent;
-use codex_core::protocol::PatchApplyBeginEvent;
-use codex_core::protocol::PatchApplyEndEvent;
-use codex_core::protocol::SessionConfiguredEvent;
-use codex_core::protocol::StreamErrorEvent;
-use codex_core::protocol::TurnAbortReason;
-use codex_core::protocol::TurnCompleteEvent;
-use codex_core::protocol::TurnDiffEvent;
-use codex_core::protocol::WarningEvent;
-use codex_core::protocol::WebSearchEndEvent;
-use codex_core::web_search::web_search_detail;
-use codex_protocol::items::TurnItem;
-use codex_protocol::num_format::format_with_separators;
+use rune_common::elapsed::format_duration;
+use rune_common::elapsed::format_elapsed;
+use rune_core::config::Config;
+use rune_core::protocol::AgentMessageEvent;
+use rune_core::protocol::AgentReasoningRawContentEvent;
+use rune_core::protocol::AgentStatus;
+use rune_core::protocol::BackgroundEventEvent;
+use rune_core::protocol::CollabAgentInteractionBeginEvent;
+use rune_core::protocol::CollabAgentInteractionEndEvent;
+use rune_core::protocol::CollabAgentSpawnBeginEvent;
+use rune_core::protocol::CollabAgentSpawnEndEvent;
+use rune_core::protocol::CollabCloseBeginEvent;
+use rune_core::protocol::CollabCloseEndEvent;
+use rune_core::protocol::CollabWaitingBeginEvent;
+use rune_core::protocol::CollabWaitingEndEvent;
+use rune_core::protocol::DeprecationNoticeEvent;
+use rune_core::protocol::ErrorEvent;
+use rune_core::protocol::Event;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ExecCommandBeginEvent;
+use rune_core::protocol::ExecCommandEndEvent;
+use rune_core::protocol::FileChange;
+use rune_core::protocol::ItemCompletedEvent;
+use rune_core::protocol::McpInvocation;
+use rune_core::protocol::McpToolCallBeginEvent;
+use rune_core::protocol::McpToolCallEndEvent;
+use rune_core::protocol::PatchApplyBeginEvent;
+use rune_core::protocol::PatchApplyEndEvent;
+use rune_core::protocol::SessionConfiguredEvent;
+use rune_core::protocol::StreamErrorEvent;
+use rune_core::protocol::TurnAbortReason;
+use rune_core::protocol::TurnCompleteEvent;
+use rune_core::protocol::TurnDiffEvent;
+use rune_core::protocol::WarningEvent;
+use rune_core::protocol::WebSearchEndEvent;
+use rune_core::web_search::web_search_detail;
+use rune_protocol::items::TurnItem;
+use rune_protocol::num_format::format_with_separators;
 use owo_colors::OwoColorize;
 use owo_colors::Style;
 use shlex::try_join;
@@ -43,12 +43,12 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Instant;
 
-use crate::event_processor::CodexStatus;
+use crate::event_processor::RuneStatus;
 use crate::event_processor::EventProcessor;
 use crate::event_processor::handle_last_message;
-use codex_common::create_config_summary_entries;
-use codex_protocol::plan_tool::StepStatus;
-use codex_protocol::plan_tool::UpdatePlanArgs;
+use rune_common::create_config_summary_entries;
+use rune_protocol::plan_tool::StepStatus;
+use rune_protocol::plan_tool::UpdatePlanArgs;
 
 /// This should be configurable. When used in CI, users may not want to impose
 /// a limit so they can see the full transcript.
@@ -73,7 +73,7 @@ pub(crate) struct EventProcessorWithHumanOutput {
     show_agent_reasoning: bool,
     show_raw_agent_reasoning: bool,
     last_message_path: Option<PathBuf>,
-    last_total_token_usage: Option<codex_core::protocol::TokenUsageInfo>,
+    last_total_token_usage: Option<rune_core::protocol::TokenUsageInfo>,
     final_message: Option<String>,
     last_proposed_plan: Option<String>,
 }
@@ -151,7 +151,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
         const VERSION: &str = env!("CARGO_PKG_VERSION");
         ts_msg!(
             self,
-            "OpenAI Codex v{} (research preview)\n--------",
+            "OpenAI Rune v{} (research preview)\n--------",
             VERSION
         );
 
@@ -174,7 +174,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
         ts_msg!(self, "{}\n{}", "user".style(self.cyan), prompt);
     }
 
-    fn process_event(&mut self, event: Event) -> CodexStatus {
+    fn process_event(&mut self, event: Event) -> RuneStatus {
         let Event { id: _, msg } = event;
         match msg {
             EventMsg::Error(ErrorEvent { message, .. }) => {
@@ -200,10 +200,10 @@ impl EventProcessor for EventProcessorWithHumanOutput {
             }
             EventMsg::McpStartupUpdate(update) => {
                 let status_text = match update.status {
-                    codex_core::protocol::McpStartupStatus::Starting => "starting".to_string(),
-                    codex_core::protocol::McpStartupStatus::Ready => "ready".to_string(),
-                    codex_core::protocol::McpStartupStatus::Cancelled => "cancelled".to_string(),
-                    codex_core::protocol::McpStartupStatus::Failed { ref error } => {
+                    rune_core::protocol::McpStartupStatus::Starting => "starting".to_string(),
+                    rune_core::protocol::McpStartupStatus::Ready => "ready".to_string(),
+                    rune_core::protocol::McpStartupStatus::Cancelled => "cancelled".to_string(),
+                    rune_core::protocol::McpStartupStatus::Failed { ref error } => {
                         format!("failed: {error}")
                     }
                 };
@@ -274,7 +274,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
 
                 self.final_message = last_agent_message.or_else(|| self.last_proposed_plan.clone());
 
-                return CodexStatus::InitiateShutdown;
+                return RuneStatus::InitiateShutdown;
             }
             EventMsg::TokenCount(ev) => {
                 self.last_total_token_usage = ev.info;
@@ -282,7 +282,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
 
             EventMsg::AgentReasoningSectionBreak(_) => {
                 if !self.show_agent_reasoning {
-                    return CodexStatus::Running;
+                    return RuneStatus::Running;
                 }
                 eprintln!();
             }
@@ -300,7 +300,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                 ts_msg!(
                     self,
                     "{}\n{}",
-                    "codex".style(self.italic).style(self.magenta),
+                    "rune".style(self.italic).style(self.magenta),
                     message,
                 );
             }
@@ -545,7 +545,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                 ts_msg!(
                     self,
                     "{} {}",
-                    "codex session".style(self.magenta).style(self.bold),
+                    "rune session".style(self.magenta).style(self.bold),
                     conversation_id.to_string().style(self.dimmed)
                 );
 
@@ -605,7 +605,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                         ts_msg!(self, "task aborted: review ended");
                     }
                 }
-                return CodexStatus::InitiateShutdown;
+                return RuneStatus::InitiateShutdown;
             }
             EventMsg::ContextCompacted(_) => {
                 ts_msg!(self, "context compacted");
@@ -708,7 +708,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                         format_collab_invocation("wait", &call_id, None),
                         "timed out".style(self.yellow)
                     );
-                    return CodexStatus::Running;
+                    return RuneStatus::Running;
                 }
                 let success = !statuses.values().any(is_collab_status_failure);
                 let title_style = if success { self.green } else { self.red };
@@ -766,7 +766,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
                     receiver_thread_id.to_string().style(self.dimmed)
                 );
             }
-            EventMsg::ShutdownComplete => return CodexStatus::Shutdown,
+            EventMsg::ShutdownComplete => return RuneStatus::Shutdown,
             EventMsg::ThreadNameUpdated(_)
             | EventMsg::ExecApprovalRequest(_)
             | EventMsg::ApplyPatchApprovalRequest(_)
@@ -800,7 +800,7 @@ impl EventProcessor for EventProcessorWithHumanOutput {
             | EventMsg::CollabResumeEnd(_)
             | EventMsg::DynamicToolCallRequest(_) => {}
         }
-        CodexStatus::Running
+        RuneStatus::Running
     }
 
     fn print_final_output(&mut self) {
@@ -897,7 +897,7 @@ fn is_collab_status_failure(status: &AgentStatus) -> bool {
     matches!(status, AgentStatus::Errored(_) | AgentStatus::NotFound)
 }
 
-fn format_receiver_list(ids: &[codex_protocol::ThreadId]) -> String {
+fn format_receiver_list(ids: &[rune_protocol::ThreadId]) -> String {
     if ids.is_empty() {
         return "none".to_string();
     }

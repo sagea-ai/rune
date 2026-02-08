@@ -3,15 +3,15 @@ use app_test_support::DEFAULT_CLIENT_NAME;
 use app_test_support::McpProcess;
 use app_test_support::create_mock_responses_server_sequence_unchecked;
 use app_test_support::to_response;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::MockExperimentalMethodParams;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
+use rune_app_server_protocol::ClientInfo;
+use rune_app_server_protocol::InitializeCapabilities;
+use rune_app_server_protocol::JSONRPCError;
+use rune_app_server_protocol::JSONRPCMessage;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::MockExperimentalMethodParams;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::ThreadStartParams;
+use rune_app_server_protocol::ThreadStartResponse;
 use pretty_assertions::assert_eq;
 use std::path::Path;
 use std::time::Duration;
@@ -22,8 +22,8 @@ const DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[tokio::test]
 async fn mock_experimental_method_requires_experimental_api_capability() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let rune_home = TempDir::new()?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
 
     let init = mcp
         .initialize_with_capabilities(
@@ -52,10 +52,10 @@ async fn mock_experimental_method_requires_experimental_api_capability() -> Resu
 #[tokio::test]
 async fn thread_start_mock_field_requires_experimental_api_capability() -> Result<()> {
     let server = create_mock_responses_server_sequence_unchecked(Vec::new()).await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     let init = mcp
         .initialize_with_capabilities(
             default_client_info(),
@@ -88,10 +88,10 @@ async fn thread_start_mock_field_requires_experimental_api_capability() -> Resul
 async fn thread_start_without_dynamic_tools_allows_without_experimental_api_capability()
 -> Result<()> {
     let server = create_mock_responses_server_sequence_unchecked(Vec::new()).await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     let init = mcp
         .initialize_with_capabilities(
             default_client_info(),
@@ -136,8 +136,8 @@ fn assert_experimental_capability_error(error: JSONRPCError, reason: &str) {
     assert_eq!(error.error.data, None);
 }
 
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

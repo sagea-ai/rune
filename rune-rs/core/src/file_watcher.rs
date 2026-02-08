@@ -92,7 +92,7 @@ pub(crate) struct FileWatcher {
 }
 
 impl FileWatcher {
-    pub(crate) fn new(_codex_home: PathBuf) -> notify::Result<Self> {
+    pub(crate) fn new(_rune_home: PathBuf) -> notify::Result<Self> {
         let (raw_tx, raw_rx) = mpsc::unbounded_channel();
         let raw_tx_clone = raw_tx;
         let watcher = notify::recommended_watcher(move |res| {
@@ -339,7 +339,7 @@ mod tests {
     #[test]
     fn classify_event_supports_multiple_roots_without_prefix_false_positives() {
         let root_a = path("/tmp/skills");
-        let root_b = path("/tmp/workspace/.codex/skills");
+        let root_b = path("/tmp/workspace/.rune/skills");
         let state = RwLock::new(WatchState {
             skills_roots: HashSet::from([root_a.clone(), root_b.clone()]),
         });

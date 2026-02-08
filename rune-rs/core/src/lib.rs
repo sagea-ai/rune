@@ -12,14 +12,14 @@ pub mod auth;
 pub mod bash;
 mod client;
 mod client_common;
-pub mod codex;
-pub use codex::SteerInputError;
-mod codex_thread;
+pub mod rune;
+pub use rune::SteerInputError;
+mod rune_thread;
 mod compact_remote;
-pub use codex_thread::CodexThread;
-pub use codex_thread::ThreadConfigSnapshot;
+pub use rune_thread::RuneThread;
+pub use rune_thread::ThreadConfigSnapshot;
 mod agent;
-mod codex_delegate;
+mod rune_delegate;
 mod command_safety;
 pub mod config;
 pub mod config_loader;
@@ -77,18 +77,18 @@ pub mod review_format;
 pub mod review_prompts;
 mod thread_manager;
 pub mod web_search;
-pub use codex_protocol::protocol::InitialHistory;
+pub use rune_protocol::protocol::InitialHistory;
 pub use thread_manager::NewThread;
 pub use thread_manager::ThreadManager;
 #[deprecated(note = "use ThreadManager")]
 pub type ConversationManager = ThreadManager;
 #[deprecated(note = "use NewThread")]
 pub type NewConversation = NewThread;
-#[deprecated(note = "use CodexThread")]
-pub type CodexConversation = CodexThread;
+#[deprecated(note = "use RuneThread")]
+pub type RuneConversation = RuneThread;
 // Re-export common auth types for workspace consumers
 pub use auth::AuthManager;
-pub use auth::CodexAuth;
+pub use auth::RuneAuth;
 pub mod default_client;
 pub mod project_doc;
 mod rollout;
@@ -130,8 +130,8 @@ mod tasks;
 mod user_shell_command;
 pub mod util;
 
-pub use apply_patch::CODEX_APPLY_PATCH_ARG1;
-pub use client::X_CODEX_TURN_METADATA_HEADER;
+pub use apply_patch::RUNE_APPLY_PATCH_ARG1;
+pub use client::X_RUNE_TURN_METADATA_HEADER;
 pub use command_safety::is_dangerous_command;
 pub use command_safety::is_safe_command;
 pub use exec_policy::ExecPolicyError;
@@ -142,11 +142,11 @@ pub use safety::get_platform_sandbox;
 pub use tools::spec::parse_tool_input_schema;
 pub use turn_metadata::build_turn_metadata_header;
 // Re-export the protocol types from the standalone `rune-protocol` crate so existing
-// `codex_core::protocol::...` references continue to work across the workspace.
-pub use codex_protocol::protocol;
+// `rune_core::protocol::...` references continue to work across the workspace.
+pub use rune_protocol::protocol;
 // Re-export protocol config enums to ensure call sites can use the same types
 // as those in the protocol crate when constructing protocol messages.
-pub use codex_protocol::config_types as protocol_config_types;
+pub use rune_protocol::config_types as protocol_config_types;
 
 pub use client::ModelClient;
 pub use client::ModelClientSession;
@@ -154,11 +154,11 @@ pub use client_common::Prompt;
 pub use client_common::REVIEW_PROMPT;
 pub use client_common::ResponseEvent;
 pub use client_common::ResponseStream;
-pub use codex_protocol::models::ContentItem;
-pub use codex_protocol::models::LocalShellAction;
-pub use codex_protocol::models::LocalShellExecAction;
-pub use codex_protocol::models::LocalShellStatus;
-pub use codex_protocol::models::ResponseItem;
+pub use rune_protocol::models::ContentItem;
+pub use rune_protocol::models::LocalShellAction;
+pub use rune_protocol::models::LocalShellExecAction;
+pub use rune_protocol::models::LocalShellStatus;
+pub use rune_protocol::models::ResponseItem;
 pub use compact::content_items_to_text;
 pub use event_mapping::parse_turn_item;
 pub mod compact;

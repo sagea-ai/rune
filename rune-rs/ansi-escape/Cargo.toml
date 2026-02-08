@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "codex_ansi_escape"
+name = "rune_ansi_escape"
 path = "src/lib.rs"
 
 [dependencies]

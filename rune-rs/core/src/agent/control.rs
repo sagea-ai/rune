@@ -1,12 +1,12 @@
 use crate::agent::AgentStatus;
 use crate::agent::guards::Guards;
-use crate::error::CodexErr;
-use crate::error::Result as CodexResult;
+use crate::error::RuneErr;
+use crate::error::Result as RuneResult;
 use crate::thread_manager::ThreadManagerState;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::Op;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::user_input::UserInput;
+use rune_protocol::ThreadId;
+use rune_protocol::protocol::Op;
+use rune_protocol::protocol::SessionSource;
+use rune_protocol::user_input::UserInput;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Weak;
@@ -16,13 +16,13 @@ use tokio::sync::watch;
 /// `AgentControl` is held by each session (via `SessionServices`). It provides capability to
 /// spawn new agents and the inter-agent communication layer.
 /// An `AgentControl` instance is shared per "user session" which means the same `AgentControl`
-/// is used for every sub-agent spawned by Codex. By doing so, we make sure the guards are
+/// is used for every sub-agent spawned by Rune. By doing so, we make sure the guards are
 /// scoped to a user session.
 #[derive(Clone, Default)]
 pub(crate) struct AgentControl {
     /// Weak handle back to the global thread registry/state.
     /// This is `Weak` to avoid reference cycles and shadow persistence of the form
-    /// `ThreadManagerState -> CodexThread -> Session -> SessionServices -> ThreadManagerState`.
+    /// `ThreadManagerState -> RuneThread -> Session -> SessionServices -> ThreadManagerState`.
     manager: Weak<ThreadManagerState>,
     state: Arc<Guards>,
 }
@@ -42,7 +42,7 @@ impl AgentControl {
         config: crate::config::Config,
         prompt: String,
         session_source: Option<SessionSource>,
-    ) -> CodexResult<ThreadId> {
+    ) -> RuneResult<ThreadId> {
         let state = self.upgrade()?;
         let reservation = self.state.reserve_spawn_slot(config.agent_max_threads)?;
 
@@ -73,7 +73,7 @@ impl AgentControl {
         config: crate::config::Config,
         rollout_path: PathBuf,
         session_source: SessionSource,
-    ) -> CodexResult<ThreadId> {
+    ) -> RuneResult<ThreadId> {
         let state = self.upgrade()?;
         let reservation = self.state.reserve_spawn_slot(config.agent_max_threads)?;
 
@@ -98,7 +98,7 @@ impl AgentControl {
         &self,
         agent_id: ThreadId,
         prompt: String,
-    ) -> CodexResult<String> {
+    ) -> RuneResult<String> {
         let state = self.upgrade()?;
         let result = state
             .send_op(
@@ -113,7 +113,7 @@ impl AgentControl {
                 },
             )
             .await;
-        if matches!(result, Err(CodexErr::InternalAgentDied)) {
+        if matches!(result, Err(RuneErr::InternalAgentDied)) {
             let _ = state.remove_thread(&agent_id).await;
             self.state.release_spawned_thread(agent_id);
         }
@@ -121,13 +121,13 @@ impl AgentControl {
     }
 
     /// Interrupt the current task for an existing agent thread.
-    pub(crate) async fn interrupt_agent(&self, agent_id: ThreadId) -> CodexResult<String> {
+    pub(crate) async fn interrupt_agent(&self, agent_id: ThreadId) -> RuneResult<String> {
         let state = self.upgrade()?;
         state.send_op(agent_id, Op::Interrupt).await
     }
 
     /// Submit a shutdown request to an existing agent thread.
-    pub(crate) async fn shutdown_agent(&self, agent_id: ThreadId) -> CodexResult<String> {
+    pub(crate) async fn shutdown_agent(&self, agent_id: ThreadId) -> RuneResult<String> {
         let state = self.upgrade()?;
         let result = state.send_op(agent_id, Op::Shutdown {}).await;
         let _ = state.remove_thread(&agent_id).await;
@@ -151,36 +151,36 @@ impl AgentControl {
     pub(crate) async fn subscribe_status(
         &self,
         agent_id: ThreadId,
-    ) -> CodexResult<watch::Receiver<AgentStatus>> {
+    ) -> RuneResult<watch::Receiver<AgentStatus>> {
         let state = self.upgrade()?;
         let thread = state.get_thread(agent_id).await?;
         Ok(thread.subscribe_status())
     }
 
-    fn upgrade(&self) -> CodexResult<Arc<ThreadManagerState>> {
+    fn upgrade(&self) -> RuneResult<Arc<ThreadManagerState>> {
         self.manager
             .upgrade()
-            .ok_or_else(|| CodexErr::UnsupportedOperation("thread manager dropped".to_string()))
+            .ok_or_else(|| RuneErr::UnsupportedOperation("thread manager dropped".to_string()))
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::CodexAuth;
-    use crate::CodexThread;
+    use crate::RuneAuth;
+    use crate::RuneThread;
     use crate::ThreadManager;
     use crate::agent::agent_status_from_event;
     use crate::config::Config;
     use crate::config::ConfigBuilder;
     use assert_matches::assert_matches;
-    use codex_protocol::config_types::ModeKind;
-    use codex_protocol::protocol::ErrorEvent;
-    use codex_protocol::protocol::EventMsg;
-    use codex_protocol::protocol::TurnAbortReason;
-    use codex_protocol::protocol::TurnAbortedEvent;
-    use codex_protocol::protocol::TurnCompleteEvent;
-    use codex_protocol::protocol::TurnStartedEvent;
+    use rune_protocol::config_types::ModeKind;
+    use rune_protocol::protocol::ErrorEvent;
+    use rune_protocol::protocol::EventMsg;
+    use rune_protocol::protocol::TurnAbortReason;
+    use rune_protocol::protocol::TurnAbortedEvent;
+    use rune_protocol::protocol::TurnCompleteEvent;
+    use rune_protocol::protocol::TurnStartedEvent;
     use pretty_assertions::assert_eq;
     use tempfile::TempDir;
     use toml::Value as TomlValue;
@@ -190,7 +190,7 @@ mod tests {
     ) -> (TempDir, Config) {
         let home = TempDir::new().expect("create temp dir");
         let config = ConfigBuilder::default()
-            .codex_home(home.path().to_path_buf())
+            .rune_home(home.path().to_path_buf())
             .cli_overrides(cli_overrides)
             .build()
             .await
@@ -213,9 +213,9 @@ mod tests {
         async fn new() -> Self {
             let (home, config) = test_config().await;
             let manager = ThreadManager::with_models_provider_and_home(
-                CodexAuth::from_api_key("dummy"),
+                RuneAuth::from_api_key("dummy"),
                 config.model_provider.clone(),
-                config.codex_home.clone(),
+                config.rune_home.clone(),
             );
             let control = manager.agent_control();
             Self {
@@ -226,7 +226,7 @@ mod tests {
             }
         }
 
-        async fn start_thread(&self) -> (ThreadId, Arc<CodexThread>) {
+        async fn start_thread(&self) -> (ThreadId, Arc<RuneThread>) {
             let new_thread = self
                 .manager
                 .start_thread(self.config.clone())
@@ -278,7 +278,7 @@ mod tests {
     async fn on_event_updates_status_from_error() {
         let status = agent_status_from_event(&EventMsg::Error(ErrorEvent {
             message: "boom".to_string(),
-            codex_error_info: None,
+            rune_error_info: None,
         }));
 
         let expected = AgentStatus::Errored("boom".to_string());
@@ -342,7 +342,7 @@ mod tests {
             .send_prompt(thread_id, "hello".to_string())
             .await
             .expect_err("send_prompt should fail for missing thread");
-        assert_matches!(err, CodexErr::ThreadNotFound(id) if id == thread_id);
+        assert_matches!(err, RuneErr::ThreadNotFound(id) if id == thread_id);
     }
 
     #[tokio::test]
@@ -369,7 +369,7 @@ mod tests {
             .subscribe_status(thread_id)
             .await
             .expect_err("subscribe_status should fail for missing thread");
-        assert_matches!(err, CodexErr::ThreadNotFound(id) if id == thread_id);
+        assert_matches!(err, RuneErr::ThreadNotFound(id) if id == thread_id);
     }
 
     #[tokio::test]
@@ -461,9 +461,9 @@ mod tests {
         )])
         .await;
         let manager = ThreadManager::with_models_provider_and_home(
-            CodexAuth::from_api_key("dummy"),
+            RuneAuth::from_api_key("dummy"),
             config.model_provider.clone(),
-            config.codex_home.clone(),
+            config.rune_home.clone(),
         );
         let control = manager.agent_control();
 
@@ -481,11 +481,11 @@ mod tests {
             .spawn_agent(config, "hello again".to_string(), None)
             .await
             .expect_err("spawn_agent should respect max threads");
-        let CodexErr::AgentLimitReached {
+        let RuneErr::AgentLimitReached {
             max_threads: seen_max_threads,
         } = err
         else {
-            panic!("expected CodexErr::AgentLimitReached");
+            panic!("expected RuneErr::AgentLimitReached");
         };
         assert_eq!(seen_max_threads, max_threads);
 
@@ -504,9 +504,9 @@ mod tests {
         )])
         .await;
         let manager = ThreadManager::with_models_provider_and_home(
-            CodexAuth::from_api_key("dummy"),
+            RuneAuth::from_api_key("dummy"),
             config.model_provider.clone(),
-            config.codex_home.clone(),
+            config.rune_home.clone(),
         );
         let control = manager.agent_control();
 
@@ -538,9 +538,9 @@ mod tests {
         )])
         .await;
         let manager = ThreadManager::with_models_provider_and_home(
-            CodexAuth::from_api_key("dummy"),
+            RuneAuth::from_api_key("dummy"),
             config.model_provider.clone(),
-            config.codex_home.clone(),
+            config.rune_home.clone(),
         );
         let control = manager.agent_control();
         let cloned = control.clone();
@@ -554,8 +554,8 @@ mod tests {
             .spawn_agent(config, "hello again".to_string(), None)
             .await
             .expect_err("spawn_agent should respect shared guard");
-        let CodexErr::AgentLimitReached { max_threads } = err else {
-            panic!("expected CodexErr::AgentLimitReached");
+        let RuneErr::AgentLimitReached { max_threads } = err else {
+            panic!("expected RuneErr::AgentLimitReached");
         };
         assert_eq!(max_threads, 1);
 
@@ -574,9 +574,9 @@ mod tests {
         )])
         .await;
         let manager = ThreadManager::with_models_provider_and_home(
-            CodexAuth::from_api_key("dummy"),
+            RuneAuth::from_api_key("dummy"),
             config.model_provider.clone(),
-            config.codex_home.clone(),
+            config.rune_home.clone(),
         );
         let control = manager.agent_control();
 
@@ -604,11 +604,11 @@ mod tests {
             .resume_agent_from_rollout(config, rollout_path, SessionSource::Exec)
             .await
             .expect_err("resume should respect max threads");
-        let CodexErr::AgentLimitReached {
+        let RuneErr::AgentLimitReached {
             max_threads: seen_max_threads,
         } = err
         else {
-            panic!("expected CodexErr::AgentLimitReached");
+            panic!("expected RuneErr::AgentLimitReached");
         };
         assert_eq!(seen_max_threads, max_threads);
 
@@ -627,13 +627,13 @@ mod tests {
         )])
         .await;
         let manager = ThreadManager::with_models_provider_and_home(
-            CodexAuth::from_api_key("dummy"),
+            RuneAuth::from_api_key("dummy"),
             config.model_provider.clone(),
-            config.codex_home.clone(),
+            config.rune_home.clone(),
         );
         let control = manager.agent_control();
 
-        let missing_rollout = config.codex_home.join("sessions/missing-rollout.jsonl");
+        let missing_rollout = config.rune_home.join("sessions/missing-rollout.jsonl");
         let _ = control
             .resume_agent_from_rollout(config.clone(), missing_rollout, SessionSource::Exec)
             .await

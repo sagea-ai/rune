@@ -14,7 +14,7 @@ use core_test_support::responses::sse_response;
 use core_test_support::responses::start_mock_server;
 use core_test_support::responses::start_websocket_server_with_headers;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use pretty_assertions::assert_eq;
 
 const TURN_STATE_HEADER: &str = "x-rune-turn-state";
@@ -51,7 +51,7 @@ async fn responses_turn_state_persists_within_turn_and_resets_after() -> Result<
     ];
     let request_log = mount_response_sequence(&server, responses).await;
 
-    let test = test_codex().build(&server).await?;
+    let test = test_rune().build(&server).await?;
     test.submit_turn("run a shell command").await?;
     test.submit_turn("second turn").await?;
 
@@ -106,7 +106,7 @@ async fn websocket_turn_state_persists_within_turn_and_resets_after() -> Result<
     ])
     .await;
 
-    let mut builder = test_codex();
+    let mut builder = test_rune();
     let test = builder.build_with_websocket_server(&server).await?;
     test.submit_turn("run the echo command").await?;
     test.submit_turn("second turn").await?;

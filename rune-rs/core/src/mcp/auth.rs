@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use anyhow::Result;
-use codex_protocol::protocol::McpAuthStatus;
-use codex_rmcp_client::OAuthCredentialsStoreMode;
-use codex_rmcp_client::determine_streamable_http_auth_status;
-use codex_rmcp_client::supports_oauth_login;
+use rune_protocol::protocol::McpAuthStatus;
+use rune_rmcp_client::OAuthCredentialsStoreMode;
+use rune_rmcp_client::determine_streamable_http_auth_status;
+use rune_rmcp_client::supports_oauth_login;
 use futures::future::join_all;
 use tracing::warn;
 

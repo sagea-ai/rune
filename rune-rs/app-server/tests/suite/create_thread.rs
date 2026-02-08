@@ -2,15 +2,15 @@ use anyhow::Result;
 use app_test_support::McpProcess;
 use app_test_support::create_final_assistant_message_sse_response;
 use app_test_support::to_response;
-use codex_app_server_protocol::AddConversationListenerParams;
-use codex_app_server_protocol::AddConversationSubscriptionResponse;
-use codex_app_server_protocol::InputItem;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::NewConversationParams;
-use codex_app_server_protocol::NewConversationResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SendUserMessageParams;
-use codex_app_server_protocol::SendUserMessageResponse;
+use rune_app_server_protocol::AddConversationListenerParams;
+use rune_app_server_protocol::AddConversationSubscriptionResponse;
+use rune_app_server_protocol::InputItem;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::NewConversationParams;
+use rune_app_server_protocol::NewConversationResponse;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::SendUserMessageParams;
+use rune_app_server_protocol::SendUserMessageResponse;
 use core_test_support::responses;
 use pretty_assertions::assert_eq;
 use serde_json::json;
@@ -27,12 +27,12 @@ async fn test_conversation_create_and_send_message_ok() -> Result<()> {
     let server = responses::start_mock_server().await;
     let response_mock = responses::mount_sse_sequence(&server, vec![response_body]).await;
 
-    // Temporary Codex home with config pointing at the mock server.
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    // Temporary Rune home with config pointing at the mock server.
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
     // Start MCP server process and initialize.
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // Create a conversation via the new JSON-RPC API.
@@ -118,8 +118,8 @@ async fn test_conversation_create_and_send_message_ok() -> Result<()> {
 }
 
 // Helper to create a config.toml pointing at the mock model server.
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

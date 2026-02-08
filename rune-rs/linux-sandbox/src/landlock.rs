@@ -5,11 +5,11 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use codex_core::error::CodexErr;
-use codex_core::error::Result;
-use codex_core::error::SandboxErr;
-use codex_core::protocol::SandboxPolicy;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_core::error::RuneErr;
+use rune_core::error::Result;
+use rune_core::error::SandboxErr;
+use rune_core::protocol::SandboxPolicy;
+use rune_utils_absolute_path::AbsolutePathBuf;
 
 use landlock::ABI;
 #[allow(unused_imports)]
@@ -86,7 +86,7 @@ fn set_no_new_privs() -> Result<()> {
 /// `/dev/null` and the provided list of `writable_roots`.
 ///
 /// # Errors
-/// Returns [`CodexErr::Sandbox`] variants when the ruleset fails to apply.
+/// Returns [`RuneErr::Sandbox`] variants when the ruleset fails to apply.
 ///
 /// Note: this is currently unused because filesystem sandboxing is performed
 /// via bubblewrap. It is kept for reference and potential fallback use.
@@ -112,7 +112,7 @@ fn install_filesystem_landlock_rules_on_current_thread(
     let status = ruleset.restrict_self()?;
 
     if status.ruleset == landlock::RulesetStatus::NotEnforced {
-        return Err(CodexErr::Sandbox(SandboxErr::LandlockRestrict));
+        return Err(RuneErr::Sandbox(SandboxErr::LandlockRestrict));
     }
 
     Ok(())

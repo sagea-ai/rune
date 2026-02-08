@@ -1,15 +1,15 @@
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
 
 use crate::config::types::Personality;
 use crate::protocol::AskForApproval;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::openai_models::ReasoningEffort;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::config_types::SandboxMode;
+use rune_protocol::config_types::Verbosity;
+use rune_protocol::config_types::WebSearchMode;
+use rune_protocol::openai_models::ReasoningEffort;
 
 /// Collection of common configuration options that a user can define as a unit
 /// in `config.toml`.
@@ -48,7 +48,7 @@ pub struct ConfigProfile {
     pub oss_provider: Option<String>,
 }
 
-impl From<ConfigProfile> for codex_app_server_protocol::Profile {
+impl From<ConfigProfile> for rune_app_server_protocol::Profile {
     fn from(config_profile: ConfigProfile) -> Self {
         Self {
             model: config_profile.model,

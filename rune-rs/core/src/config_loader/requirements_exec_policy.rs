@@ -1,9 +1,9 @@
-use codex_execpolicy::Decision;
-use codex_execpolicy::Policy;
-use codex_execpolicy::rule::PatternToken;
-use codex_execpolicy::rule::PrefixPattern;
-use codex_execpolicy::rule::PrefixRule;
-use codex_execpolicy::rule::RuleRef;
+use rune_execpolicy::Decision;
+use rune_execpolicy::Policy;
+use rune_execpolicy::rule::PatternToken;
+use rune_execpolicy::rule::PrefixPattern;
+use rune_execpolicy::rule::PrefixRule;
+use rune_execpolicy::rule::RuleRef;
 use multimap::MultiMap;
 use serde::Deserialize;
 use std::sync::Arc;
@@ -114,7 +114,7 @@ pub enum RequirementsExecPolicyParseError {
     MissingDecision { rule_index: usize },
 
     #[error(
-        "rules prefix_rule at index {rule_index} has decision 'allow', which is not permitted in requirements.toml: Codex merges these rules with other config and uses the most restrictive result (use 'prompt' or 'forbidden')"
+        "rules prefix_rule at index {rule_index} has decision 'allow', which is not permitted in requirements.toml: Rune merges these rules with other config and uses the most restrictive result (use 'prompt' or 'forbidden')"
     )]
     AllowDecisionNotAllowed { rule_index: usize },
 }

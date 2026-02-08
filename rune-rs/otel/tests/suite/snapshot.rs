@@ -1,12 +1,12 @@
 use crate::harness::attributes_to_map;
 use crate::harness::find_metric;
-use codex_otel::OtelManager;
-use codex_otel::TelemetryAuthMode;
-use codex_otel::metrics::MetricsClient;
-use codex_otel::metrics::MetricsConfig;
-use codex_otel::metrics::Result;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::SessionSource;
+use rune_otel::OtelManager;
+use rune_otel::TelemetryAuthMode;
+use rune_otel::metrics::MetricsClient;
+use rune_otel::metrics::MetricsConfig;
+use rune_otel::metrics::Result;
+use rune_protocol::ThreadId;
+use rune_protocol::protocol::SessionSource;
 use opentelemetry_sdk::metrics::InMemoryMetricExporter;
 use opentelemetry_sdk::metrics::data::AggregatedMetrics;
 use opentelemetry_sdk::metrics::data::MetricData;
@@ -27,14 +27,14 @@ fn snapshot_collects_metrics_without_shutdown() -> Result<()> {
     let metrics = MetricsClient::new(config)?;
 
     metrics.counter(
-        "codex.tool.call",
+        "rune.tool.call",
         1,
         &[("tool", "shell"), ("success", "true")],
     )?;
 
     let snapshot = metrics.snapshot()?;
 
-    let metric = find_metric(&snapshot, "codex.tool.call").expect("counter metric missing");
+    let metric = find_metric(&snapshot, "rune.tool.call").expect("counter metric missing");
     let attrs = match metric.data() {
         AggregatedMetrics::U64(data) => match data {
             MetricData::Sum(sum) => {
@@ -84,13 +84,13 @@ fn manager_snapshot_metrics_collects_without_shutdown() -> Result<()> {
     .with_metrics(metrics);
 
     manager.counter(
-        "codex.tool.call",
+        "rune.tool.call",
         1,
         &[("tool", "shell"), ("success", "true")],
     );
 
     let snapshot = manager.snapshot_metrics()?;
-    let metric = find_metric(&snapshot, "codex.tool.call").expect("counter metric missing");
+    let metric = find_metric(&snapshot, "rune.tool.call").expect("counter metric missing");
     let attrs = match metric.data() {
         AggregatedMetrics::U64(data) => match data {
             MetricData::Sum(sum) => {

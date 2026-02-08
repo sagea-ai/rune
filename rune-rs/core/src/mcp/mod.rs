@@ -8,16 +8,16 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use async_channel::unbounded;
-use codex_protocol::mcp::Resource;
-use codex_protocol::mcp::ResourceTemplate;
-use codex_protocol::mcp::Tool;
-use codex_protocol::protocol::McpListToolsResponseEvent;
-use codex_protocol::protocol::SandboxPolicy;
+use rune_protocol::mcp::Resource;
+use rune_protocol::mcp::ResourceTemplate;
+use rune_protocol::mcp::Tool;
+use rune_protocol::protocol::McpListToolsResponseEvent;
+use rune_protocol::protocol::SandboxPolicy;
 use serde_json::Value;
 use tokio_util::sync::CancellationToken;
 
 use crate::AuthManager;
-use crate::CodexAuth;
+use crate::RuneAuth;
 use crate::config::Config;
 use crate::config::types::McpServerConfig;
 use crate::config::types::McpServerTransportConfig;
@@ -28,19 +28,19 @@ use crate::mcp_connection_manager::SandboxState;
 
 const MCP_TOOL_NAME_PREFIX: &str = "mcp";
 const MCP_TOOL_NAME_DELIMITER: &str = "__";
-pub(crate) const CODEX_APPS_MCP_SERVER_NAME: &str = "codex_apps";
-const CODEX_CONNECTORS_TOKEN_ENV_VAR: &str = "CODEX_CONNECTORS_TOKEN";
+pub(crate) const RUNE_APPS_MCP_SERVER_NAME: &str = "rune_apps";
+const RUNE_CONNECTORS_TOKEN_ENV_VAR: &str = "RUNE_CONNECTORS_TOKEN";
 
-fn codex_apps_mcp_bearer_token_env_var() -> Option<String> {
-    match env::var(CODEX_CONNECTORS_TOKEN_ENV_VAR) {
-        Ok(value) if !value.trim().is_empty() => Some(CODEX_CONNECTORS_TOKEN_ENV_VAR.to_string()),
+fn rune_apps_mcp_bearer_token_env_var() -> Option<String> {
+    match env::var(RUNE_CONNECTORS_TOKEN_ENV_VAR) {
+        Ok(value) if !value.trim().is_empty() => Some(RUNE_CONNECTORS_TOKEN_ENV_VAR.to_string()),
         Ok(_) => None,
         Err(env::VarError::NotPresent) => None,
-        Err(env::VarError::NotUnicode(_)) => Some(CODEX_CONNECTORS_TOKEN_ENV_VAR.to_string()),
+        Err(env::VarError::NotUnicode(_)) => Some(RUNE_CONNECTORS_TOKEN_ENV_VAR.to_string()),
     }
 }
 
-fn codex_apps_mcp_bearer_token(auth: Option<&CodexAuth>) -> Option<String> {
+fn rune_apps_mcp_bearer_token(auth: Option<&RuneAuth>) -> Option<String> {
     let token = auth.and_then(|auth| auth.get_token().ok())?;
     let token = token.trim();
     if token.is_empty() {
@@ -50,12 +50,12 @@ fn codex_apps_mcp_bearer_token(auth: Option<&CodexAuth>) -> Option<String> {
     }
 }
 
-fn codex_apps_mcp_http_headers(auth: Option<&CodexAuth>) -> Option<HashMap<String, String>> {
+fn rune_apps_mcp_http_headers(auth: Option<&RuneAuth>) -> Option<HashMap<String, String>> {
     let mut headers = HashMap::new();
-    if let Some(token) = codex_apps_mcp_bearer_token(auth) {
+    if let Some(token) = rune_apps_mcp_bearer_token(auth) {
         headers.insert("Authorization".to_string(), format!("Bearer {token}"));
     }
-    if let Some(account_id) = auth.and_then(CodexAuth::get_account_id) {
+    if let Some(account_id) = auth.and_then(RuneAuth::get_account_id) {
         headers.insert("ChatGPT-Account-ID".to_string(), account_id);
     }
     if headers.is_empty() {
@@ -65,7 +65,7 @@ fn codex_apps_mcp_http_headers(auth: Option<&CodexAuth>) -> Option<HashMap<Strin
     }
 }
 
-fn codex_apps_mcp_url(base_url: &str) -> String {
+fn rune_apps_mcp_url(base_url: &str) -> String {
     let mut base_url = base_url.trim_end_matches('/').to_string();
     if (base_url.starts_with("https://chatgpt.com")
         || base_url.starts_with("https://chat.openai.com"))
@@ -75,21 +75,21 @@ fn codex_apps_mcp_url(base_url: &str) -> String {
     }
     if base_url.contains("/backend-api") {
         format!("{base_url}/wham/apps")
-    } else if base_url.contains("/api/codex") {
+    } else if base_url.contains("/api/rune") {
         format!("{base_url}/apps")
     } else {
-        format!("{base_url}/api/codex/apps")
+        format!("{base_url}/api/rune/apps")
     }
 }
 
-fn codex_apps_mcp_server_config(config: &Config, auth: Option<&CodexAuth>) -> McpServerConfig {
-    let bearer_token_env_var = codex_apps_mcp_bearer_token_env_var();
+fn rune_apps_mcp_server_config(config: &Config, auth: Option<&RuneAuth>) -> McpServerConfig {
+    let bearer_token_env_var = rune_apps_mcp_bearer_token_env_var();
     let http_headers = if bearer_token_env_var.is_some() {
         None
     } else {
-        codex_apps_mcp_http_headers(auth)
+        rune_apps_mcp_http_headers(auth)
     };
-    let url = codex_apps_mcp_url(&config.chatgpt_base_url);
+    let url = rune_apps_mcp_url(&config.chatgpt_base_url);
 
     McpServerConfig {
         transport: McpServerTransportConfig::StreamableHttp {
@@ -109,28 +109,28 @@ fn codex_apps_mcp_server_config(config: &Config, auth: Option<&CodexAuth>) -> Mc
     }
 }
 
-pub(crate) fn with_codex_apps_mcp(
+pub(crate) fn with_rune_apps_mcp(
     mut servers: HashMap<String, McpServerConfig>,
     connectors_enabled: bool,
-    auth: Option<&CodexAuth>,
+    auth: Option<&RuneAuth>,
     config: &Config,
 ) -> HashMap<String, McpServerConfig> {
     if connectors_enabled {
         servers.insert(
-            CODEX_APPS_MCP_SERVER_NAME.to_string(),
-            codex_apps_mcp_server_config(config, auth),
+            RUNE_APPS_MCP_SERVER_NAME.to_string(),
+            rune_apps_mcp_server_config(config, auth),
         );
     } else {
-        servers.remove(CODEX_APPS_MCP_SERVER_NAME);
+        servers.remove(RUNE_APPS_MCP_SERVER_NAME);
     }
     servers
 }
 
 pub(crate) fn effective_mcp_servers(
     config: &Config,
-    auth: Option<&CodexAuth>,
+    auth: Option<&RuneAuth>,
 ) -> HashMap<String, McpServerConfig> {
-    with_codex_apps_mcp(
+    with_rune_apps_mcp(
         config.mcp_servers.get().clone(),
         config.features.enabled(Feature::Apps),
         auth,
@@ -140,7 +140,7 @@ pub(crate) fn effective_mcp_servers(
 
 pub async fn collect_mcp_snapshot(config: &Config) -> McpListToolsResponseEvent {
     let auth_manager = AuthManager::shared(
-        config.codex_home.clone(),
+        config.rune_home.clone(),
         false,
         config.cli_auth_credentials_store_mode,
     );
@@ -166,7 +166,7 @@ pub async fn collect_mcp_snapshot(config: &Config) -> McpListToolsResponseEvent 
     // Use ReadOnly sandbox policy for MCP snapshot collection (safest default)
     let sandbox_state = SandboxState {
         sandbox_policy: SandboxPolicy::ReadOnly,
-        codex_linux_sandbox_exe: config.codex_linux_sandbox_exe.clone(),
+        rune_linux_sandbox_exe: config.rune_linux_sandbox_exe.clone(),
         sandbox_cwd: env::current_dir().unwrap_or_else(|_| PathBuf::from("/")),
         use_linux_sandbox_bwrap: config.features.enabled(Feature::UseLinuxSandboxBwrap),
     };

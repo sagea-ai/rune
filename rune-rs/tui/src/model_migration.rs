@@ -82,7 +82,7 @@ pub(crate) fn migration_copy_for_models(
     }
 
     let heading_text = Span::from(format!(
-        "Codex just got an upgrade. Introducing {target_display_name}."
+        "Rune just got an upgrade. Introducing {target_display_name}."
     ))
     .bold();
     let description_line: Line<'static>;
@@ -330,7 +330,7 @@ impl ModelMigrationScreen {
     fn render_menu(&self, column: &mut ColumnRenderable) {
         column.push(Line::from(""));
         column.push(
-            Paragraph::new("Choose how you'd like Codex to proceed.")
+            Paragraph::new("Choose how you'd like Rune to proceed.")
                 .wrap(Wrap { trim: false })
                 .inset(Insets::tlbr(0, 2, 0, 0)),
         );
@@ -418,12 +418,12 @@ mod tests {
                 "gpt-5.1-rune-max",
                 None,
                 Some(
-                    "Upgrade to gpt-5.2-codex for the latest and greatest agentic coding model."
+                    "Upgrade to gpt-5.2-rune for the latest and greatest agentic coding model."
                         .to_string(),
                 ),
                 None,
                 "gpt-5.1-rune-max".to_string(),
-                Some("Codex-optimized flagship for deep and fast reasoning.".to_string()),
+                Some("Rune-optimized flagship for deep and fast reasoning.".to_string()),
                 true,
             ),
         );
@@ -448,7 +448,7 @@ mod tests {
             migration_copy_for_models(
                 "gpt-5",
                 "gpt-5.1",
-                Some("https://www.codex.com/models/gpt-5.1".to_string()),
+                Some("https://www.rune.com/models/gpt-5.1".to_string()),
                 None,
                 None,
                 "gpt-5.1".to_string(),
@@ -465,7 +465,7 @@ mod tests {
     }
 
     #[test]
-    fn prompt_snapshot_gpt5_codex() {
+    fn prompt_snapshot_gpt5_rune() {
         let backend = VT100Backend::new(60, 22);
         let mut terminal = Terminal::with_options(backend).expect("terminal");
         terminal.set_viewport_area(Rect::new(0, 0, 60, 22));
@@ -473,13 +473,13 @@ mod tests {
         let screen = ModelMigrationScreen::new(
             FrameRequester::test_dummy(),
             migration_copy_for_models(
-                "gpt-5-codex",
+                "gpt-5-rune",
                 "gpt-5.1-rune-max",
-                Some("https://www.codex.com/models/gpt-5.1-rune-max".to_string()),
+                Some("https://www.rune.com/models/gpt-5.1-rune-max".to_string()),
                 None,
                 None,
                 "gpt-5.1-rune-max".to_string(),
-                Some("Codex-optimized flagship for deep and fast reasoning.".to_string()),
+                Some("Rune-optimized flagship for deep and fast reasoning.".to_string()),
                 false,
             ),
         );
@@ -488,11 +488,11 @@ mod tests {
             frame.render_widget_ref(&screen, frame.area());
         }
         terminal.flush().expect("flush");
-        assert_snapshot!("model_migration_prompt_gpt5_codex", terminal.backend());
+        assert_snapshot!("model_migration_prompt_gpt5_rune", terminal.backend());
     }
 
     #[test]
-    fn prompt_snapshot_gpt5_codex_mini() {
+    fn prompt_snapshot_gpt5_rune_mini() {
         let backend = VT100Backend::new(60, 22);
         let mut terminal = Terminal::with_options(backend).expect("terminal");
         terminal.set_viewport_area(Rect::new(0, 0, 60, 22));
@@ -502,11 +502,11 @@ mod tests {
             migration_copy_for_models(
                 "gpt-5-rune-mini",
                 "gpt-5.1-rune-mini",
-                Some("https://www.codex.com/models/gpt-5.1-rune-mini".to_string()),
+                Some("https://www.rune.com/models/gpt-5.1-rune-mini".to_string()),
                 None,
                 None,
                 "gpt-5.1-rune-mini".to_string(),
-                Some("Optimized for codex. Cheaper, faster, but less capable.".to_string()),
+                Some("Optimized for rune. Cheaper, faster, but less capable.".to_string()),
                 false,
             ),
         );
@@ -515,7 +515,7 @@ mod tests {
             frame.render_widget_ref(&screen, frame.area());
         }
         terminal.flush().expect("flush");
-        assert_snapshot!("model_migration_prompt_gpt5_codex_mini", terminal.backend());
+        assert_snapshot!("model_migration_prompt_gpt5_rune_mini", terminal.backend());
     }
 
     #[test]
@@ -525,7 +525,7 @@ mod tests {
             migration_copy_for_models(
                 "gpt-old",
                 "gpt-new",
-                Some("https://www.codex.com/models/gpt-new".to_string()),
+                Some("https://www.rune.com/models/gpt-new".to_string()),
                 None,
                 None,
                 "gpt-new".to_string(),
@@ -554,7 +554,7 @@ mod tests {
             migration_copy_for_models(
                 "gpt-old",
                 "gpt-new",
-                Some("https://www.codex.com/models/gpt-new".to_string()),
+                Some("https://www.rune.com/models/gpt-new".to_string()),
                 None,
                 None,
                 "gpt-new".to_string(),

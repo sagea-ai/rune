@@ -2,17 +2,17 @@
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_windows_sandbox::allow_null_device;
-use codex_windows_sandbox::convert_string_sid_to_sid;
-use codex_windows_sandbox::create_process_as_user;
-use codex_windows_sandbox::create_readonly_token_with_caps_from;
-use codex_windows_sandbox::create_workspace_write_token_with_caps_from;
-use codex_windows_sandbox::get_current_token_for_restriction;
-use codex_windows_sandbox::hide_current_user_profile_dir;
-use codex_windows_sandbox::log_note;
-use codex_windows_sandbox::parse_policy;
-use codex_windows_sandbox::to_wide;
-use codex_windows_sandbox::SandboxPolicy;
+use rune_windows_sandbox::allow_null_device;
+use rune_windows_sandbox::convert_string_sid_to_sid;
+use rune_windows_sandbox::create_process_as_user;
+use rune_windows_sandbox::create_readonly_token_with_caps_from;
+use rune_windows_sandbox::create_workspace_write_token_with_caps_from;
+use rune_windows_sandbox::get_current_token_for_restriction;
+use rune_windows_sandbox::hide_current_user_profile_dir;
+use rune_windows_sandbox::log_note;
+use rune_windows_sandbox::parse_policy;
+use rune_windows_sandbox::to_wide;
+use rune_windows_sandbox::SandboxPolicy;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::ffi::c_void;
@@ -46,10 +46,10 @@ mod read_acl_mutex;
 #[derive(Debug, Deserialize)]
 struct RunnerRequest {
     policy_json_or_preset: String,
-    // Writable location for logs (sandbox user's .codex).
-    codex_home: PathBuf,
-    // Real user's CODEX_HOME for shared data (caps, config).
-    real_codex_home: PathBuf,
+    // Writable location for logs (sandbox user's .rune).
+    rune_home: PathBuf,
+    // Real user's RUNE_HOME for shared data (caps, config).
+    real_rune_home: PathBuf,
     cap_sids: Vec<String>,
     command: Vec<String>,
     cwd: PathBuf,
@@ -101,16 +101,16 @@ pub fn main() -> Result<()> {
         anyhow::bail!("runner: no request-file provided");
     }
     let req: RunnerRequest = serde_json::from_str(&input).context("parse runner request json")?;
-    let log_dir = Some(req.codex_home.as_path());
-    hide_current_user_profile_dir(req.codex_home.as_path());
+    let log_dir = Some(req.rune_home.as_path());
+    hide_current_user_profile_dir(req.rune_home.as_path());
     log_note(
         &format!(
-            "runner start cwd={} cmd={:?} real_codex_home={}",
+            "runner start cwd={} cmd={:?} real_rune_home={}",
             req.cwd.display(),
             req.command,
-            req.real_codex_home.display()
+            req.real_rune_home.display()
         ),
-        Some(&req.codex_home),
+        Some(&req.rune_home),
     );
 
     let policy = parse_policy(&req.policy_json_or_preset).context("parse policy_json_or_preset")?;
@@ -171,7 +171,7 @@ pub fn main() -> Result<()> {
             let err = unsafe { GetLastError() };
             log_note(
                 &format!("CreateFileW failed for pipe {name}: {err}"),
-                Some(&req.codex_home),
+                Some(&req.rune_home),
             );
             return Err(anyhow::anyhow!("CreateFileW failed for pipe {name}: {err}"));
         }
@@ -224,7 +224,7 @@ pub fn main() -> Result<()> {
             &req.command,
             &effective_cwd,
             &req.env_map,
-            Some(&req.codex_home),
+            Some(&req.rune_home),
             stdio,
         )
     };

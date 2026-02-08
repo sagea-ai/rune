@@ -19,8 +19,8 @@ use tracing::trace;
 use tracing::warn;
 
 use crate::AuthManager;
-use crate::codex::Session;
-use crate::codex::TurnContext;
+use crate::rune::Session;
+use crate::rune::TurnContext;
 use crate::models_manager::manager::ModelsManager;
 use crate::protocol::EventMsg;
 use crate::protocol::TurnAbortReason;
@@ -30,11 +30,11 @@ use crate::session_prefix::TURN_ABORTED_OPEN_TAG;
 use crate::state::ActiveTurn;
 use crate::state::RunningTask;
 use crate::state::TaskKind;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::user_input::UserInput;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::ResponseInputItem;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::protocol::RolloutItem;
+use rune_protocol::user_input::UserInput;
 
 pub(crate) use compact::CompactTask;
 pub(crate) use ghost_snapshot::GhostSnapshotTask;
@@ -74,7 +74,7 @@ impl SessionTaskContext {
 
 /// Async task that drives a [`Session`] turn.
 ///
-/// Implementations encapsulate a specific Codex workflow (regular chat,
+/// Implementations encapsulate a specific Rune workflow (regular chat,
 /// reviews, ghost snapshots, etc.). Each task instance is owned by a
 /// [`Session`] and executed on a background Tokio task. The trait is
 /// intentionally small: implementers identify themselves via
@@ -162,7 +162,7 @@ impl Session {
 
         let timer = turn_context
             .otel_manager
-            .start_timer("codex.turn.e2e_duration_ms", &[])
+            .start_timer("rune.turn.e2e_duration_ms", &[])
             .ok();
 
         let running_task = RunningTask {

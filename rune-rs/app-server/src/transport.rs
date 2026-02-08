@@ -2,7 +2,7 @@ use crate::message_processor::ConnectionSessionState;
 use crate::outgoing_message::ConnectionId;
 use crate::outgoing_message::OutgoingEnvelope;
 use crate::outgoing_message::OutgoingMessage;
-use codex_app_server_protocol::JSONRPCMessage;
+use rune_app_server_protocol::JSONRPCMessage;
 use futures::SinkExt;
 use futures::StreamExt;
 use owo_colors::OwoColorize;
@@ -43,7 +43,7 @@ fn colorize(text: &str, style: Style) -> String {
 
 #[allow(clippy::print_stderr)]
 fn print_websocket_startup_banner(addr: SocketAddr) {
-    let title = colorize("codex app-server (WebSockets)", Style::new().bold().cyan());
+    let title = colorize("rune app-server (WebSockets)", Style::new().bold().cyan());
     let listening_label = colorize("listening on:", Style::new().dimmed());
     let listen_url = colorize(&format!("ws://{addr}"), Style::new().green());
     let note_label = colorize("note:", Style::new().dimmed());

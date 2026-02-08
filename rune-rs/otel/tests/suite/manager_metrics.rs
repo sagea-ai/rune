@@ -2,11 +2,11 @@ use crate::harness::attributes_to_map;
 use crate::harness::build_metrics_with_defaults;
 use crate::harness::find_metric;
 use crate::harness::latest_metrics;
-use codex_otel::OtelManager;
-use codex_otel::TelemetryAuthMode;
-use codex_otel::metrics::Result;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::SessionSource;
+use rune_otel::OtelManager;
+use rune_otel::TelemetryAuthMode;
+use rune_otel::metrics::Result;
+use rune_protocol::ThreadId;
+use rune_protocol::protocol::SessionSource;
 use opentelemetry_sdk::metrics::data::AggregatedMetrics;
 use opentelemetry_sdk::metrics::data::MetricData;
 use pretty_assertions::assert_eq;
@@ -30,12 +30,12 @@ fn manager_attaches_metadata_tags_to_metrics() -> Result<()> {
     )
     .with_metrics(metrics);
 
-    manager.counter("codex.session_started", 1, &[("source", "tui")]);
+    manager.counter("rune.session_started", 1, &[("source", "tui")]);
     manager.shutdown_metrics()?;
 
     let resource_metrics = latest_metrics(&exporter);
     let metric =
-        find_metric(&resource_metrics, "codex.session_started").expect("counter metric missing");
+        find_metric(&resource_metrics, "rune.session_started").expect("counter metric missing");
     let attrs = match metric.data() {
         AggregatedMetrics::U64(data) => match data {
             MetricData::Sum(sum) => {
@@ -85,12 +85,12 @@ fn manager_allows_disabling_metadata_tags() -> Result<()> {
     )
     .with_metrics_without_metadata_tags(metrics);
 
-    manager.counter("codex.session_started", 1, &[("source", "tui")]);
+    manager.counter("rune.session_started", 1, &[("source", "tui")]);
     manager.shutdown_metrics()?;
 
     let resource_metrics = latest_metrics(&exporter);
     let metric =
-        find_metric(&resource_metrics, "codex.session_started").expect("counter metric missing");
+        find_metric(&resource_metrics, "rune.session_started").expect("counter metric missing");
     let attrs = match metric.data() {
         AggregatedMetrics::U64(data) => match data {
             MetricData::Sum(sum) => {

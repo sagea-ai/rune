@@ -7,7 +7,7 @@ use std::sync::Mutex;
 use anyhow::Context;
 use anyhow::Result;
 use anyhow::ensure;
-use codex_exec_server::ExecResult;
+use rune_exec_server::ExecResult;
 use exec_server_test_support::InteractiveClient;
 use exec_server_test_support::create_transport;
 use exec_server_test_support::notify_readable_sandbox;
@@ -35,8 +35,8 @@ const USE_LOGIN_SHELL: bool = false;
 #[tokio::test(flavor = "current_thread")]
 async fn accept_elicitation_for_prompt_rule() -> Result<()> {
     // Configure a stdio transport that will launch the MCP server using
-    // $CODEX_HOME with an execpolicy that prompts for `git init` commands.
-    let codex_home = TempDir::new()?;
+    // $RUNE_HOME with an execpolicy that prompts for `git init` commands.
+    let rune_home = TempDir::new()?;
     write_default_execpolicy(
         r#"
 # Create a rule with `decision = "prompt"` to exercise the elicitation flow.
@@ -48,12 +48,12 @@ prefix_rule(
   ],
 )
 "#,
-        codex_home.as_ref(),
+        rune_home.as_ref(),
     )
     .await?;
     let dotslash_cache_temp_dir = TempDir::new()?;
     let dotslash_cache = dotslash_cache_temp_dir.path();
-    let transport = create_transport(codex_home.as_ref(), dotslash_cache).await?;
+    let transport = create_transport(rune_home.as_ref(), dotslash_cache).await?;
 
     // Create an MCP client that approves expected elicitation messages.
     let project_root = TempDir::new()?;
@@ -77,16 +77,16 @@ prefix_rule(
     // Notify the MCP server about the current sandbox state before making any
     // `shell` tool calls.
     let linux_sandbox_exe_folder = TempDir::new()?;
-    let codex_linux_sandbox_exe = if cfg!(target_os = "linux") {
-        let codex_linux_sandbox_exe = linux_sandbox_exe_folder.path().join("rune-linux-sandbox");
-        let codex_cli = ensure_codex_cli()?;
-        symlink(&codex_cli, &codex_linux_sandbox_exe)?;
-        Some(codex_linux_sandbox_exe)
+    let rune_linux_sandbox_exe = if cfg!(target_os = "linux") {
+        let rune_linux_sandbox_exe = linux_sandbox_exe_folder.path().join("rune-linux-sandbox");
+        let rune_cli = ensure_rune_cli()?;
+        symlink(&rune_cli, &rune_linux_sandbox_exe)?;
+        Some(rune_linux_sandbox_exe)
     } else {
         None
     };
     let response =
-        notify_readable_sandbox(&project_root_path, codex_linux_sandbox_exe, &service).await?;
+        notify_readable_sandbox(&project_root_path, rune_linux_sandbox_exe, &service).await?;
     let ServerResult::EmptyResult(EmptyResult {}) = response else {
         panic!("expected EmptyResult from sandbox state notification but found: {response:?}");
     };
@@ -143,29 +143,29 @@ prefix_rule(
     Ok(())
 }
 
-fn ensure_codex_cli() -> Result<PathBuf> {
-    let codex_cli = codex_utils_cargo_bin::cargo_bin("codex")?;
+fn ensure_rune_cli() -> Result<PathBuf> {
+    let rune_cli = rune_utils_cargo_bin::cargo_bin("rune")?;
 
-    let metadata = codex_cli.metadata().with_context(|| {
+    let metadata = rune_cli.metadata().with_context(|| {
         format!(
-            "failed to read metadata for codex binary at {}",
-            codex_cli.display()
+            "failed to read metadata for rune binary at {}",
+            rune_cli.display()
         )
     })?;
     ensure!(
         metadata.is_file(),
-        "expected codex binary at {} to be a file; run `cargo build -p rune-cli --bin codex` before this test",
-        codex_cli.display()
+        "expected rune binary at {} to be a file; run `cargo build -p rune-cli --bin rune` before this test",
+        rune_cli.display()
     );
 
     let mode = metadata.permissions().mode();
     ensure!(
         mode & 0o111 != 0,
-        "codex binary at {} is not executable (mode {mode:o}); run `cargo build -p rune-cli --bin codex` before this test",
-        codex_cli.display()
+        "rune binary at {} is not executable (mode {mode:o}); run `cargo build -p rune-cli --bin rune` before this test",
+        rune_cli.display()
     );
 
-    Ok(codex_cli)
+    Ok(rune_cli)
 }
 
 async fn resolve_git_path(use_login_shell: bool) -> Result<String> {

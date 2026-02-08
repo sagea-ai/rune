@@ -22,7 +22,7 @@ use crate::render::renderable::Renderable;
 use crate::skills_helpers::match_skill;
 use crate::skills_helpers::truncate_skill_name;
 use crate::style::user_message_style;
-use codex_core::protocol::Op;
+use rune_core::protocol::Op;
 
 use super::CancellationEvent;
 use super::bottom_pane_view::BottomPaneView;
@@ -187,7 +187,7 @@ impl SkillsToggleView {
         }
         self.complete = true;
         self.app_event_tx.send(AppEvent::ManageSkillsClosed);
-        self.app_event_tx.send(AppEvent::CodexOp(Op::ListSkills {
+        self.app_event_tx.send(AppEvent::RuneOp(Op::ListSkills {
             cwds: Vec::new(),
             force_reload: true,
         }));

@@ -1,25 +1,25 @@
 use std::process::Command;
 use std::sync::Arc;
 
-use codex_core::AuthManager;
-use codex_core::CodexAuth;
-use codex_core::ContentItem;
-use codex_core::ModelClient;
-use codex_core::ModelProviderInfo;
-use codex_core::Prompt;
-use codex_core::ResponseEvent;
-use codex_core::ResponseItem;
-use codex_core::WireApi;
-use codex_core::models_manager::manager::ModelsManager;
-use codex_otel::OtelManager;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
+use rune_core::AuthManager;
+use rune_core::RuneAuth;
+use rune_core::ContentItem;
+use rune_core::ModelClient;
+use rune_core::ModelProviderInfo;
+use rune_core::Prompt;
+use rune_core::ResponseEvent;
+use rune_core::ResponseItem;
+use rune_core::WireApi;
+use rune_core::models_manager::manager::ModelsManager;
+use rune_otel::OtelManager;
+use rune_otel::TelemetryAuthMode;
+use rune_protocol::ThreadId;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::protocol::SessionSource;
+use rune_protocol::protocol::SubAgentSource;
 use core_test_support::load_default_config_for_test;
 use core_test_support::responses;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use futures::StreamExt;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
@@ -59,8 +59,8 @@ async fn responses_stream_includes_subagent_header_on_review() {
         supports_websockets: false,
     };
 
-    let codex_home = TempDir::new().expect("failed to create TempDir");
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new().expect("failed to create TempDir");
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.model_provider_id = provider.name.clone();
     config.model_provider = provider.clone();
     let effort = config.model_reasoning_effort;
@@ -162,8 +162,8 @@ async fn responses_stream_includes_subagent_header_on_other() {
         supports_websockets: false,
     };
 
-    let codex_home = TempDir::new().expect("failed to create TempDir");
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new().expect("failed to create TempDir");
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.model_provider_id = provider.name.clone();
     config.model_provider = provider.clone();
     let effort = config.model_reasoning_effort;
@@ -261,8 +261,8 @@ async fn responses_respects_model_info_overrides_from_config() {
         supports_websockets: false,
     };
 
-    let codex_home = TempDir::new().expect("failed to create TempDir");
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new().expect("failed to create TempDir");
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.model = Some("gpt-3.5-turbo".to_string());
     config.model_provider_id = provider.name.clone();
     config.model_provider = provider.clone();
@@ -274,7 +274,7 @@ async fn responses_respects_model_info_overrides_from_config() {
     let config = Arc::new(config);
 
     let conversation_id = ThreadId::new();
-    let auth_mode = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("Test API Key"))
+    let auth_mode = AuthManager::from_auth_for_testing(RuneAuth::from_api_key("Test API Key"))
         .auth_mode()
         .map(TelemetryAuthMode::from);
     let session_source =
@@ -359,7 +359,7 @@ async fn responses_stream_includes_turn_metadata_header_for_git_workspace_e2e() 
         responses::ev_completed("resp-1"),
     ]);
 
-    let test = test_codex().build(&server).await.expect("build test codex");
+    let test = test_rune().build(&server).await.expect("build test rune");
     let cwd = test.cwd_path();
 
     let first_request = responses::mount_sse_once(&server, response_body.clone()).await;
@@ -403,7 +403,7 @@ async fn responses_stream_includes_turn_metadata_header_for_git_workspace_e2e() 
         "remote",
         "add",
         "origin",
-        "https://github.com/openai/codex.git",
+        "https://github.com/openai/rune.git",
     ]);
 
     let expected_head = String::from_utf8(run_git(&["rev-parse", "HEAD"]).stdout)

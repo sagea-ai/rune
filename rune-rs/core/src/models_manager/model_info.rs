@@ -1,15 +1,15 @@
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::openai_models::ApplyPatchToolType;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelInstructionsVariables;
-use codex_protocol::openai_models::ModelMessages;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_protocol::openai_models::TruncationMode;
-use codex_protocol::openai_models::TruncationPolicyConfig;
-use codex_protocol::openai_models::default_input_modalities;
+use rune_protocol::config_types::Verbosity;
+use rune_protocol::openai_models::ApplyPatchToolType;
+use rune_protocol::openai_models::ConfigShellToolType;
+use rune_protocol::openai_models::ModelInfo;
+use rune_protocol::openai_models::ModelInstructionsVariables;
+use rune_protocol::openai_models::ModelMessages;
+use rune_protocol::openai_models::ModelVisibility;
+use rune_protocol::openai_models::ReasoningEffort;
+use rune_protocol::openai_models::ReasoningEffortPreset;
+use rune_protocol::openai_models::TruncationMode;
+use rune_protocol::openai_models::TruncationPolicyConfig;
+use rune_protocol::openai_models::default_input_modalities;
 
 use crate::config::Config;
 use crate::features::Feature;
@@ -20,19 +20,19 @@ pub const BASE_INSTRUCTIONS: &str = include_str!("../../prompt.md");
 const BASE_INSTRUCTIONS_WITH_APPLY_PATCH: &str =
     include_str!("../../prompt_with_apply_patch_instructions.md");
 
-const GPT_5_CODEX_INSTRUCTIONS: &str = include_str!("../../gpt_5_codex_prompt.md");
+const GPT_5_RUNE_INSTRUCTIONS: &str = include_str!("../../gpt_5_rune_prompt.md");
 const GPT_5_1_INSTRUCTIONS: &str = include_str!("../../gpt_5_1_prompt.md");
 const GPT_5_2_INSTRUCTIONS: &str = include_str!("../../gpt_5_2_prompt.md");
-const GPT_5_1_CODEX_MAX_INSTRUCTIONS: &str = include_str!("../../gpt-5.1-rune-max_prompt.md");
+const GPT_5_1_RUNE_MAX_INSTRUCTIONS: &str = include_str!("../../gpt-5.1-rune-max_prompt.md");
 
-const GPT_5_2_CODEX_INSTRUCTIONS: &str = include_str!("../../gpt-5.2-codex_prompt.md");
-const GPT_5_2_CODEX_INSTRUCTIONS_TEMPLATE: &str =
-    include_str!("../../templates/model_instructions/gpt-5.2-codex_instructions_template.md");
+const GPT_5_2_RUNE_INSTRUCTIONS: &str = include_str!("../../gpt-5.2-rune_prompt.md");
+const GPT_5_2_RUNE_INSTRUCTIONS_TEMPLATE: &str =
+    include_str!("../../templates/model_instructions/gpt-5.2-rune_instructions_template.md");
 
-const GPT_5_2_CODEX_PERSONALITY_FRIENDLY: &str =
-    include_str!("../../templates/personalities/gpt-5.2-codex_friendly.md");
-const GPT_5_2_CODEX_PERSONALITY_PRAGMATIC: &str =
-    include_str!("../../templates/personalities/gpt-5.2-codex_pragmatic.md");
+const GPT_5_2_RUNE_PERSONALITY_FRIENDLY: &str =
+    include_str!("../../templates/personalities/gpt-5.2-rune_friendly.md");
+const GPT_5_2_RUNE_PERSONALITY_PRAGMATIC: &str =
+    include_str!("../../templates/personalities/gpt-5.2-rune_pragmatic.md");
 
 pub(crate) const CONTEXT_WINDOW_272K: i64 = 272_000;
 
@@ -158,7 +158,7 @@ pub(crate) fn find_model_info_for_slug(slug: &str) -> ModelInfo {
     } else if slug.starts_with("test-gpt-5") {
         model_info!(
             slug,
-            base_instructions: GPT_5_CODEX_INSTRUCTIONS.to_string(),
+            base_instructions: GPT_5_RUNE_INSTRUCTIONS.to_string(),
             experimental_supported_tools: vec![
                 "grep_files".to_string(),
                 "list_dir".to_string(),
@@ -171,16 +171,16 @@ pub(crate) fn find_model_info_for_slug(slug: &str) -> ModelInfo {
             support_verbosity: true,
             truncation_policy: TruncationPolicyConfig::tokens(10_000),
         )
-    } else if slug.starts_with("exp-codex") || slug.starts_with("rune-1p") {
+    } else if slug.starts_with("exp-rune") || slug.starts_with("rune-1p") {
         model_info!(
             slug,
-            base_instructions: GPT_5_2_CODEX_INSTRUCTIONS.to_string(),
+            base_instructions: GPT_5_2_RUNE_INSTRUCTIONS.to_string(),
             model_messages: Some(ModelMessages {
-                instructions_template: Some(GPT_5_2_CODEX_INSTRUCTIONS_TEMPLATE.to_string()),
+                instructions_template: Some(GPT_5_2_RUNE_INSTRUCTIONS_TEMPLATE.to_string()),
                 instructions_variables: Some(ModelInstructionsVariables {
                     personality_default: Some("".to_string()),
-                    personality_friendly: Some(GPT_5_2_CODEX_PERSONALITY_FRIENDLY.to_string()),
-                    personality_pragmatic: Some(GPT_5_2_CODEX_PERSONALITY_PRAGMATIC.to_string()),
+                    personality_friendly: Some(GPT_5_2_RUNE_PERSONALITY_FRIENDLY.to_string()),
+                    personality_pragmatic: Some(GPT_5_2_RUNE_PERSONALITY_PRAGMATIC.to_string()),
                 }),
             }),
             apply_patch_tool_type: Some(ApplyPatchToolType::Freeform),
@@ -205,10 +205,10 @@ pub(crate) fn find_model_info_for_slug(slug: &str) -> ModelInfo {
             supports_parallel_tool_calls: true,
             context_window: Some(CONTEXT_WINDOW_272K),
         )
-    } else if slug.starts_with("gpt-5.2-codex") || slug.starts_with("bengalfox") {
+    } else if slug.starts_with("gpt-5.2-rune") || slug.starts_with("bengalfox") {
         model_info!(
             slug,
-            base_instructions: GPT_5_2_CODEX_INSTRUCTIONS.to_string(),
+            base_instructions: GPT_5_2_RUNE_INSTRUCTIONS.to_string(),
             apply_patch_tool_type: Some(ApplyPatchToolType::Freeform),
             shell_type: ConfigShellToolType::ShellCommand,
             supports_parallel_tool_calls: true,
@@ -217,20 +217,20 @@ pub(crate) fn find_model_info_for_slug(slug: &str) -> ModelInfo {
             truncation_policy: TruncationPolicyConfig::tokens(10_000),
             context_window: Some(CONTEXT_WINDOW_272K),
             supported_reasoning_levels: supported_reasoning_level_low_medium_high_xhigh(),
-            base_instructions: GPT_5_2_CODEX_INSTRUCTIONS.to_string(),
+            base_instructions: GPT_5_2_RUNE_INSTRUCTIONS.to_string(),
             model_messages: Some(ModelMessages {
-                instructions_template: Some(GPT_5_2_CODEX_INSTRUCTIONS_TEMPLATE.to_string()),
+                instructions_template: Some(GPT_5_2_RUNE_INSTRUCTIONS_TEMPLATE.to_string()),
                 instructions_variables: Some(ModelInstructionsVariables {
                     personality_default: Some("".to_string()),
-                    personality_friendly: Some(GPT_5_2_CODEX_PERSONALITY_FRIENDLY.to_string()),
-                    personality_pragmatic: Some(GPT_5_2_CODEX_PERSONALITY_PRAGMATIC.to_string()),
+                    personality_friendly: Some(GPT_5_2_RUNE_PERSONALITY_FRIENDLY.to_string()),
+                    personality_pragmatic: Some(GPT_5_2_RUNE_PERSONALITY_PRAGMATIC.to_string()),
                 }),
             }),
         )
     } else if slug.starts_with("gpt-5.1-rune-max") {
         model_info!(
             slug,
-            base_instructions: GPT_5_1_CODEX_MAX_INSTRUCTIONS.to_string(),
+            base_instructions: GPT_5_1_RUNE_MAX_INSTRUCTIONS.to_string(),
             apply_patch_tool_type: Some(ApplyPatchToolType::Freeform),
             shell_type: ConfigShellToolType::ShellCommand,
             supports_parallel_tool_calls: false,
@@ -240,14 +240,14 @@ pub(crate) fn find_model_info_for_slug(slug: &str) -> ModelInfo {
             context_window: Some(CONTEXT_WINDOW_272K),
             supported_reasoning_levels: supported_reasoning_level_low_medium_high_xhigh(),
         )
-    } else if (slug.starts_with("gpt-5-codex")
-        || slug.starts_with("gpt-5.1-codex")
+    } else if (slug.starts_with("gpt-5-rune")
+        || slug.starts_with("gpt-5.1-rune")
         || slug.starts_with("rune-"))
         && !slug.contains("-mini")
     {
         model_info!(
             slug,
-            base_instructions: GPT_5_CODEX_INSTRUCTIONS.to_string(),
+            base_instructions: GPT_5_RUNE_INSTRUCTIONS.to_string(),
             apply_patch_tool_type: Some(ApplyPatchToolType::Freeform),
             shell_type: ConfigShellToolType::ShellCommand,
             supports_parallel_tool_calls: false,
@@ -257,13 +257,13 @@ pub(crate) fn find_model_info_for_slug(slug: &str) -> ModelInfo {
             context_window: Some(CONTEXT_WINDOW_272K),
             supported_reasoning_levels: supported_reasoning_level_low_medium_high(),
         )
-    } else if slug.starts_with("gpt-5-codex")
-        || slug.starts_with("gpt-5.1-codex")
+    } else if slug.starts_with("gpt-5-rune")
+        || slug.starts_with("gpt-5.1-rune")
         || slug.starts_with("rune-")
     {
         model_info!(
             slug,
-            base_instructions: GPT_5_CODEX_INSTRUCTIONS.to_string(),
+            base_instructions: GPT_5_RUNE_INSTRUCTIONS.to_string(),
             apply_patch_tool_type: Some(ApplyPatchToolType::Freeform),
             shell_type: ConfigShellToolType::ShellCommand,
             supports_parallel_tool_calls: false,
@@ -285,7 +285,7 @@ pub(crate) fn find_model_info_for_slug(slug: &str) -> ModelInfo {
             shell_type: ConfigShellToolType::ShellCommand,
             supports_parallel_tool_calls: true,
             context_window: Some(CONTEXT_WINDOW_272K),
-            supported_reasoning_levels: supported_reasoning_level_low_medium_high_xhigh_non_codex(),
+            supported_reasoning_levels: supported_reasoning_level_low_medium_high_xhigh_non_rune(),
         )
     } else if slug.starts_with("gpt-5.1") {
         model_info!(
@@ -300,7 +300,7 @@ pub(crate) fn find_model_info_for_slug(slug: &str) -> ModelInfo {
             shell_type: ConfigShellToolType::ShellCommand,
             supports_parallel_tool_calls: true,
             context_window: Some(CONTEXT_WINDOW_272K),
-            supported_reasoning_levels: supported_reasoning_level_low_medium_high_non_codex(),
+            supported_reasoning_levels: supported_reasoning_level_low_medium_high_non_rune(),
         )
     } else if slug.starts_with("gpt-5") {
         model_info!(
@@ -313,7 +313,7 @@ pub(crate) fn find_model_info_for_slug(slug: &str) -> ModelInfo {
             context_window: Some(CONTEXT_WINDOW_272K),
         )
     } else {
-        warn!("Unknown model {slug} is used. This will degrade the performance of Codex.");
+        warn!("Unknown model {slug} is used. This will degrade the performance of Rune.");
         model_info!(
             slug,
             context_window: None,
@@ -340,7 +340,7 @@ fn supported_reasoning_level_low_medium_high() -> Vec<ReasoningEffortPreset> {
     ]
 }
 
-fn supported_reasoning_level_low_medium_high_non_codex() -> Vec<ReasoningEffortPreset> {
+fn supported_reasoning_level_low_medium_high_non_rune() -> Vec<ReasoningEffortPreset> {
     vec![
         ReasoningEffortPreset {
             effort: ReasoningEffort::Low,
@@ -378,7 +378,7 @@ fn supported_reasoning_level_low_medium_high_xhigh() -> Vec<ReasoningEffortPrese
     ]
 }
 
-fn supported_reasoning_level_low_medium_high_xhigh_non_codex() -> Vec<ReasoningEffortPreset> {
+fn supported_reasoning_level_low_medium_high_xhigh_non_rune() -> Vec<ReasoningEffortPreset> {
     vec![
         ReasoningEffortPreset {
             effort: ReasoningEffort::Low,

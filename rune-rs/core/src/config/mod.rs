@@ -45,22 +45,22 @@ use crate::project_doc::LOCAL_PROJECT_DOC_FILENAME;
 use crate::protocol::AskForApproval;
 use crate::protocol::SandboxPolicy;
 use crate::windows_sandbox::WindowsSandboxLevelExt;
-use codex_app_server_protocol::Tools;
-use codex_app_server_protocol::UserSavedConfig;
-use codex_protocol::config_types::AltScreenMode;
-use codex_protocol::config_types::ForcedLoginMethod;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::config_types::TrustLevel;
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_rmcp_client::OAuthCredentialsStoreMode;
-use codex_utils_absolute_path::AbsolutePathBuf;
-use codex_utils_absolute_path::AbsolutePathBufGuard;
+use rune_app_server_protocol::Tools;
+use rune_app_server_protocol::UserSavedConfig;
+use rune_protocol::config_types::AltScreenMode;
+use rune_protocol::config_types::ForcedLoginMethod;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::config_types::Personality;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::config_types::SandboxMode;
+use rune_protocol::config_types::TrustLevel;
+use rune_protocol::config_types::Verbosity;
+use rune_protocol::config_types::WebSearchMode;
+use rune_protocol::config_types::WindowsSandboxLevel;
+use rune_protocol::openai_models::ReasoningEffort;
+use rune_rmcp_client::OAuthCredentialsStoreMode;
+use rune_utils_absolute_path::AbsolutePathBuf;
+use rune_utils_absolute_path::AbsolutePathBufGuard;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -90,7 +90,7 @@ pub use constraint::ConstraintResult;
 pub use service::ConfigService;
 pub use service::ConfigServiceError;
 
-pub use codex_git::GhostSnapshotConfig;
+pub use rune_git::GhostSnapshotConfig;
 
 /// Maximum number of bytes of the documentation that will be embedded. Larger
 /// files are *silently truncated* to this size so we do not take up too much of
@@ -102,11 +102,11 @@ pub const CONFIG_TOML_FILE: &str = "rune.toml";
 
 #[cfg(test)]
 pub(crate) fn test_config() -> Config {
-    let codex_home = tempdir().expect("create temp dir");
+    let rune_home = tempdir().expect("create temp dir");
     Config::load_from_base_config_with_overrides(
         ConfigToml::default(),
         ConfigOverrides::default(),
-        codex_home.path().to_path_buf(),
+        rune_home.path().to_path_buf(),
     )
     .expect("load default test config")
 }
@@ -183,23 +183,23 @@ pub struct Config {
     /// Compact prompt override.
     pub compact_prompt: Option<String>,
 
-    /// Optional external notifier command. When set, Codex will spawn this
+    /// Optional external notifier command. When set, Rune will spawn this
     /// program after each completed *turn* (i.e. when the agent finishes
     /// processing a user submission). The value must be the full command
-    /// broken into argv tokens **without** the trailing JSON argument - Codex
+    /// broken into argv tokens **without** the trailing JSON argument - Rune
     /// appends one extra argument containing a JSON payload describing the
     /// event.
     ///
     /// Example `~/.rune/rune.toml` snippet:
     ///
     /// ```toml
-    /// notify = ["notify-send", "Codex"]
+    /// notify = ["notify-send", "Rune"]
     /// ```
     ///
     /// which will be invoked as:
     ///
     /// ```shell
-    /// notify-send Codex '{"type":"agent-turn-complete","turn-id":"12345"}'
+    /// notify-send Rune '{"type":"agent-turn-complete","turn-id":"12345"}'
     /// ```
     ///
     /// If unset the feature is disabled.
@@ -238,26 +238,26 @@ pub struct Config {
     pub cwd: PathBuf,
 
     /// Preferred store for CLI auth credentials.
-    /// file (default): Use a file in the Codex home directory.
+    /// file (default): Use a file in the Rune home directory.
     /// keyring: Use an OS-specific keyring service.
     /// auto: Use the OS-specific keyring service if available, otherwise use a file.
     pub cli_auth_credentials_store_mode: AuthCredentialsStoreMode,
 
-    /// Definition for MCP servers that Codex can reach out to for tool calls.
+    /// Definition for MCP servers that Rune can reach out to for tool calls.
     pub mcp_servers: Constrained<HashMap<String, McpServerConfig>>,
 
     /// Preferred store for MCP OAuth credentials.
     /// keyring: Use an OS-specific keyring service.
-    ///          Credentials stored in the keyring will only be readable by Codex unless the user explicitly grants access via OS-level keyring access.
-    ///          https://github.com/openai/codex/blob/main/rune-rs/rmcp-client/src/oauth.rs#L2
-    /// file: CODEX_HOME/.credentials.json
-    ///       This file will be readable to Codex and other applications running as the same user.
+    ///          Credentials stored in the keyring will only be readable by Rune unless the user explicitly grants access via OS-level keyring access.
+    ///          https://github.com/openai/rune/blob/main/rune-rs/rmcp-client/src/oauth.rs#L2
+    /// file: RUNE_HOME/.credentials.json
+    ///       This file will be readable to Rune and other applications running as the same user.
     /// auto (default): keyring if available, otherwise file.
     pub mcp_oauth_credentials_store_mode: OAuthCredentialsStoreMode,
 
     /// Optional fixed port to use for the local HTTP callback server used during MCP OAuth login.
     ///
-    /// When unset, Codex will bind to an ephemeral port chosen by the OS.
+    /// When unset, Rune will bind to an ephemeral port chosen by the OS.
     pub mcp_oauth_callback_port: Option<u16>,
 
     /// Combined provider map (defaults merged with user-defined overrides).
@@ -275,11 +275,11 @@ pub struct Config {
     /// Maximum number of agent threads that can be open concurrently.
     pub agent_max_threads: Option<usize>,
 
-    /// Directory containing all Codex state (defaults to `~/.rune` but can be
+    /// Directory containing all Rune state (defaults to `~/.rune` but can be
     /// overridden by the `RUNE_HOME` environment variable).
-    pub codex_home: PathBuf,
+    pub rune_home: PathBuf,
 
-    /// Directory where Codex writes log files (defaults to `$RUNE_HOME/log`).
+    /// Directory where Rune writes log files (defaults to `$RUNE_HOME/log`).
     pub log_dir: PathBuf,
 
     /// Settings that govern if and what will be written to `~/.rune/history.jsonl`.
@@ -298,7 +298,7 @@ pub struct Config {
     /// [`ConfigOverrides`].
     ///
     /// When this program is invoked, arg0 will be set to `rune-linux-sandbox`.
-    pub codex_linux_sandbox_exe: Option<PathBuf>,
+    pub rune_linux_sandbox_exe: Option<PathBuf>,
 
     /// Value to use for `reasoning.effort` when making a request using the
     /// Responses API.
@@ -356,8 +356,8 @@ pub struct Config {
     /// Collection of various notices we show the user
     pub notices: Notice,
 
-    /// When `true`, checks for Codex updates on startup and surfaces update prompts.
-    /// Set to `false` only if your Codex updates are centrally managed.
+    /// When `true`, checks for Rune updates on startup and surfaces update prompts.
+    /// Set to `false` only if your Rune updates are centrally managed.
     /// Defaults to `true`.
     pub check_for_update_on_startup: bool,
 
@@ -366,11 +366,11 @@ pub struct Config {
     /// or placeholder replacement will occur for fast keypress bursts.
     pub disable_paste_burst: bool,
 
-    /// When `false`, disables analytics across Codex product surfaces in this machine.
+    /// When `false`, disables analytics across Rune product surfaces in this machine.
     /// Voluntarily left as Optional because the default value might depend on the client.
     pub analytics_enabled: Option<bool>,
 
-    /// When `false`, disables feedback collection across Codex product surfaces.
+    /// When `false`, disables feedback collection across Rune product surfaces.
     /// Defaults to `true`.
     pub feedback_enabled: bool,
 
@@ -380,7 +380,7 @@ pub struct Config {
 
 #[derive(Debug, Clone, Default)]
 pub struct ConfigBuilder {
-    codex_home: Option<PathBuf>,
+    rune_home: Option<PathBuf>,
     cli_overrides: Option<Vec<(String, TomlValue)>>,
     harness_overrides: Option<ConfigOverrides>,
     loader_overrides: Option<LoaderOverrides>,
@@ -389,8 +389,8 @@ pub struct ConfigBuilder {
 }
 
 impl ConfigBuilder {
-    pub fn codex_home(mut self, codex_home: PathBuf) -> Self {
-        self.codex_home = Some(codex_home);
+    pub fn rune_home(mut self, rune_home: PathBuf) -> Self {
+        self.rune_home = Some(rune_home);
         self
     }
 
@@ -421,14 +421,14 @@ impl ConfigBuilder {
 
     pub async fn build(self) -> std::io::Result<Config> {
         let Self {
-            codex_home,
+            rune_home,
             cli_overrides,
             harness_overrides,
             loader_overrides,
             cloud_requirements,
             fallback_cwd,
         } = self;
-        let codex_home = codex_home.map_or_else(find_codex_home, std::io::Result::Ok)?;
+        let rune_home = rune_home.map_or_else(find_rune_home, std::io::Result::Ok)?;
         let cli_overrides = cli_overrides.unwrap_or_default();
         let mut harness_overrides = harness_overrides.unwrap_or_default();
         let loader_overrides = loader_overrides.unwrap_or_default();
@@ -439,7 +439,7 @@ impl ConfigBuilder {
         };
         harness_overrides.cwd = Some(cwd.to_path_buf());
         let config_layer_stack = load_config_layers_state(
-            &codex_home,
+            &rune_home,
             Some(cwd),
             &cli_overrides,
             loader_overrides,
@@ -470,7 +470,7 @@ impl ConfigBuilder {
         Config::load_config_with_layer_stack(
             config_toml,
             harness_overrides,
-            codex_home,
+            rune_home,
             config_layer_stack,
         )
     }
@@ -491,7 +491,7 @@ impl Config {
     pub fn load_default_with_cli_overrides(
         cli_overrides: Vec<(String, TomlValue)>,
     ) -> std::io::Result<Self> {
-        let codex_home = find_codex_home()?;
+        let rune_home = find_rune_home()?;
         let mut merged = toml::Value::try_from(ConfigToml::default()).map_err(|e| {
             std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
@@ -500,22 +500,22 @@ impl Config {
         })?;
         let cli_layer = crate::config_loader::build_cli_overrides_layer(&cli_overrides);
         crate::config_loader::merge_toml_values(&mut merged, &cli_layer);
-        let config_toml = deserialize_config_toml_with_base(merged, &codex_home)?;
+        let config_toml = deserialize_config_toml_with_base(merged, &rune_home)?;
         Self::load_config_with_layer_stack(
             config_toml,
             ConfigOverrides::default(),
-            codex_home,
+            rune_home,
             ConfigLayerStack::default(),
         )
     }
 
     /// This is a secondary way of creating [Config], which is appropriate when
     /// the harness is meant to be used with a specific configuration that
-    /// ignores user settings. For example, the `codex exec` subcommand is
+    /// ignores user settings. For example, the `rune exec` subcommand is
     /// designed to use [AskForApproval::Never] exclusively.
     ///
     /// Further, [ConfigOverrides] contains some options that are not supported
-    /// in [ConfigToml], such as `cwd` and `codex_linux_sandbox_exe`.
+    /// in [ConfigToml], such as `cwd` and `rune_linux_sandbox_exe`.
     pub async fn load_with_cli_overrides_and_harness_overrides(
         cli_overrides: Vec<(String, TomlValue)>,
         harness_overrides: ConfigOverrides,
@@ -532,12 +532,12 @@ impl Config {
 /// with [ConfigToml] directly means that [ConfigRequirements] have not been
 /// applied yet, which risks failing to enforce required constraints.
 pub async fn load_config_as_toml_with_cli_overrides(
-    codex_home: &Path,
+    rune_home: &Path,
     cwd: &AbsolutePathBuf,
     cli_overrides: Vec<(String, TomlValue)>,
 ) -> std::io::Result<ConfigToml> {
     let config_layer_stack = load_config_layers_state(
-        codex_home,
+        rune_home,
         Some(cwd.clone()),
         &cli_overrides,
         LoaderOverrides::default(),
@@ -546,7 +546,7 @@ pub async fn load_config_as_toml_with_cli_overrides(
     .await?;
 
     let merged_toml = config_layer_stack.effective_config();
-    let cfg = deserialize_config_toml_with_base(merged_toml, codex_home).map_err(|e| {
+    let cfg = deserialize_config_toml_with_base(merged_toml, rune_home).map_err(|e| {
         tracing::error!("Failed to deserialize overridden config: {e}");
         e
     })?;
@@ -662,7 +662,7 @@ fn mcp_server_matches_requirement(
 }
 
 pub async fn load_global_mcp_servers(
-    codex_home: &Path,
+    rune_home: &Path,
 ) -> std::io::Result<BTreeMap<String, McpServerConfig>> {
     // In general, Config::load_with_cli_overrides() should be used to load the
     // full config with requirements.toml applied, but in this case, we need
@@ -673,10 +673,10 @@ pub async fn load_global_mcp_servers(
     // result.
     let cli_overrides = Vec::<(String, TomlValue)>::new();
     // There is no cwd/project context for this query, so this will not include
-    // MCP servers defined in in-repo .codex/ folders.
+    // MCP servers defined in in-repo .rune/ folders.
     let cwd: Option<AbsolutePathBuf> = None;
     let config_layer_stack = load_config_layers_state(
-        codex_home,
+        rune_home,
         cwd,
         &cli_overrides,
         LoaderOverrides::default(),
@@ -789,19 +789,19 @@ pub(crate) fn set_project_trust_level_inner(
 /// Patch `RUNE_HOME/rune.toml` project state to set trust level.
 /// Use with caution.
 pub fn set_project_trust_level(
-    codex_home: &Path,
+    rune_home: &Path,
     project_path: &Path,
     trust_level: TrustLevel,
 ) -> anyhow::Result<()> {
     use crate::config::edit::ConfigEditsBuilder;
 
-    ConfigEditsBuilder::new(codex_home)
+    ConfigEditsBuilder::new(rune_home)
         .set_project_trust_level(project_path, trust_level)
         .apply_blocking()
 }
 
 /// Save the default OSS provider preference to config.toml
-pub fn set_default_oss_provider(codex_home: &Path, provider: &str) -> std::io::Result<()> {
+pub fn set_default_oss_provider(rune_home: &Path, provider: &str) -> std::io::Result<()> {
     // Validate that the provider is one of the known OSS providers
     match provider {
         LMSTUDIO_OSS_PROVIDER_ID | OLLAMA_OSS_PROVIDER_ID => {
@@ -829,13 +829,13 @@ pub fn set_default_oss_provider(codex_home: &Path, provider: &str) -> std::io::R
         value: value(provider),
     }];
 
-    ConfigEditsBuilder::new(codex_home)
+    ConfigEditsBuilder::new(rune_home)
         .with_edits(edits)
         .apply_blocking()
         .map_err(|err| std::io::Error::other(format!("failed to persist config.toml: {err}")))
 }
 
-/// Base config deserialized from ~/.codex/config.toml.
+/// Base config deserialized from ~/.rune/config.toml.
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq, JsonSchema)]
 #[schemars(deny_unknown_fields)]
 pub struct ConfigToml {
@@ -879,7 +879,7 @@ pub struct ConfigToml {
     /// Optional path to a file containing model instructions that will override
     /// the built-in instructions for the selected model. Users are STRONGLY
     /// DISCOURAGED from using this field, as deviating from the instructions
-    /// sanctioned by Codex will likely degrade model performance.
+    /// sanctioned by Rune will likely degrade model performance.
     pub model_instructions_file: Option<AbsolutePathBuf>,
 
     /// Compact prompt used for history compaction.
@@ -894,13 +894,13 @@ pub struct ConfigToml {
     pub forced_login_method: Option<ForcedLoginMethod>,
 
     /// Preferred backend for storing CLI auth credentials.
-    /// file (default): Use a file in the Codex home directory.
+    /// file (default): Use a file in the Rune home directory.
     /// keyring: Use an OS-specific keyring service.
     /// auto: Use the keyring if available, otherwise use a file.
     #[serde(default)]
     pub cli_auth_credentials_store: Option<AuthCredentialsStoreMode>,
 
-    /// Definition for MCP servers that Codex can reach out to for tool calls.
+    /// Definition for MCP servers that Rune can reach out to for tool calls.
     #[serde(default)]
     // Uses the raw MCP input shape (custom deserialization) rather than `McpServerConfig`.
     #[schemars(schema_with = "crate::config::schema::mcp_servers_schema")]
@@ -908,14 +908,14 @@ pub struct ConfigToml {
 
     /// Preferred backend for storing MCP OAuth credentials.
     /// keyring: Use an OS-specific keyring service.
-    ///          https://github.com/openai/codex/blob/main/rune-rs/rmcp-client/src/oauth.rs#L2
-    /// file: Use a file in the Codex home directory.
+    ///          https://github.com/openai/rune/blob/main/rune-rs/rmcp-client/src/oauth.rs#L2
+    /// file: Use a file in the Rune home directory.
     /// auto (default): Use the OS-specific keyring service if available, otherwise use a file.
     #[serde(default)]
     pub mcp_oauth_credentials_store: Option<OAuthCredentialsStoreMode>,
 
     /// Optional fixed port for the local HTTP callback server used during MCP OAuth login.
-    /// When unset, Codex will bind to an ephemeral port chosen by the OS.
+    /// When unset, Rune will bind to an ephemeral port chosen by the OS.
     pub mcp_oauth_callback_port: Option<u16>,
 
     /// User-defined provider entries that extend/override the built-in list.
@@ -938,12 +938,12 @@ pub struct ConfigToml {
     #[serde(default)]
     pub profiles: HashMap<String, ConfigProfile>,
 
-    /// Settings that govern if and what will be written to `~/.codex/history.jsonl`.
+    /// Settings that govern if and what will be written to `~/.rune/history.jsonl`.
     #[serde(default)]
     pub history: Option<History>,
 
-    /// Directory where Codex writes log files, for example `rune-tui.log`.
-    /// Defaults to `$CODEX_HOME/log`.
+    /// Directory where Rune writes log files, for example `rune-tui.log`.
+    /// Defaults to `$RUNE_HOME/log`.
     pub log_dir: Option<AbsolutePathBuf>,
 
     /// Optional URI-based file opener. If set, citations to files in the model
@@ -1003,12 +1003,12 @@ pub struct ConfigToml {
     pub ghost_snapshot: Option<GhostSnapshotToml>,
 
     /// Markers used to detect the project root when searching parent
-    /// directories for `.codex` folders. Defaults to [".git"] when unset.
+    /// directories for `.rune` folders. Defaults to [".git"] when unset.
     #[serde(default)]
     pub project_root_markers: Option<Vec<String>>,
 
-    /// When `true`, checks for Codex updates on startup and surfaces update prompts.
-    /// Set to `false` only if your Codex updates are centrally managed.
+    /// When `true`, checks for Rune updates on startup and surfaces update prompts.
+    /// Set to `false` only if your Rune updates are centrally managed.
     /// Defaults to `true`.
     pub check_for_update_on_startup: Option<bool>,
 
@@ -1017,11 +1017,11 @@ pub struct ConfigToml {
     /// or placeholder replacement will occur for fast keypress bursts.
     pub disable_paste_burst: Option<bool>,
 
-    /// When `false`, disables analytics across Codex product surfaces in this machine.
+    /// When `false`, disables analytics across Rune product surfaces in this machine.
     /// Defaults to `true`.
     pub analytics: Option<crate::config::types::AnalyticsConfigToml>,
 
-    /// When `false`, disables feedback collection across Codex product surfaces.
+    /// When `false`, disables feedback collection across Rune product surfaces.
     /// Defaults to `true`.
     pub feedback: Option<crate::config::types::FeedbackConfigToml>,
 
@@ -1190,7 +1190,7 @@ impl ConfigToml {
             if cfg!(target_os = "windows")
                 // If the experimental Windows sandbox is enabled, do not force a downgrade.
                 && windows_sandbox_level
-                    == codex_protocol::config_types::WindowsSandboxLevel::Disabled
+                    == rune_protocol::config_types::WindowsSandboxLevel::Disabled
                 && matches!(&*policy, SandboxPolicy::WorkspaceWrite { .. })
             {
                 *policy = SandboxPolicy::new_read_only_policy();
@@ -1271,7 +1271,7 @@ pub struct ConfigOverrides {
     pub sandbox_mode: Option<SandboxMode>,
     pub model_provider: Option<String>,
     pub config_profile: Option<String>,
-    pub codex_linux_sandbox_exe: Option<PathBuf>,
+    pub rune_linux_sandbox_exe: Option<PathBuf>,
     pub base_instructions: Option<String>,
     pub developer_instructions: Option<String>,
     pub personality: Option<Personality>,
@@ -1371,21 +1371,21 @@ impl Config {
     fn load_from_base_config_with_overrides(
         cfg: ConfigToml,
         overrides: ConfigOverrides,
-        codex_home: PathBuf,
+        rune_home: PathBuf,
     ) -> std::io::Result<Self> {
         // Note this ignores requirements.toml enforcement for tests.
         let config_layer_stack = ConfigLayerStack::default();
-        Self::load_config_with_layer_stack(cfg, overrides, codex_home, config_layer_stack)
+        Self::load_config_with_layer_stack(cfg, overrides, rune_home, config_layer_stack)
     }
 
     fn load_config_with_layer_stack(
         cfg: ConfigToml,
         overrides: ConfigOverrides,
-        codex_home: PathBuf,
+        rune_home: PathBuf,
         config_layer_stack: ConfigLayerStack,
     ) -> std::io::Result<Self> {
         let requirements = config_layer_stack.requirements().clone();
-        let user_instructions = Self::load_instructions(Some(&codex_home));
+        let user_instructions = Self::load_instructions(Some(&rune_home));
         let mut startup_warnings = Vec::new();
 
         // Destructure ConfigOverrides fully to ensure all overrides are applied.
@@ -1397,7 +1397,7 @@ impl Config {
             sandbox_mode,
             model_provider,
             config_profile: config_profile_key,
-            codex_linux_sandbox_exe,
+            rune_linux_sandbox_exe,
             base_instructions,
             developer_instructions,
             personality,
@@ -1639,7 +1639,7 @@ impl Config {
             .as_ref()
             .map(AbsolutePathBuf::to_path_buf)
             .unwrap_or_else(|| {
-                let mut p = codex_home.clone();
+                let mut p = rune_home.clone();
                 p.push("log");
                 p
             });
@@ -1724,13 +1724,13 @@ impl Config {
                 .collect(),
             tool_output_token_limit: cfg.tool_output_token_limit,
             agent_max_threads,
-            codex_home,
+            rune_home,
             log_dir,
             config_layer_stack,
             history,
             ephemeral: ephemeral.unwrap_or_default(),
             file_opener: cfg.file_opener.unwrap_or(UriBasedFileOpener::VsCode),
-            codex_linux_sandbox_exe,
+            rune_linux_sandbox_exe,
 
             hide_agent_reasoning: cfg.hide_agent_reasoning.unwrap_or(false),
             show_raw_agent_reasoning: cfg
@@ -1815,8 +1815,8 @@ impl Config {
         Ok(config)
     }
 
-    fn load_instructions(codex_dir: Option<&Path>) -> Option<String> {
-        let base = codex_dir?;
+    fn load_instructions(rune_dir: Option<&Path>) -> Option<String> {
+        let base = rune_dir?;
         for candidate in [LOCAL_PROJECT_DOC_FILENAME, DEFAULT_PROJECT_DOC_FILENAME] {
             let mut path = base.to_path_buf();
             path.push(candidate);
@@ -1902,19 +1902,19 @@ fn toml_uses_deprecated_instructions_file(value: &TomlValue) -> bool {
     })
 }
 
-/// Returns the path to the Codex configuration directory, which can be
-/// specified by the `CODEX_HOME` environment variable. If not set, defaults to
-/// `~/.codex`.
+/// Returns the path to the Rune configuration directory, which can be
+/// specified by the `RUNE_HOME` environment variable. If not set, defaults to
+/// `~/.rune`.
 ///
-/// - If `CODEX_HOME` is set, the value must exist and be a directory. The
+/// - If `RUNE_HOME` is set, the value must exist and be a directory. The
 ///   value will be canonicalized and this function will Err otherwise.
-/// - If `CODEX_HOME` is not set, this function does not verify that the
+/// - If `RUNE_HOME` is not set, this function does not verify that the
 ///   directory exists.
-pub fn find_codex_home() -> std::io::Result<PathBuf> {
-    codex_utils_home_dir::find_codex_home()
+pub fn find_rune_home() -> std::io::Result<PathBuf> {
+    rune_utils_home_dir::find_rune_home()
 }
 
-/// Returns the path to the folder where Codex logs are stored. Does not verify
+/// Returns the path to the folder where Rune logs are stored. Does not verify
 /// that the directory exists.
 pub fn log_dir(cfg: &Config) -> std::io::Result<PathBuf> {
     Ok(cfg.log_dir.clone())
@@ -2374,13 +2374,13 @@ trust_level = "trusted"
 
     #[test]
     fn config_defaults_to_file_cli_auth_store_mode() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let cfg = ConfigToml::default();
 
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert_eq!(
@@ -2393,7 +2393,7 @@ trust_level = "trusted"
 
     #[test]
     fn config_honors_explicit_keyring_auth_store_mode() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let cfg = ConfigToml {
             cli_auth_credentials_store: Some(AuthCredentialsStoreMode::Keyring),
             ..Default::default()
@@ -2402,7 +2402,7 @@ trust_level = "trusted"
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert_eq!(
@@ -2415,13 +2415,13 @@ trust_level = "trusted"
 
     #[test]
     fn config_defaults_to_auto_oauth_store_mode() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let cfg = ConfigToml::default();
 
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert_eq!(
@@ -2434,7 +2434,7 @@ trust_level = "trusted"
 
     #[test]
     fn feedback_enabled_defaults_to_true() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let cfg = ConfigToml {
             feedback: Some(FeedbackConfigToml::default()),
             ..Default::default()
@@ -2443,7 +2443,7 @@ trust_level = "trusted"
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert_eq!(config.feedback_enabled, true);
@@ -2542,7 +2542,7 @@ trust_level = "trusted"
 
     #[test]
     fn profile_legacy_toggles_override_base() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let mut profiles = HashMap::new();
         profiles.insert(
             "work".to_string(),
@@ -2560,7 +2560,7 @@ trust_level = "trusted"
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert!(!config.features.enabled(Feature::WebSearchRequest));
@@ -2570,11 +2570,11 @@ trust_level = "trusted"
 
     #[tokio::test]
     async fn project_profile_overrides_user_profile() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let workspace = TempDir::new()?;
         let workspace_key = workspace.path().to_string_lossy().replace('\\', "\\\\");
         std::fs::write(
-            codex_home.path().join(CONFIG_TOML_FILE),
+            rune_home.path().join(CONFIG_TOML_FILE),
             format!(
                 r#"
 profile = "global"
@@ -2590,7 +2590,7 @@ trust_level = "trusted"
 "#,
             ),
         )?;
-        let project_config_dir = workspace.path().join(".codex");
+        let project_config_dir = workspace.path().join(".rune");
         std::fs::create_dir_all(&project_config_dir)?;
         std::fs::write(
             project_config_dir.join(CONFIG_TOML_FILE),
@@ -2600,7 +2600,7 @@ profile = "project"
         )?;
 
         let config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
+            .rune_home(rune_home.path().to_path_buf())
             .harness_overrides(ConfigOverrides {
                 cwd: Some(workspace.path().to_path_buf()),
                 ..Default::default()
@@ -2616,7 +2616,7 @@ profile = "project"
 
     #[test]
     fn profile_sandbox_mode_overrides_base() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let mut profiles = HashMap::new();
         profiles.insert(
             "work".to_string(),
@@ -2635,7 +2635,7 @@ profile = "project"
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert!(matches!(
@@ -2649,7 +2649,7 @@ profile = "project"
 
     #[test]
     fn cli_override_takes_precedence_over_profile_sandbox_mode() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let mut profiles = HashMap::new();
         profiles.insert(
             "work".to_string(),
@@ -2672,7 +2672,7 @@ profile = "project"
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             overrides,
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         if cfg!(target_os = "windows") {
@@ -2694,7 +2694,7 @@ profile = "project"
 
     #[test]
     fn feature_table_overrides_legacy_flags() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let mut entries = BTreeMap::new();
         entries.insert("apply_patch_freeform".to_string(), false);
         let cfg = ConfigToml {
@@ -2705,7 +2705,7 @@ profile = "project"
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert!(!config.features.enabled(Feature::ApplyPatchFreeform));
@@ -2716,7 +2716,7 @@ profile = "project"
 
     #[test]
     fn legacy_toggles_map_to_features() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let cfg = ConfigToml {
             experimental_use_unified_exec_tool: Some(true),
             experimental_use_freeform_apply_patch: Some(true),
@@ -2726,7 +2726,7 @@ profile = "project"
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert!(config.features.enabled(Feature::ApplyPatchFreeform));
@@ -2742,7 +2742,7 @@ profile = "project"
     #[test]
     fn responses_websocket_features_do_not_change_wire_api() -> std::io::Result<()> {
         for feature_key in ["responses_websockets", "responses_websockets_v2"] {
-            let codex_home = TempDir::new()?;
+            let rune_home = TempDir::new()?;
             let mut entries = BTreeMap::new();
             entries.insert(feature_key.to_string(), true);
             let cfg = ConfigToml {
@@ -2753,7 +2753,7 @@ profile = "project"
             let config = Config::load_from_base_config_with_overrides(
                 cfg,
                 ConfigOverrides::default(),
-                codex_home.path().to_path_buf(),
+                rune_home.path().to_path_buf(),
             )?;
 
             assert_eq!(
@@ -2767,7 +2767,7 @@ profile = "project"
 
     #[test]
     fn config_honors_explicit_file_oauth_store_mode() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let cfg = ConfigToml {
             mcp_oauth_credentials_store: Some(OAuthCredentialsStoreMode::File),
             ..Default::default()
@@ -2776,7 +2776,7 @@ profile = "project"
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert_eq!(
@@ -2789,9 +2789,9 @@ profile = "project"
 
     #[tokio::test]
     async fn managed_config_overrides_oauth_store_mode() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
-        let managed_path = codex_home.path().join("managed_config.toml");
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let rune_home = TempDir::new()?;
+        let managed_path = rune_home.path().join("managed_config.toml");
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
 
         std::fs::write(&config_path, "mcp_oauth_credentials_store = \"file\"\n")?;
         std::fs::write(&managed_path, "mcp_oauth_credentials_store = \"keyring\"\n")?;
@@ -2803,9 +2803,9 @@ profile = "project"
             macos_managed_config_requirements_base64: None,
         };
 
-        let cwd = AbsolutePathBuf::try_from(codex_home.path())?;
+        let cwd = AbsolutePathBuf::try_from(rune_home.path())?;
         let config_layer_stack = load_config_layers_state(
-            codex_home.path(),
+            rune_home.path(),
             Some(cwd),
             &Vec::new(),
             overrides,
@@ -2814,7 +2814,7 @@ profile = "project"
         .await?;
         let cfg = deserialize_config_toml_with_base(
             config_layer_stack.effective_config(),
-            codex_home.path(),
+            rune_home.path(),
         )
         .map_err(|e| {
             tracing::error!("Failed to deserialize overridden config: {e}");
@@ -2828,7 +2828,7 @@ profile = "project"
         let final_config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
         assert_eq!(
             final_config.mcp_oauth_credentials_store_mode,
@@ -2840,9 +2840,9 @@ profile = "project"
 
     #[tokio::test]
     async fn load_global_mcp_servers_returns_empty_if_missing() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
-        let servers = load_global_mcp_servers(codex_home.path()).await?;
+        let servers = load_global_mcp_servers(rune_home.path()).await?;
         assert!(servers.is_empty());
 
         Ok(())
@@ -2850,7 +2850,7 @@ profile = "project"
 
     #[tokio::test]
     async fn replace_mcp_servers_round_trips_entries() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
         let mut servers = BTreeMap::new();
         servers.insert(
@@ -2875,12 +2875,12 @@ profile = "project"
         );
 
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
 
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         assert_eq!(loaded.len(), 1);
         let docs = loaded.get("docs").expect("docs entry");
         match &docs.transport {
@@ -2905,11 +2905,11 @@ profile = "project"
 
         let empty = BTreeMap::new();
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(empty.clone())],
         )?;
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         assert!(loaded.is_empty());
 
         Ok(())
@@ -2917,11 +2917,11 @@ profile = "project"
 
     #[tokio::test]
     async fn managed_config_wins_over_cli_overrides() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
-        let managed_path = codex_home.path().join("managed_config.toml");
+        let rune_home = TempDir::new()?;
+        let managed_path = rune_home.path().join("managed_config.toml");
 
         std::fs::write(
-            codex_home.path().join(CONFIG_TOML_FILE),
+            rune_home.path().join(CONFIG_TOML_FILE),
             "model = \"base\"\n",
         )?;
         std::fs::write(&managed_path, "model = \"managed_config\"\n")?;
@@ -2933,9 +2933,9 @@ profile = "project"
             macos_managed_config_requirements_base64: None,
         };
 
-        let cwd = AbsolutePathBuf::try_from(codex_home.path())?;
+        let cwd = AbsolutePathBuf::try_from(rune_home.path())?;
         let config_layer_stack = load_config_layers_state(
-            codex_home.path(),
+            rune_home.path(),
             Some(cwd),
             &[("model".to_string(), TomlValue::String("cli".to_string()))],
             overrides,
@@ -2945,7 +2945,7 @@ profile = "project"
 
         let cfg = deserialize_config_toml_with_base(
             config_layer_stack.effective_config(),
-            codex_home.path(),
+            rune_home.path(),
         )
         .map_err(|e| {
             tracing::error!("Failed to deserialize overridden config: {e}");
@@ -2958,8 +2958,8 @@ profile = "project"
 
     #[tokio::test]
     async fn load_global_mcp_servers_accepts_legacy_ms_field() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let rune_home = TempDir::new()?;
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
 
         std::fs::write(
             &config_path,
@@ -2971,7 +2971,7 @@ startup_timeout_ms = 2500
 "#,
         )?;
 
-        let servers = load_global_mcp_servers(codex_home.path()).await?;
+        let servers = load_global_mcp_servers(rune_home.path()).await?;
         let docs = servers.get("docs").expect("docs entry");
         assert_eq!(docs.startup_timeout_sec, Some(Duration::from_millis(2500)));
 
@@ -2980,8 +2980,8 @@ startup_timeout_ms = 2500
 
     #[tokio::test]
     async fn load_global_mcp_servers_rejects_inline_bearer_token() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let rune_home = TempDir::new()?;
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
 
         std::fs::write(
             &config_path,
@@ -2992,7 +2992,7 @@ bearer_token = "secret"
 "#,
         )?;
 
-        let err = load_global_mcp_servers(codex_home.path())
+        let err = load_global_mcp_servers(rune_home.path())
             .await
             .expect_err("bearer_token entries should be rejected");
 
@@ -3005,7 +3005,7 @@ bearer_token = "secret"
 
     #[tokio::test]
     async fn replace_mcp_servers_serializes_env_sorted() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
         let servers = BTreeMap::from([(
             "docs".to_string(),
@@ -3032,12 +3032,12 @@ bearer_token = "secret"
         )]);
 
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
 
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
         let serialized = std::fs::read_to_string(&config_path)?;
         assert_eq!(
             serialized,
@@ -3051,7 +3051,7 @@ ZIG_VAR = "3"
 "#
         );
 
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         let docs = loaded.get("docs").expect("docs entry");
         match &docs.transport {
             McpServerTransportConfig::Stdio {
@@ -3079,7 +3079,7 @@ ZIG_VAR = "3"
 
     #[tokio::test]
     async fn replace_mcp_servers_serializes_env_vars() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
         let servers = BTreeMap::from([(
             "docs".to_string(),
@@ -3103,19 +3103,19 @@ ZIG_VAR = "3"
         )]);
 
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
 
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
         let serialized = std::fs::read_to_string(&config_path)?;
         assert!(
             serialized.contains(r#"env_vars = ["ALPHA", "BETA"]"#),
             "serialized config missing env_vars field:\n{serialized}"
         );
 
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         let docs = loaded.get("docs").expect("docs entry");
         match &docs.transport {
             McpServerTransportConfig::Stdio { env_vars, .. } => {
@@ -3129,7 +3129,7 @@ ZIG_VAR = "3"
 
     #[tokio::test]
     async fn replace_mcp_servers_serializes_cwd() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
         let cwd_path = PathBuf::from("/tmp/rune-mcp");
         let servers = BTreeMap::from([(
@@ -3154,19 +3154,19 @@ ZIG_VAR = "3"
         )]);
 
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
 
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
         let serialized = std::fs::read_to_string(&config_path)?;
         assert!(
             serialized.contains(r#"cwd = "/tmp/rune-mcp""#),
             "serialized config missing cwd field:\n{serialized}"
         );
 
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         let docs = loaded.get("docs").expect("docs entry");
         match &docs.transport {
             McpServerTransportConfig::Stdio { cwd, .. } => {
@@ -3180,7 +3180,7 @@ ZIG_VAR = "3"
 
     #[tokio::test]
     async fn replace_mcp_servers_streamable_http_serializes_bearer_token() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
         let servers = BTreeMap::from([(
             "docs".to_string(),
@@ -3203,12 +3203,12 @@ ZIG_VAR = "3"
         )]);
 
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
 
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
         let serialized = std::fs::read_to_string(&config_path)?;
         assert_eq!(
             serialized,
@@ -3219,7 +3219,7 @@ startup_timeout_sec = 2.0
 "#
         );
 
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         let docs = loaded.get("docs").expect("docs entry");
         match &docs.transport {
             McpServerTransportConfig::StreamableHttp {
@@ -3242,7 +3242,7 @@ startup_timeout_sec = 2.0
 
     #[tokio::test]
     async fn replace_mcp_servers_streamable_http_serializes_custom_headers() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
         let servers = BTreeMap::from([(
             "docs".to_string(),
@@ -3267,12 +3267,12 @@ startup_timeout_sec = 2.0
             },
         )]);
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
 
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
         let serialized = std::fs::read_to_string(&config_path)?;
         assert_eq!(
             serialized,
@@ -3289,7 +3289,7 @@ X-Auth = "DOCS_AUTH"
 "#
         );
 
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         let docs = loaded.get("docs").expect("docs entry");
         match &docs.transport {
             McpServerTransportConfig::StreamableHttp {
@@ -3317,9 +3317,9 @@ X-Auth = "DOCS_AUTH"
 
     #[tokio::test]
     async fn replace_mcp_servers_streamable_http_removes_optional_sections() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
 
         let mut servers = BTreeMap::from([(
             "docs".to_string(),
@@ -3345,7 +3345,7 @@ X-Auth = "DOCS_AUTH"
         )]);
 
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
@@ -3374,7 +3374,7 @@ X-Auth = "DOCS_AUTH"
             },
         );
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
@@ -3387,7 +3387,7 @@ url = "https://example.com/mcp"
 "#
         );
 
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         let docs = loaded.get("docs").expect("docs entry");
         match &docs.transport {
             McpServerTransportConfig::StreamableHttp {
@@ -3412,8 +3412,8 @@ url = "https://example.com/mcp"
     #[tokio::test]
     async fn replace_mcp_servers_streamable_http_isolates_headers_between_servers()
     -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let rune_home = TempDir::new()?;
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
 
         let servers = BTreeMap::from([
             (
@@ -3464,7 +3464,7 @@ url = "https://example.com/mcp"
         ]);
 
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
@@ -3487,7 +3487,7 @@ url = "https://example.com/mcp"
             "serialized config should not add bearer token to logs:\n{serialized}"
         );
 
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         let docs = loaded.get("docs").expect("docs entry");
         match &docs.transport {
             McpServerTransportConfig::StreamableHttp {
@@ -3522,7 +3522,7 @@ url = "https://example.com/mcp"
 
     #[tokio::test]
     async fn replace_mcp_servers_serializes_disabled_flag() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
         let servers = BTreeMap::from([(
             "docs".to_string(),
@@ -3546,19 +3546,19 @@ url = "https://example.com/mcp"
         )]);
 
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
 
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
         let serialized = std::fs::read_to_string(&config_path)?;
         assert!(
             serialized.contains("enabled = false"),
             "serialized config missing disabled flag:\n{serialized}"
         );
 
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         let docs = loaded.get("docs").expect("docs entry");
         assert!(!docs.enabled);
 
@@ -3567,7 +3567,7 @@ url = "https://example.com/mcp"
 
     #[tokio::test]
     async fn replace_mcp_servers_serializes_required_flag() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
         let servers = BTreeMap::from([(
             "docs".to_string(),
@@ -3591,19 +3591,19 @@ url = "https://example.com/mcp"
         )]);
 
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
 
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
         let serialized = std::fs::read_to_string(&config_path)?;
         assert!(
             serialized.contains("required = true"),
             "serialized config missing required flag:\n{serialized}"
         );
 
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         let docs = loaded.get("docs").expect("docs entry");
         assert!(docs.required);
 
@@ -3612,7 +3612,7 @@ url = "https://example.com/mcp"
 
     #[tokio::test]
     async fn replace_mcp_servers_serializes_tool_filters() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
         let servers = BTreeMap::from([(
             "docs".to_string(),
@@ -3636,17 +3636,17 @@ url = "https://example.com/mcp"
         )]);
 
         apply_blocking(
-            codex_home.path(),
+            rune_home.path(),
             None,
             &[ConfigEdit::ReplaceMcpServers(servers.clone())],
         )?;
 
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
         let serialized = std::fs::read_to_string(&config_path)?;
         assert!(serialized.contains(r#"enabled_tools = ["allowed"]"#));
         assert!(serialized.contains(r#"disabled_tools = ["blocked"]"#));
 
-        let loaded = load_global_mcp_servers(codex_home.path()).await?;
+        let loaded = load_global_mcp_servers(rune_home.path()).await?;
         let docs = loaded.get("docs").expect("docs entry");
         assert_eq!(
             docs.enabled_tools.as_ref(),
@@ -3662,18 +3662,18 @@ url = "https://example.com/mcp"
 
     #[tokio::test]
     async fn set_model_updates_defaults() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
-        ConfigEditsBuilder::new(codex_home.path())
-            .set_model(Some("gpt-5.1-codex"), Some(ReasoningEffort::High))
+        ConfigEditsBuilder::new(rune_home.path())
+            .set_model(Some("gpt-5.1-rune"), Some(ReasoningEffort::High))
             .apply()
             .await?;
 
         let serialized =
-            tokio::fs::read_to_string(codex_home.path().join(CONFIG_TOML_FILE)).await?;
+            tokio::fs::read_to_string(rune_home.path().join(CONFIG_TOML_FILE)).await?;
         let parsed: ConfigToml = toml::from_str(&serialized)?;
 
-        assert_eq!(parsed.model.as_deref(), Some("gpt-5.1-codex"));
+        assert_eq!(parsed.model.as_deref(), Some("gpt-5.1-rune"));
         assert_eq!(parsed.model_reasoning_effort, Some(ReasoningEffort::High));
 
         Ok(())
@@ -3681,13 +3681,13 @@ url = "https://example.com/mcp"
 
     #[tokio::test]
     async fn set_model_overwrites_existing_model() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let rune_home = TempDir::new()?;
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
 
         tokio::fs::write(
             &config_path,
             r#"
-model = "gpt-5.1-codex"
+model = "gpt-5.1-rune"
 model_reasoning_effort = "medium"
 
 [profiles.dev]
@@ -3696,7 +3696,7 @@ model = "gpt-4.1"
         )
         .await?;
 
-        ConfigEditsBuilder::new(codex_home.path())
+        ConfigEditsBuilder::new(rune_home.path())
             .set_model(Some("o4-mini"), Some(ReasoningEffort::High))
             .apply()
             .await?;
@@ -3719,23 +3719,23 @@ model = "gpt-4.1"
 
     #[tokio::test]
     async fn set_model_updates_profile() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
-        ConfigEditsBuilder::new(codex_home.path())
+        ConfigEditsBuilder::new(rune_home.path())
             .with_profile(Some("dev"))
-            .set_model(Some("gpt-5.1-codex"), Some(ReasoningEffort::Medium))
+            .set_model(Some("gpt-5.1-rune"), Some(ReasoningEffort::Medium))
             .apply()
             .await?;
 
         let serialized =
-            tokio::fs::read_to_string(codex_home.path().join(CONFIG_TOML_FILE)).await?;
+            tokio::fs::read_to_string(rune_home.path().join(CONFIG_TOML_FILE)).await?;
         let parsed: ConfigToml = toml::from_str(&serialized)?;
         let profile = parsed
             .profiles
             .get("dev")
             .expect("profile should be created");
 
-        assert_eq!(profile.model.as_deref(), Some("gpt-5.1-codex"));
+        assert_eq!(profile.model.as_deref(), Some("gpt-5.1-rune"));
         assert_eq!(
             profile.model_reasoning_effort,
             Some(ReasoningEffort::Medium)
@@ -3746,8 +3746,8 @@ model = "gpt-4.1"
 
     #[tokio::test]
     async fn set_model_updates_existing_profile() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
-        let config_path = codex_home.path().join(CONFIG_TOML_FILE);
+        let rune_home = TempDir::new()?;
+        let config_path = rune_home.path().join(CONFIG_TOML_FILE);
 
         tokio::fs::write(
             &config_path,
@@ -3757,12 +3757,12 @@ model = "gpt-4"
 model_reasoning_effort = "medium"
 
 [profiles.prod]
-model = "gpt-5.1-codex"
+model = "gpt-5.1-rune"
 "#,
         )
         .await?;
 
-        ConfigEditsBuilder::new(codex_home.path())
+        ConfigEditsBuilder::new(rune_home.path())
             .with_profile(Some("dev"))
             .set_model(Some("o4-high"), Some(ReasoningEffort::Medium))
             .apply()
@@ -3786,7 +3786,7 @@ model = "gpt-5.1-codex"
                 .profiles
                 .get("prod")
                 .and_then(|profile| profile.model.as_deref()),
-            Some("gpt-5.1-codex"),
+            Some("gpt-5.1-rune"),
         );
 
         Ok(())
@@ -3794,7 +3794,7 @@ model = "gpt-5.1-codex"
 
     struct PrecedenceTestFixture {
         cwd: TempDir,
-        codex_home: TempDir,
+        rune_home: TempDir,
         cfg: ConfigToml,
         model_provider_map: HashMap<String, ModelProviderInfo>,
         openai_provider: ModelProviderInfo,
@@ -3806,14 +3806,14 @@ model = "gpt-5.1-codex"
             self.cwd.path().to_path_buf()
         }
 
-        fn codex_home(&self) -> PathBuf {
-            self.codex_home.path().to_path_buf()
+        fn rune_home(&self) -> PathBuf {
+            self.rune_home.path().to_path_buf()
         }
     }
 
     #[test]
     fn cli_override_sets_compact_prompt() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let overrides = ConfigOverrides {
             compact_prompt: Some("Use the compact override".to_string()),
             ..Default::default()
@@ -3822,7 +3822,7 @@ model = "gpt-5.1-codex"
         let config = Config::load_from_base_config_with_overrides(
             ConfigToml::default(),
             overrides,
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert_eq!(
@@ -3835,8 +3835,8 @@ model = "gpt-5.1-codex"
 
     #[test]
     fn loads_compact_prompt_from_file() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
-        let workspace = codex_home.path().join("workspace");
+        let rune_home = TempDir::new()?;
+        let workspace = rune_home.path().join("workspace");
         std::fs::create_dir_all(&workspace)?;
 
         let prompt_path = workspace.join("compact_prompt.txt");
@@ -3857,7 +3857,7 @@ model = "gpt-5.1-codex"
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             overrides,
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert_eq!(
@@ -3927,7 +3927,7 @@ model_verbosity = "high"
         // a parent folder, either.
         std::fs::write(cwd.join(".git"), "gitdir: nowhere")?;
 
-        let codex_home_temp_dir = TempDir::new().unwrap();
+        let rune_home_temp_dir = TempDir::new().unwrap();
 
         let openai_custom_provider = ModelProviderInfo {
             name: "OpenAI custom".to_string(),
@@ -3958,7 +3958,7 @@ model_verbosity = "high"
 
         Ok(PrecedenceTestFixture {
             cwd: cwd_temp_dir,
-            codex_home: codex_home_temp_dir,
+            rune_home: rune_home_temp_dir,
             cfg,
             model_provider_map,
             openai_provider,
@@ -3990,7 +3990,7 @@ model_verbosity = "high"
         let o3_profile_config: Config = Config::load_from_base_config_with_overrides(
             fixture.cfg.clone(),
             o3_profile_overrides,
-            fixture.codex_home(),
+            fixture.rune_home(),
         )?;
         assert_eq!(
             Config {
@@ -4018,14 +4018,14 @@ model_verbosity = "high"
                 project_doc_fallback_filenames: Vec::new(),
                 tool_output_token_limit: None,
                 agent_max_threads: DEFAULT_AGENT_MAX_THREADS,
-                codex_home: fixture.codex_home(),
-                log_dir: fixture.codex_home().join("log"),
+                rune_home: fixture.rune_home(),
+                log_dir: fixture.rune_home().join("log"),
                 config_layer_stack: Default::default(),
                 startup_warnings: Vec::new(),
                 history: History::default(),
                 ephemeral: false,
                 file_opener: UriBasedFileOpener::VsCode,
-                codex_linux_sandbox_exe: None,
+                rune_linux_sandbox_exe: None,
                 hide_agent_reasoning: false,
                 show_raw_agent_reasoning: false,
                 model_reasoning_effort: Some(ReasoningEffort::High),
@@ -4079,7 +4079,7 @@ model_verbosity = "high"
         let gpt3_profile_config = Config::load_from_base_config_with_overrides(
             fixture.cfg.clone(),
             gpt3_profile_overrides,
-            fixture.codex_home(),
+            fixture.rune_home(),
         )?;
         let expected_gpt3_profile_config = Config {
             model: Some("gpt-3.5-turbo".to_string()),
@@ -4106,14 +4106,14 @@ model_verbosity = "high"
             project_doc_fallback_filenames: Vec::new(),
             tool_output_token_limit: None,
             agent_max_threads: DEFAULT_AGENT_MAX_THREADS,
-            codex_home: fixture.codex_home(),
-            log_dir: fixture.codex_home().join("log"),
+            rune_home: fixture.rune_home(),
+            log_dir: fixture.rune_home().join("log"),
             config_layer_stack: Default::default(),
             startup_warnings: Vec::new(),
             history: History::default(),
             ephemeral: false,
             file_opener: UriBasedFileOpener::VsCode,
-            codex_linux_sandbox_exe: None,
+            rune_linux_sandbox_exe: None,
             hide_agent_reasoning: false,
             show_raw_agent_reasoning: false,
             model_reasoning_effort: None,
@@ -4163,7 +4163,7 @@ model_verbosity = "high"
         let default_profile_config = Config::load_from_base_config_with_overrides(
             fixture.cfg.clone(),
             default_profile_overrides,
-            fixture.codex_home(),
+            fixture.rune_home(),
         )?;
 
         assert_eq!(expected_gpt3_profile_config, default_profile_config);
@@ -4182,7 +4182,7 @@ model_verbosity = "high"
         let zdr_profile_config = Config::load_from_base_config_with_overrides(
             fixture.cfg.clone(),
             zdr_profile_overrides,
-            fixture.codex_home(),
+            fixture.rune_home(),
         )?;
         let expected_zdr_profile_config = Config {
             model: Some("o3".to_string()),
@@ -4209,14 +4209,14 @@ model_verbosity = "high"
             project_doc_fallback_filenames: Vec::new(),
             tool_output_token_limit: None,
             agent_max_threads: DEFAULT_AGENT_MAX_THREADS,
-            codex_home: fixture.codex_home(),
-            log_dir: fixture.codex_home().join("log"),
+            rune_home: fixture.rune_home(),
+            log_dir: fixture.rune_home().join("log"),
             config_layer_stack: Default::default(),
             startup_warnings: Vec::new(),
             history: History::default(),
             ephemeral: false,
             file_opener: UriBasedFileOpener::VsCode,
-            codex_linux_sandbox_exe: None,
+            rune_linux_sandbox_exe: None,
             hide_agent_reasoning: false,
             show_raw_agent_reasoning: false,
             model_reasoning_effort: None,
@@ -4271,7 +4271,7 @@ model_verbosity = "high"
         let gpt5_profile_config = Config::load_from_base_config_with_overrides(
             fixture.cfg.clone(),
             gpt5_profile_overrides,
-            fixture.codex_home(),
+            fixture.rune_home(),
         )?;
         let expected_gpt5_profile_config = Config {
             model: Some("gpt-5.1".to_string()),
@@ -4298,14 +4298,14 @@ model_verbosity = "high"
             project_doc_fallback_filenames: Vec::new(),
             tool_output_token_limit: None,
             agent_max_threads: DEFAULT_AGENT_MAX_THREADS,
-            codex_home: fixture.codex_home(),
-            log_dir: fixture.codex_home().join("log"),
+            rune_home: fixture.rune_home(),
+            log_dir: fixture.rune_home().join("log"),
             config_layer_stack: Default::default(),
             startup_warnings: Vec::new(),
             history: History::default(),
             ephemeral: false,
             file_opener: UriBasedFileOpener::VsCode,
-            codex_linux_sandbox_exe: None,
+            rune_linux_sandbox_exe: None,
             hide_agent_reasoning: false,
             show_raw_agent_reasoning: false,
             model_reasoning_effort: Some(ReasoningEffort::High),
@@ -4358,7 +4358,7 @@ model_verbosity = "high"
             ConfigOverrides {
                 ..Default::default()
             },
-            fixture.codex_home(),
+            fixture.rune_home(),
         )?;
 
         assert!(config.did_user_set_custom_approval_policy_or_sandbox_mode);
@@ -4417,7 +4417,7 @@ model_verbosity = "high"
                 cwd: Some(fixture.cwd()),
                 ..Default::default()
             },
-            fixture.codex_home(),
+            fixture.rune_home(),
             config_layer_stack,
         )?;
 
@@ -4499,12 +4499,12 @@ trust_level = "trusted"
     fn test_set_project_trusted_migrates_top_level_inline_projects_preserving_entries()
     -> anyhow::Result<()> {
         let initial = r#"toplevel = "baz"
-projects = { "/Users/mbolin/code/codex4" = { trust_level = "trusted", foo = "bar" } , "/Users/mbolin/code/codex3" = { trust_level = "trusted" } }
+projects = { "/Users/mbolin/code/rune4" = { trust_level = "trusted", foo = "bar" } , "/Users/mbolin/code/rune3" = { trust_level = "trusted" } }
 model = "foo""#;
         let mut doc = initial.parse::<DocumentMut>()?;
 
         // Approve a new directory
-        let new_project = Path::new("/Users/mbolin/code/codex2");
+        let new_project = Path::new("/Users/mbolin/code/rune2");
         set_project_trust_level_inner(&mut doc, new_project, TrustLevel::Trusted)?;
 
         let contents = doc.to_string();
@@ -4514,14 +4514,14 @@ model = "foo""#;
         let expected = r#"toplevel = "baz"
 model = "foo"
 
-[projects."/Users/mbolin/code/codex4"]
+[projects."/Users/mbolin/code/rune4"]
 trust_level = "trusted"
 foo = "bar"
 
-[projects."/Users/mbolin/code/codex3"]
+[projects."/Users/mbolin/code/rune3"]
 trust_level = "trusted"
 
-[projects."/Users/mbolin/code/codex2"]
+[projects."/Users/mbolin/code/rune2"]
 trust_level = "trusted"
 "#;
         assert_eq!(contents, expected);
@@ -4532,29 +4532,29 @@ trust_level = "trusted"
     #[test]
     fn test_set_default_oss_provider() -> std::io::Result<()> {
         let temp_dir = TempDir::new()?;
-        let codex_home = temp_dir.path();
-        let config_path = codex_home.join(CONFIG_TOML_FILE);
+        let rune_home = temp_dir.path();
+        let config_path = rune_home.join(CONFIG_TOML_FILE);
 
         // Test setting valid provider on empty config
-        set_default_oss_provider(codex_home, OLLAMA_OSS_PROVIDER_ID)?;
+        set_default_oss_provider(rune_home, OLLAMA_OSS_PROVIDER_ID)?;
         let content = std::fs::read_to_string(&config_path)?;
         assert!(content.contains("oss_provider = \"ollama\""));
 
         // Test updating existing config
         std::fs::write(&config_path, "model = \"gpt-4\"\n")?;
-        set_default_oss_provider(codex_home, LMSTUDIO_OSS_PROVIDER_ID)?;
+        set_default_oss_provider(rune_home, LMSTUDIO_OSS_PROVIDER_ID)?;
         let content = std::fs::read_to_string(&config_path)?;
         assert!(content.contains("oss_provider = \"lmstudio\""));
         assert!(content.contains("model = \"gpt-4\""));
 
         // Test overwriting existing oss_provider
-        set_default_oss_provider(codex_home, OLLAMA_OSS_PROVIDER_ID)?;
+        set_default_oss_provider(rune_home, OLLAMA_OSS_PROVIDER_ID)?;
         let content = std::fs::read_to_string(&config_path)?;
         assert!(content.contains("oss_provider = \"ollama\""));
         assert!(!content.contains("oss_provider = \"lmstudio\""));
 
         // Test invalid provider
-        let result = set_default_oss_provider(codex_home, "invalid_provider");
+        let result = set_default_oss_provider(rune_home, "invalid_provider");
         assert!(result.is_err());
         let error = result.unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
@@ -4567,9 +4567,9 @@ trust_level = "trusted"
     #[test]
     fn test_set_default_oss_provider_rejects_legacy_ollama_chat_provider() -> std::io::Result<()> {
         let temp_dir = TempDir::new()?;
-        let codex_home = temp_dir.path();
+        let rune_home = temp_dir.path();
 
-        let result = set_default_oss_provider(codex_home, LEGACY_OLLAMA_CHAT_PROVIDER_ID);
+        let result = set_default_oss_provider(rune_home, LEGACY_OLLAMA_CHAT_PROVIDER_ID);
         assert!(result.is_err());
         let error = result.unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::InvalidInput);
@@ -4585,7 +4585,7 @@ trust_level = "trusted"
     #[test]
     fn test_load_config_rejects_legacy_ollama_chat_provider_with_helpful_error()
     -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let cfg = ConfigToml {
             model_provider: Some(LEGACY_OLLAMA_CHAT_PROVIDER_ID.to_string()),
             ..Default::default()
@@ -4594,7 +4594,7 @@ trust_level = "trusted"
         let result = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         );
         assert!(result.is_err());
         let error = result.unwrap_err();
@@ -4830,7 +4830,7 @@ trust_level = "untrusted"
 
     #[test]
     fn config_loads_mcp_oauth_callback_port_from_toml() -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let toml = r#"
 model = "gpt-5.1"
 mcp_oauth_callback_port = 5678
@@ -4841,7 +4841,7 @@ mcp_oauth_callback_port = 5678
         let config = Config::load_from_base_config_with_overrides(
             cfg,
             ConfigOverrides::default(),
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         assert_eq!(config.mcp_oauth_callback_port, Some(5678));
@@ -4850,7 +4850,7 @@ mcp_oauth_callback_port = 5678
 
     #[test]
     fn test_untrusted_project_gets_unless_trusted_approval_policy() -> anyhow::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let test_project_dir = TempDir::new()?;
         let test_path = test_project_dir.path();
 
@@ -4868,7 +4868,7 @@ mcp_oauth_callback_port = 5678
                 cwd: Some(test_path.to_path_buf()),
                 ..Default::default()
             },
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
         )?;
 
         // Verify that untrusted projects get UnlessTrusted approval policy
@@ -4900,10 +4900,10 @@ mcp_oauth_callback_port = 5678
     #[tokio::test]
     async fn requirements_disallowing_default_sandbox_falls_back_to_required_default()
     -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
 
         let config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
+            .rune_home(rune_home.path().to_path_buf())
             .cloud_requirements(CloudRequirementsLoader::new(async {
                 Some(crate::config_loader::ConfigRequirementsToml {
                     allowed_sandbox_modes: Some(vec![
@@ -4922,9 +4922,9 @@ mcp_oauth_callback_port = 5678
     #[tokio::test]
     async fn explicit_sandbox_mode_falls_back_when_disallowed_by_requirements()
     -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         std::fs::write(
-            codex_home.path().join(CONFIG_TOML_FILE),
+            rune_home.path().join(CONFIG_TOML_FILE),
             r#"sandbox_mode = "danger-full-access"
 "#,
         )?;
@@ -4942,8 +4942,8 @@ mcp_oauth_callback_port = 5678
         };
 
         let config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
-            .fallback_cwd(Some(codex_home.path().to_path_buf()))
+            .rune_home(rune_home.path().to_path_buf())
+            .fallback_cwd(Some(rune_home.path().to_path_buf()))
             .cloud_requirements(CloudRequirementsLoader::new(
                 async move { Some(requirements) },
             ))
@@ -4956,16 +4956,16 @@ mcp_oauth_callback_port = 5678
     #[tokio::test]
     async fn requirements_web_search_mode_overrides_danger_full_access_default()
     -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         std::fs::write(
-            codex_home.path().join(CONFIG_TOML_FILE),
+            rune_home.path().join(CONFIG_TOML_FILE),
             r#"sandbox_mode = "danger-full-access"
 "#,
         )?;
 
         let config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
-            .fallback_cwd(Some(codex_home.path().to_path_buf()))
+            .rune_home(rune_home.path().to_path_buf())
+            .fallback_cwd(Some(rune_home.path().to_path_buf()))
             .cloud_requirements(CloudRequirementsLoader::new(async {
                 Some(crate::config_loader::ConfigRequirementsToml {
                     allowed_web_search_modes: Some(vec![
@@ -4988,11 +4988,11 @@ mcp_oauth_callback_port = 5678
     #[tokio::test]
     async fn requirements_disallowing_default_approval_falls_back_to_required_default()
     -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         let workspace = TempDir::new()?;
         let workspace_key = workspace.path().to_string_lossy().replace('\\', "\\\\");
         std::fs::write(
-            codex_home.path().join(CONFIG_TOML_FILE),
+            rune_home.path().join(CONFIG_TOML_FILE),
             format!(
                 r#"
 [projects."{workspace_key}"]
@@ -5002,7 +5002,7 @@ trust_level = "untrusted"
         )?;
 
         let config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
+            .rune_home(rune_home.path().to_path_buf())
             .fallback_cwd(Some(workspace.path().to_path_buf()))
             .cloud_requirements(CloudRequirementsLoader::new(async {
                 Some(crate::config_loader::ConfigRequirementsToml {
@@ -5020,16 +5020,16 @@ trust_level = "untrusted"
     #[tokio::test]
     async fn explicit_approval_policy_falls_back_when_disallowed_by_requirements()
     -> std::io::Result<()> {
-        let codex_home = TempDir::new()?;
+        let rune_home = TempDir::new()?;
         std::fs::write(
-            codex_home.path().join(CONFIG_TOML_FILE),
+            rune_home.path().join(CONFIG_TOML_FILE),
             r#"approval_policy = "untrusted"
 "#,
         )?;
 
         let config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
-            .fallback_cwd(Some(codex_home.path().to_path_buf()))
+            .rune_home(rune_home.path().to_path_buf())
+            .fallback_cwd(Some(rune_home.path().to_path_buf()))
             .cloud_requirements(CloudRequirementsLoader::new(async {
                 Some(crate::config_loader::ConfigRequirementsToml {
                     allowed_approval_policies: Some(vec![AskForApproval::OnRequest]),

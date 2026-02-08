@@ -1,27 +1,27 @@
 #![allow(clippy::expect_used, clippy::unwrap_used)]
-use codex_core::AuthManager;
-use codex_core::CodexAuth;
-use codex_core::ContentItem;
-use codex_core::ModelClient;
-use codex_core::ModelClientSession;
-use codex_core::ModelProviderInfo;
-use codex_core::Prompt;
-use codex_core::ResponseEvent;
-use codex_core::ResponseItem;
-use codex_core::WireApi;
-use codex_core::X_RESPONSESAPI_INCLUDE_TIMING_METRICS_HEADER;
-use codex_core::features::Feature;
-use codex_core::models_manager::manager::ModelsManager;
-use codex_core::protocol::SessionSource;
-use codex_otel::OtelManager;
-use codex_otel::TelemetryAuthMode;
-use codex_otel::metrics::MetricsClient;
-use codex_otel::metrics::MetricsConfig;
-use codex_protocol::ThreadId;
-use codex_protocol::account::PlanType;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use rune_core::AuthManager;
+use rune_core::RuneAuth;
+use rune_core::ContentItem;
+use rune_core::ModelClient;
+use rune_core::ModelClientSession;
+use rune_core::ModelProviderInfo;
+use rune_core::Prompt;
+use rune_core::ResponseEvent;
+use rune_core::ResponseItem;
+use rune_core::WireApi;
+use rune_core::X_RESPONSESAPI_INCLUDE_TIMING_METRICS_HEADER;
+use rune_core::features::Feature;
+use rune_core::models_manager::manager::ModelsManager;
+use rune_core::protocol::SessionSource;
+use rune_otel::OtelManager;
+use rune_otel::TelemetryAuthMode;
+use rune_otel::metrics::MetricsClient;
+use rune_otel::metrics::MetricsConfig;
+use rune_protocol::ThreadId;
+use rune_protocol::account::PlanType;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::openai_models::ModelInfo;
+use rune_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
 use core_test_support::load_default_config_for_test;
 use core_test_support::responses::WebSocketConnectionConfig;
 use core_test_support::responses::WebSocketTestServer;
@@ -40,13 +40,13 @@ use std::time::Duration;
 use tempfile::TempDir;
 use tracing_test::traced_test;
 
-const MODEL: &str = "gpt-5.2-codex";
+const MODEL: &str = "gpt-5.2-rune";
 const OPENAI_BETA_HEADER: &str = "OpenAI-Beta";
 const OPENAI_BETA_RESPONSES_WEBSOCKETS: &str = "responses_websockets=2026-02-04";
 const WS_V2_BETA_HEADER_VALUE: &str = "responses_websockets=2026-02-06";
 
 struct WebsocketTestHarness {
-    _codex_home: TempDir,
+    _rune_home: TempDir,
     client: ModelClient,
     model_info: ModelInfo,
     effort: Option<ReasoningEffortConfig>,
@@ -306,7 +306,7 @@ async fn responses_websocket_emits_rate_limit_events() {
     skip_if_no_network!();
 
     let rate_limit_event = json!({
-        "type": "codex.rate_limits",
+        "type": "rune.rate_limits",
         "plan_type": "plus",
         "rate_limits": {
             "allowed": true,
@@ -680,8 +680,8 @@ async fn websocket_harness_with_options(
     websocket_v2_enabled: bool,
 ) -> WebsocketTestHarness {
     let provider = websocket_provider(server);
-    let codex_home = TempDir::new().unwrap();
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new().unwrap();
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.model = Some(MODEL.to_string());
     config.features.enable(Feature::ResponsesWebsockets);
     if runtime_metrics_enabled {
@@ -693,7 +693,7 @@ async fn websocket_harness_with_options(
     let config = Arc::new(config);
     let model_info = ModelsManager::construct_model_info_offline(MODEL, &config);
     let conversation_id = ThreadId::new();
-    let auth_manager = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("Test API Key"));
+    let auth_manager = AuthManager::from_auth_for_testing(RuneAuth::from_api_key("Test API Key"));
     let exporter = InMemoryMetricExporter::default();
     let metrics = MetricsClient::new(
         MetricsConfig::in_memory("test", "rune-core", env!("CARGO_PKG_VERSION"), exporter)
@@ -729,7 +729,7 @@ async fn websocket_harness_with_options(
     );
 
     WebsocketTestHarness {
-        _codex_home: codex_home,
+        _rune_home: rune_home,
         client,
         model_info,
         effort,

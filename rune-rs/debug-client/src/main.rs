@@ -12,7 +12,7 @@ use anyhow::Context;
 use anyhow::Result;
 use clap::ArgAction;
 use clap::Parser;
-use codex_app_server_protocol::AskForApproval;
+use rune_app_server_protocol::AskForApproval;
 
 use crate::client::AppServerClient;
 use crate::client::build_thread_resume_params;
@@ -24,13 +24,13 @@ use crate::output::Output;
 use crate::state::ReaderEvent;
 
 #[derive(Parser)]
-#[command(author = "Codex", version, about = "Minimal app-server client")]
+#[command(author = "Rune", version, about = "Minimal app-server client")]
 struct Cli {
-    /// Path to the `codex` CLI binary.
-    #[arg(long, default_value = "codex")]
-    codex_bin: String,
+    /// Path to the `rune` CLI binary.
+    #[arg(long, default_value = "rune")]
+    rune_bin: String,
 
-    /// Forwarded to the `codex` CLI as `--config key=value`. Repeatable.
+    /// Forwarded to the `rune` CLI as `--config key=value`. Repeatable.
     #[arg(short = 'c', long = "config", value_name = "key=value", action = ArgAction::Append)]
     config_overrides: Vec<String>,
 
@@ -69,7 +69,7 @@ fn main() -> Result<()> {
     let approval_policy = parse_approval_policy(&cli.approval_policy)?;
 
     let mut client = AppServerClient::spawn(
-        &cli.codex_bin,
+        &cli.rune_bin,
         &cli.config_overrides,
         output.clone(),
         cli.final_only,

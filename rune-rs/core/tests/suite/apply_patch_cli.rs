@@ -4,19 +4,19 @@ use anyhow::Result;
 use core_test_support::responses::ev_apply_patch_call;
 use core_test_support::responses::ev_apply_patch_custom_tool_call;
 use core_test_support::responses::ev_shell_command_call;
-use core_test_support::test_codex::ApplyPatchModelOutput;
+use core_test_support::test_rune::ApplyPatchModelOutput;
 use pretty_assertions::assert_eq;
 use std::fs;
 use std::sync::atomic::AtomicI32;
 use std::sync::atomic::Ordering;
 
-use codex_core::features::Feature;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::user_input::UserInput;
+use rune_core::features::Feature;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::user_input::UserInput;
 use core_test_support::assert_regex_match;
 use core_test_support::responses::ev_apply_patch_function_call;
 use core_test_support::responses::ev_assistant_message;
@@ -26,9 +26,9 @@ use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodexBuilder;
-use core_test_support::test_codex::TestCodexHarness;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRuneBuilder;
+use core_test_support::test_rune::TestRuneHarness;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use serde_json::json;
 use test_case::test_case;
@@ -38,21 +38,21 @@ use wiremock::ResponseTemplate;
 use wiremock::matchers::method;
 use wiremock::matchers::path_regex;
 
-pub async fn apply_patch_harness() -> Result<TestCodexHarness> {
+pub async fn apply_patch_harness() -> Result<TestRuneHarness> {
     apply_patch_harness_with(|builder| builder).await
 }
 
 async fn apply_patch_harness_with(
-    configure: impl FnOnce(TestCodexBuilder) -> TestCodexBuilder,
-) -> Result<TestCodexHarness> {
-    let builder = configure(test_codex()).with_config(|config| {
+    configure: impl FnOnce(TestRuneBuilder) -> TestRuneBuilder,
+) -> Result<TestRuneHarness> {
+    let builder = configure(test_rune()).with_config(|config| {
         config.include_apply_patch_tool = true;
     });
-    TestCodexHarness::with_builder(builder).await
+    TestRuneHarness::with_builder(builder).await
 }
 
 pub async fn mount_apply_patch(
-    harness: &TestCodexHarness,
+    harness: &TestRuneHarness,
     call_id: &str,
     patch: &str,
     assistant_msg: &str,
@@ -285,7 +285,7 @@ async fn apply_patch_cli_move_without_content_change_has_no_turn_diff(
 
     let harness = apply_patch_harness().await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let cwd = test.cwd.clone();
 
     let original = harness.path("old/name.txt");
@@ -298,7 +298,7 @@ async fn apply_patch_cli_move_without_content_change_has_no_turn_diff(
     mount_apply_patch(&harness, call_id, patch, "ok", model_output).await;
 
     let model = test.session_configured.model.clone();
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "rename without content change".into(),
@@ -317,7 +317,7 @@ async fn apply_patch_cli_move_without_content_change_has_no_turn_diff(
         .await?;
 
     let mut saw_turn_diff = false;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&rune, |event| match event {
         EventMsg::TurnDiff(_) => {
             saw_turn_diff = true;
             false
@@ -861,7 +861,7 @@ async fn apply_patch_shell_command_heredoc_with_cd_emits_turn_diff() -> Result<(
 
     let harness = apply_patch_harness_with(|builder| builder.with_model("gpt-5.1")).await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let cwd = test.cwd.clone();
 
     // Prepare a file inside a subdir; update it via cd && apply_patch heredoc form.
@@ -887,7 +887,7 @@ async fn apply_patch_shell_command_heredoc_with_cd_emits_turn_diff() -> Result<(
     mount_sse_sequence(harness.server(), bodies).await;
 
     let model = test.session_configured.model.clone();
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "apply via shell heredoc with cd".into(),
@@ -908,7 +908,7 @@ async fn apply_patch_shell_command_heredoc_with_cd_emits_turn_diff() -> Result<(
     let mut saw_turn_diff = None;
     let mut saw_patch_begin = false;
     let mut patch_end_success = None;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&rune, |event| match event {
         EventMsg::PatchApplyBegin(begin) => {
             saw_patch_begin = true;
             assert_eq!(begin.call_id, call_id);
@@ -944,7 +944,7 @@ async fn apply_patch_shell_command_failure_propagates_error_and_skips_diff() -> 
 
     let harness = apply_patch_harness_with(|builder| builder.with_model("gpt-5.1")).await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let cwd = test.cwd.clone();
 
     let target = cwd.path().join("invalid.txt");
@@ -967,7 +967,7 @@ async fn apply_patch_shell_command_failure_propagates_error_and_skips_diff() -> 
     mount_sse_sequence(harness.server(), bodies).await;
 
     let model = test.session_configured.model.clone();
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "apply patch via shell".into(),
@@ -986,7 +986,7 @@ async fn apply_patch_shell_command_failure_propagates_error_and_skips_diff() -> 
         .await?;
 
     let mut saw_turn_diff = false;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&rune, |event| match event {
         EventMsg::TurnDiff(_) => {
             saw_turn_diff = true;
             false
@@ -1108,7 +1108,7 @@ async fn apply_patch_emits_turn_diff_event_with_unified_diff(
 
     let harness = apply_patch_harness().await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let cwd = test.cwd.clone();
 
     let call_id = "apply-diff-event";
@@ -1117,7 +1117,7 @@ async fn apply_patch_emits_turn_diff_event_with_unified_diff(
     mount_apply_patch(&harness, call_id, patch.as_str(), "ok", model_output).await;
 
     let model = test.session_configured.model.clone();
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "emit diff".into(),
@@ -1136,7 +1136,7 @@ async fn apply_patch_emits_turn_diff_event_with_unified_diff(
         .await?;
 
     let mut saw_turn_diff = None;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&rune, |event| match event {
         EventMsg::TurnDiff(ev) => {
             saw_turn_diff = Some(ev.unified_diff.clone());
             false
@@ -1167,7 +1167,7 @@ async fn apply_patch_turn_diff_for_rename_with_content_change(
 
     let harness = apply_patch_harness().await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let cwd = test.cwd.clone();
 
     // Seed original file
@@ -1180,7 +1180,7 @@ async fn apply_patch_turn_diff_for_rename_with_content_change(
     mount_apply_patch(&harness, call_id, patch, "ok", model_output).await;
 
     let model = test.session_configured.model.clone();
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "rename with change".into(),
@@ -1199,7 +1199,7 @@ async fn apply_patch_turn_diff_for_rename_with_content_change(
         .await?;
 
     let mut last_diff: Option<String> = None;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&rune, |event| match event {
         EventMsg::TurnDiff(ev) => {
             last_diff = Some(ev.unified_diff.clone());
             false
@@ -1226,7 +1226,7 @@ async fn apply_patch_aggregates_diff_across_multiple_tool_calls() -> Result<()> 
 
     let harness = apply_patch_harness().await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let cwd = test.cwd.clone();
 
     let call1 = "agg-1";
@@ -1251,7 +1251,7 @@ async fn apply_patch_aggregates_diff_across_multiple_tool_calls() -> Result<()> 
     mount_sse_sequence(harness.server(), vec![s1, s2, s3]).await;
 
     let model = test.session_configured.model.clone();
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "aggregate diffs".into(),
@@ -1270,7 +1270,7 @@ async fn apply_patch_aggregates_diff_across_multiple_tool_calls() -> Result<()> 
         .await?;
 
     let mut last_diff: Option<String> = None;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&rune, |event| match event {
         EventMsg::TurnDiff(ev) => {
             last_diff = Some(ev.unified_diff.clone());
             false
@@ -1294,7 +1294,7 @@ async fn apply_patch_aggregates_diff_preserves_success_after_failure() -> Result
 
     let harness = apply_patch_harness().await?;
     let test = harness.test();
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let cwd = test.cwd.clone();
 
     let call_success = "agg-success";
@@ -1322,7 +1322,7 @@ async fn apply_patch_aggregates_diff_preserves_success_after_failure() -> Result
     mount_sse_sequence(harness.server(), responses).await;
 
     let model = test.session_configured.model.clone();
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "apply patch twice with failure".into(),
@@ -1341,7 +1341,7 @@ async fn apply_patch_aggregates_diff_preserves_success_after_failure() -> Result
         .await?;
 
     let mut last_diff: Option<String> = None;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&rune, |event| match event {
         EventMsg::TurnDiff(ev) => {
             last_diff = Some(ev.unified_diff.clone());
             false

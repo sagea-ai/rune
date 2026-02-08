@@ -1,27 +1,27 @@
-use codex_core::CodexThread;
-use codex_core::ContentItem;
-use codex_core::REVIEW_PROMPT;
-use codex_core::ResponseItem;
-use codex_core::config::Config;
-use codex_core::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ExitedReviewModeEvent;
-use codex_core::protocol::Op;
-use codex_core::protocol::ReviewCodeLocation;
-use codex_core::protocol::ReviewFinding;
-use codex_core::protocol::ReviewLineRange;
-use codex_core::protocol::ReviewOutputEvent;
-use codex_core::protocol::ReviewRequest;
-use codex_core::protocol::ReviewTarget;
-use codex_core::protocol::RolloutItem;
-use codex_core::protocol::RolloutLine;
-use codex_core::review_format::render_review_output_text;
-use codex_protocol::user_input::UserInput;
+use rune_core::RuneThread;
+use rune_core::ContentItem;
+use rune_core::REVIEW_PROMPT;
+use rune_core::ResponseItem;
+use rune_core::config::Config;
+use rune_core::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ExitedReviewModeEvent;
+use rune_core::protocol::Op;
+use rune_core::protocol::ReviewCodeLocation;
+use rune_core::protocol::ReviewFinding;
+use rune_core::protocol::ReviewLineRange;
+use rune_core::protocol::ReviewOutputEvent;
+use rune_core::protocol::ReviewRequest;
+use rune_core::protocol::ReviewTarget;
+use rune_core::protocol::RolloutItem;
+use rune_core::protocol::RolloutLine;
+use rune_core::review_format::render_review_output_text;
+use rune_protocol::user_input::UserInput;
 use core_test_support::load_sse_fixture_with_id_from_str;
 use core_test_support::responses::ResponseMock;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use std::path::PathBuf;
@@ -36,7 +36,7 @@ use wiremock::MockServer;
 /// in that order when the model returns a structured review JSON payload.
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn review_op_emits_lifecycle_and_review_output() {
-    // Skip under Codex sandbox network restrictions.
+    // Skip under Rune sandbox network restrictions.
     skip_if_no_network!();
 
     // Start mock Responses API server. Return a single assistant message whose
@@ -69,11 +69,11 @@ async fn review_op_emits_lifecycle_and_review_output() {
     let review_json_escaped = serde_json::to_string(&review_json).unwrap();
     let sse_raw = sse_template.replace("__REVIEW__", &review_json_escaped);
     let (server, _request_log) = start_responses_server_with_sse(&sse_raw, 1).await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |_| {}).await;
+    let rune_home = Arc::new(TempDir::new().unwrap());
+    let rune = new_conversation_for_server(&server, rune_home.clone(), |_| {}).await;
 
     // Submit review request.
-    codex
+    rune
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -86,8 +86,8 @@ async fn review_op_emits_lifecycle_and_review_output() {
         .unwrap();
 
     // Verify lifecycle: Entered -> Exited(Some(review)) -> TurnComplete.
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let closed = wait_for_event(&codex, |ev| matches!(ev, EventMsg::ExitedReviewMode(_))).await;
+    let _entered = wait_for_event(&rune, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let closed = wait_for_event(&rune, |ev| matches!(ev, EventMsg::ExitedReviewMode(_))).await;
     let review = match closed {
         EventMsg::ExitedReviewMode(ev) => ev
             .review_output
@@ -112,11 +112,11 @@ async fn review_op_emits_lifecycle_and_review_output() {
         overall_confidence_score: 0.8,
     };
     assert_eq!(expected, review);
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Also verify that a user message with the header and a formatted finding
     // was recorded back in the parent session's rollout.
-    let path = codex.rollout_path().expect("rollout path");
+    let path = rune.rollout_path().expect("rollout path");
     let text = std::fs::read_to_string(&path).expect("read rollout file");
 
     let mut saw_header = false;
@@ -170,7 +170,7 @@ async fn review_op_emits_lifecycle_and_review_output() {
         "assistant review output contains user_action markup"
     );
 
-    let _codex_home_guard = codex_home;
+    let _rune_home_guard = rune_home;
     server.verify().await;
 }
 
@@ -191,10 +191,10 @@ async fn review_op_with_plain_text_emits_review_fallback() {
         {"type":"response.completed", "response": {"id": "__ID__"}}
     ]"#;
     let (server, _request_log) = start_responses_server_with_sse(sse_raw, 1).await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |_| {}).await;
+    let rune_home = Arc::new(TempDir::new().unwrap());
+    let rune = new_conversation_for_server(&server, rune_home.clone(), |_| {}).await;
 
-    codex
+    rune
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -206,8 +206,8 @@ async fn review_op_with_plain_text_emits_review_fallback() {
         .await
         .unwrap();
 
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let closed = wait_for_event(&codex, |ev| matches!(ev, EventMsg::ExitedReviewMode(_))).await;
+    let _entered = wait_for_event(&rune, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let closed = wait_for_event(&rune, |ev| matches!(ev, EventMsg::ExitedReviewMode(_))).await;
     let review = match closed {
         EventMsg::ExitedReviewMode(ev) => ev
             .review_output
@@ -221,9 +221,9 @@ async fn review_op_with_plain_text_emits_review_fallback() {
         ..Default::default()
     };
     assert_eq!(expected, review);
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    let _codex_home_guard = codex_home;
+    let _rune_home_guard = rune_home;
     server.verify().await;
 }
 
@@ -252,10 +252,10 @@ async fn review_filters_agent_message_related_events() {
         {"type":"response.completed", "response": {"id": "__ID__"}}
     ]"#;
     let (server, _request_log) = start_responses_server_with_sse(sse_raw, 1).await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |_| {}).await;
+    let rune_home = Arc::new(TempDir::new().unwrap());
+    let rune = new_conversation_for_server(&server, rune_home.clone(), |_| {}).await;
 
-    codex
+    rune
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -271,7 +271,7 @@ async fn review_filters_agent_message_related_events() {
     let mut saw_exited = false;
 
     // Drain until TurnComplete; assert streaming-related events never surface.
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&rune, |event| match event {
         EventMsg::TurnComplete(_) => true,
         EventMsg::EnteredReviewMode(_) => {
             saw_entered = true;
@@ -293,7 +293,7 @@ async fn review_filters_agent_message_related_events() {
     .await;
     assert!(saw_entered && saw_exited, "missing review lifecycle events");
 
-    let _codex_home_guard = codex_home;
+    let _rune_home_guard = rune_home;
     server.verify().await;
 }
 
@@ -334,10 +334,10 @@ async fn review_does_not_emit_agent_message_on_structured_output() {
     let review_json_escaped = serde_json::to_string(&review_json).unwrap();
     let sse_raw = sse_template.replace("__REVIEW__", &review_json_escaped);
     let (server, _request_log) = start_responses_server_with_sse(&sse_raw, 1).await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |_| {}).await;
+    let rune_home = Arc::new(TempDir::new().unwrap());
+    let rune = new_conversation_for_server(&server, rune_home.clone(), |_| {}).await;
 
-    codex
+    rune
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -354,7 +354,7 @@ async fn review_does_not_emit_agent_message_on_structured_output() {
     let mut saw_entered = false;
     let mut saw_exited = false;
     let mut agent_messages = 0;
-    wait_for_event(&codex, |event| match event {
+    wait_for_event(&rune, |event| match event {
         EventMsg::TurnComplete(_) => true,
         EventMsg::AgentMessage(_) => {
             agent_messages += 1;
@@ -374,7 +374,7 @@ async fn review_does_not_emit_agent_message_on_structured_output() {
     assert_eq!(1, agent_messages, "expected exactly one AgentMessage event");
     assert!(saw_entered && saw_exited, "missing review lifecycle events");
 
-    let _codex_home_guard = codex_home;
+    let _rune_home_guard = rune_home;
     server.verify().await;
 }
 
@@ -389,15 +389,15 @@ async fn review_uses_custom_review_model_from_config() {
         {"type":"response.completed", "response": {"id": "__ID__"}}
     ]"#;
     let (server, request_log) = start_responses_server_with_sse(sse_raw, 1).await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
+    let rune_home = Arc::new(TempDir::new().unwrap());
     // Choose a review model different from the main model; ensure it is used.
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |cfg| {
+    let rune = new_conversation_for_server(&server, rune_home.clone(), |cfg| {
         cfg.model = Some("gpt-4.1".to_string());
         cfg.review_model = Some("gpt-5.1".to_string());
     })
     .await;
 
-    codex
+    rune
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -410,8 +410,8 @@ async fn review_uses_custom_review_model_from_config() {
         .unwrap();
 
     // Wait for completion
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let _closed = wait_for_event(&codex, |ev| {
+    let _entered = wait_for_event(&rune, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let _closed = wait_for_event(&rune, |ev| {
         matches!(
             ev,
             EventMsg::ExitedReviewMode(ExitedReviewModeEvent {
@@ -420,7 +420,7 @@ async fn review_uses_custom_review_model_from_config() {
         )
     })
     .await;
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Assert the request body model equals the configured review model
     let request = request_log.single_request();
@@ -428,7 +428,7 @@ async fn review_uses_custom_review_model_from_config() {
     let body = request.body_json();
     assert_eq!(body["model"].as_str().unwrap(), "gpt-5.1");
 
-    let _codex_home_guard = codex_home;
+    let _rune_home_guard = rune_home;
     server.verify().await;
 }
 
@@ -443,14 +443,14 @@ async fn review_uses_session_model_when_review_model_unset() {
         {"type":"response.completed", "response": {"id": "__ID__"}}
     ]"#;
     let (server, request_log) = start_responses_server_with_sse(sse_raw, 1).await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |cfg| {
+    let rune_home = Arc::new(TempDir::new().unwrap());
+    let rune = new_conversation_for_server(&server, rune_home.clone(), |cfg| {
         cfg.model = Some("gpt-4.1".to_string());
         cfg.review_model = None;
     })
     .await;
 
-    codex
+    rune
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -462,8 +462,8 @@ async fn review_uses_session_model_when_review_model_unset() {
         .await
         .unwrap();
 
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let _closed = wait_for_event(&codex, |ev| {
+    let _entered = wait_for_event(&rune, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let _closed = wait_for_event(&rune, |ev| {
         matches!(
             ev,
             EventMsg::ExitedReviewMode(ExitedReviewModeEvent {
@@ -472,14 +472,14 @@ async fn review_uses_session_model_when_review_model_unset() {
         )
     })
     .await;
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = request_log.single_request();
     assert_eq!(request.path(), "/v1/responses");
     let body = request.body_json();
     assert_eq!(body["model"].as_str().unwrap(), "gpt-4.1");
 
-    let _codex_home_guard = codex_home;
+    let _rune_home_guard = rune_home;
     server.verify().await;
 }
 
@@ -499,9 +499,9 @@ async fn review_input_isolated_from_parent_history() {
     let (server, request_log) = start_responses_server_with_sse(sse_raw, 1).await;
 
     // Seed a parent session history via resume file with both user + assistant items.
-    let codex_home = Arc::new(TempDir::new().unwrap());
+    let rune_home = Arc::new(TempDir::new().unwrap());
 
-    let session_file = codex_home.path().join("resume.jsonl");
+    let session_file = rune_home.path().join("resume.jsonl");
     {
         let mut f = tokio::fs::File::create(&session_file).await.unwrap();
         let convo_id = Uuid::new_v4();
@@ -523,10 +523,10 @@ async fn review_input_isolated_from_parent_history() {
             .unwrap();
 
         // Prior user message (enveloped response_item)
-        let user = codex_protocol::models::ResponseItem::Message {
+        let user = rune_protocol::models::ResponseItem::Message {
             id: None,
             role: "user".to_string(),
-            content: vec![codex_protocol::models::ContentItem::InputText {
+            content: vec![rune_protocol::models::ContentItem::InputText {
                 text: "parent: earlier user message".to_string(),
             }],
             end_turn: None,
@@ -543,10 +543,10 @@ async fn review_input_isolated_from_parent_history() {
             .unwrap();
 
         // Prior assistant message (enveloped response_item)
-        let assistant = codex_protocol::models::ResponseItem::Message {
+        let assistant = rune_protocol::models::ResponseItem::Message {
             id: None,
             role: "assistant".to_string(),
-            content: vec![codex_protocol::models::ContentItem::OutputText {
+            content: vec![rune_protocol::models::ContentItem::OutputText {
                 text: "parent: assistant reply".to_string(),
             }],
             end_turn: None,
@@ -562,13 +562,13 @@ async fn review_input_isolated_from_parent_history() {
             .await
             .unwrap();
     }
-    let codex =
-        resume_conversation_for_server(&server, codex_home.clone(), session_file.clone(), |_| {})
+    let rune =
+        resume_conversation_for_server(&server, rune_home.clone(), session_file.clone(), |_| {})
             .await;
 
     // Submit review request; it must start fresh (no parent history in `input`).
     let review_prompt = "Please review only this".to_string();
-    codex
+    rune
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -580,8 +580,8 @@ async fn review_input_isolated_from_parent_history() {
         .await
         .unwrap();
 
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let _closed = wait_for_event(&codex, |ev| {
+    let _entered = wait_for_event(&rune, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let _closed = wait_for_event(&rune, |ev| {
         matches!(
             ev,
             EventMsg::ExitedReviewMode(ExitedReviewModeEvent {
@@ -590,7 +590,7 @@ async fn review_input_isolated_from_parent_history() {
         )
     })
     .await;
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Assert the request `input` contains the environment context followed by the user review prompt.
     let request = request_log.single_request();
@@ -627,7 +627,7 @@ async fn review_input_isolated_from_parent_history() {
     assert_eq!(instructions, REVIEW_PROMPT);
 
     // Also verify that a user interruption note was recorded in the rollout.
-    let path = codex.rollout_path().expect("rollout path");
+    let path = rune.rollout_path().expect("rollout path");
     let text = std::fs::read_to_string(&path).expect("read rollout file");
     let mut saw_interruption_message = false;
     for line in text.lines() {
@@ -657,7 +657,7 @@ async fn review_input_isolated_from_parent_history() {
         "expected user interruption message in rollout"
     );
 
-    let _codex_home_guard = codex_home;
+    let _rune_home_guard = rune_home;
     server.verify().await;
 }
 
@@ -676,11 +676,11 @@ async fn review_history_surfaces_in_parent_session() {
         {"type":"response.completed", "response": {"id": "__ID__"}}
     ]"#;
     let (server, request_log) = start_responses_server_with_sse(sse_raw, 2).await;
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let codex = new_conversation_for_server(&server, codex_home.clone(), |_| {}).await;
+    let rune_home = Arc::new(TempDir::new().unwrap());
+    let rune = new_conversation_for_server(&server, rune_home.clone(), |_| {}).await;
 
     // 1) Run a review turn that produces an assistant message (isolated in child).
-    codex
+    rune
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::Custom {
@@ -691,8 +691,8 @@ async fn review_history_surfaces_in_parent_session() {
         })
         .await
         .unwrap();
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let _closed = wait_for_event(&codex, |ev| {
+    let _entered = wait_for_event(&rune, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let _closed = wait_for_event(&rune, |ev| {
         matches!(
             ev,
             EventMsg::ExitedReviewMode(ExitedReviewModeEvent {
@@ -701,11 +701,11 @@ async fn review_history_surfaces_in_parent_session() {
         )
     })
     .await;
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // 2) Continue in the parent session; request input must not include any review items.
     let followup = "back to parent".to_string();
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: followup.clone(),
@@ -715,7 +715,7 @@ async fn review_history_surfaces_in_parent_session() {
         })
         .await
         .unwrap();
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _complete = wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Inspect the second request (parent turn) input contents.
     // Parent turns include session initial messages (user_instructions, environment_context).
@@ -756,7 +756,7 @@ async fn review_history_surfaces_in_parent_session() {
         "review assistant output missing from parent turn input"
     );
 
-    let _codex_home_guard = codex_home;
+    let _rune_home_guard = rune_home;
     server.verify().await;
 }
 
@@ -809,14 +809,14 @@ async fn review_uses_overridden_cwd_for_base_branch_merge_base() {
         .trim()
         .to_string();
 
-    let codex_home = Arc::new(TempDir::new().unwrap());
+    let rune_home = Arc::new(TempDir::new().unwrap());
     let initial_cwd_path = initial_cwd.path().to_path_buf();
-    let codex = new_conversation_for_server(&server, codex_home.clone(), move |config| {
+    let rune = new_conversation_for_server(&server, rune_home.clone(), move |config| {
         config.cwd = initial_cwd_path;
     })
     .await;
 
-    codex
+    rune
         .submit(Op::OverrideTurnContext {
             cwd: Some(repo_path.to_path_buf()),
             approval_policy: None,
@@ -831,7 +831,7 @@ async fn review_uses_overridden_cwd_for_base_branch_merge_base() {
         .await
         .unwrap();
 
-    codex
+    rune
         .submit(Op::Review {
             review_request: ReviewRequest {
                 target: ReviewTarget::BaseBranch {
@@ -843,8 +843,8 @@ async fn review_uses_overridden_cwd_for_base_branch_merge_base() {
         .await
         .unwrap();
 
-    let _entered = wait_for_event(&codex, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
-    let _complete = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _entered = wait_for_event(&rune, |ev| matches!(ev, EventMsg::EnteredReviewMode(_))).await;
+    let _complete = wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = request_log.requests();
     assert_eq!(requests.len(), 1);
@@ -863,7 +863,7 @@ async fn review_uses_overridden_cwd_for_base_branch_merge_base() {
         "expected review prompt to include merge-base sha {head_sha}"
     );
 
-    let _codex_home_guard = codex_home;
+    let _rune_home_guard = rune_home;
     server.verify().await;
 }
 
@@ -883,15 +883,15 @@ async fn start_responses_server_with_sse(
 #[expect(clippy::expect_used)]
 async fn new_conversation_for_server<F>(
     server: &MockServer,
-    codex_home: Arc<TempDir>,
+    rune_home: Arc<TempDir>,
     mutator: F,
-) -> Arc<CodexThread>
+) -> Arc<RuneThread>
 where
     F: FnOnce(&mut Config) + Send + 'static,
 {
     let base_url = format!("{}/v1", server.uri());
-    let mut builder = test_codex()
-        .with_home(codex_home)
+    let mut builder = test_rune()
+        .with_home(rune_home)
         .with_config(move |config| {
             config.model_provider.base_url = Some(base_url.clone());
             mutator(config);
@@ -900,30 +900,30 @@ where
         .build(server)
         .await
         .expect("create conversation")
-        .codex
+        .rune
 }
 
 /// Create a conversation resuming from a rollout file, configured to talk to the provided mock server.
 #[expect(clippy::expect_used)]
 async fn resume_conversation_for_server<F>(
     server: &MockServer,
-    codex_home: Arc<TempDir>,
+    rune_home: Arc<TempDir>,
     resume_path: std::path::PathBuf,
     mutator: F,
-) -> Arc<CodexThread>
+) -> Arc<RuneThread>
 where
     F: FnOnce(&mut Config) + Send + 'static,
 {
     let base_url = format!("{}/v1", server.uri());
-    let mut builder = test_codex()
-        .with_home(codex_home.clone())
+    let mut builder = test_rune()
+        .with_home(rune_home.clone())
         .with_config(move |config| {
             config.model_provider.base_url = Some(base_url.clone());
             mutator(config);
         });
     builder
-        .resume(server, codex_home, resume_path)
+        .resume(server, rune_home, resume_path)
         .await
         .expect("resume conversation")
-        .codex
+        .rune
 }

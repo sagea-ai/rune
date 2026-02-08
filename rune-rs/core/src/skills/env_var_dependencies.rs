@@ -3,13 +3,13 @@ use std::collections::HashSet;
 use std::env;
 use std::sync::Arc;
 
-use codex_protocol::request_user_input::RequestUserInputArgs;
-use codex_protocol::request_user_input::RequestUserInputQuestion;
-use codex_protocol::request_user_input::RequestUserInputResponse;
+use rune_protocol::request_user_input::RequestUserInputArgs;
+use rune_protocol::request_user_input::RequestUserInputQuestion;
+use rune_protocol::request_user_input::RequestUserInputResponse;
 use tracing::warn;
 
-use crate::codex::Session;
-use crate::codex::TurnContext;
+use crate::rune::Session;
+use crate::rune::TurnContext;
 use crate::skills::SkillMetadata;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

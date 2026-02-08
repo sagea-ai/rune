@@ -3,10 +3,10 @@ name = "rune-execpolicy"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Codex exec policy: prefix-based Starlark rules for command decisions."
+description = "Rune exec policy: prefix-based Starlark rules for command decisions."
 
 [lib]
-name = "codex_execpolicy"
+name = "rune_execpolicy"
 path = "src/lib.rs"
 
 [[bin]]

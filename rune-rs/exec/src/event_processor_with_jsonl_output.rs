@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicU64;
 
-use crate::event_processor::CodexStatus;
+use crate::event_processor::RuneStatus;
 use crate::event_processor::EventProcessor;
 use crate::event_processor::handle_last_message;
 use crate::exec_events::AgentMessageItem;
@@ -38,20 +38,20 @@ use crate::exec_events::TurnFailedEvent;
 use crate::exec_events::TurnStartedEvent;
 use crate::exec_events::Usage;
 use crate::exec_events::WebSearchItem;
-use codex_core::config::Config;
-use codex_core::protocol;
-use codex_core::protocol::AgentStatus as CoreAgentStatus;
-use codex_core::protocol::CollabAgentInteractionBeginEvent;
-use codex_core::protocol::CollabAgentInteractionEndEvent;
-use codex_core::protocol::CollabAgentSpawnBeginEvent;
-use codex_core::protocol::CollabAgentSpawnEndEvent;
-use codex_core::protocol::CollabCloseBeginEvent;
-use codex_core::protocol::CollabCloseEndEvent;
-use codex_core::protocol::CollabWaitingBeginEvent;
-use codex_core::protocol::CollabWaitingEndEvent;
-use codex_protocol::models::WebSearchAction;
-use codex_protocol::plan_tool::StepStatus;
-use codex_protocol::plan_tool::UpdatePlanArgs;
+use rune_core::config::Config;
+use rune_core::protocol;
+use rune_core::protocol::AgentStatus as CoreAgentStatus;
+use rune_core::protocol::CollabAgentInteractionBeginEvent;
+use rune_core::protocol::CollabAgentInteractionEndEvent;
+use rune_core::protocol::CollabAgentSpawnBeginEvent;
+use rune_core::protocol::CollabAgentSpawnEndEvent;
+use rune_core::protocol::CollabCloseBeginEvent;
+use rune_core::protocol::CollabCloseEndEvent;
+use rune_core::protocol::CollabWaitingBeginEvent;
+use rune_core::protocol::CollabWaitingEndEvent;
+use rune_protocol::models::WebSearchAction;
+use rune_protocol::plan_tool::StepStatus;
+use rune_protocol::plan_tool::UpdatePlanArgs;
 use serde_json::Value as JsonValue;
 use tracing::error;
 use tracing::warn;
@@ -65,7 +65,7 @@ pub struct EventProcessorWithJsonOutput {
     running_patch_applies: HashMap<String, protocol::PatchApplyBeginEvent>,
     // Tracks the todo list for the current turn (at most one per turn).
     running_todo_list: Option<RunningTodoList>,
-    last_total_token_usage: Option<codex_core::protocol::TokenUsage>,
+    last_total_token_usage: Option<rune_core::protocol::TokenUsage>,
     running_mcp_tool_calls: HashMap<String, RunningMcpToolCall>,
     running_collab_tool_calls: HashMap<String, RunningCollabToolCall>,
     running_web_search_calls: HashMap<String, String>,
@@ -122,7 +122,7 @@ impl EventProcessorWithJsonOutput {
             protocol::EventMsg::ThreadNameUpdated(_) => Vec::new(),
             protocol::EventMsg::AgentMessage(ev) => self.handle_agent_message(ev),
             protocol::EventMsg::ItemCompleted(protocol::ItemCompletedEvent {
-                item: codex_protocol::items::TurnItem::Plan(item),
+                item: rune_protocol::items::TurnItem::Plan(item),
                 ..
             }) => {
                 self.last_proposed_plan = Some(item.text.clone());
@@ -844,7 +844,7 @@ impl EventProcessor for EventProcessorWithJsonOutput {
     }
 
     #[allow(clippy::print_stdout)]
-    fn process_event(&mut self, event: protocol::Event) -> CodexStatus {
+    fn process_event(&mut self, event: protocol::Event) -> RuneStatus {
         let aggregated = self.collect_thread_events(&event);
         for conv_event in aggregated {
             match serde_json::to_string(&conv_event) {
@@ -869,11 +869,11 @@ impl EventProcessor for EventProcessorWithJsonOutput {
                         .or(self.last_proposed_plan.as_deref());
                     handle_last_message(last_message, output_file);
                 }
-                CodexStatus::InitiateShutdown
+                RuneStatus::InitiateShutdown
             }
-            protocol::EventMsg::TurnAborted(_) => CodexStatus::InitiateShutdown,
-            protocol::EventMsg::ShutdownComplete => CodexStatus::Shutdown,
-            _ => CodexStatus::Running,
+            protocol::EventMsg::TurnAborted(_) => RuneStatus::InitiateShutdown,
+            protocol::EventMsg::ShutdownComplete => RuneStatus::Shutdown,
+            _ => RuneStatus::Running,
         }
     }
 }

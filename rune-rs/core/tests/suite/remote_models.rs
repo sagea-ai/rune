@@ -4,29 +4,29 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use codex_core::CodexAuth;
-use codex_core::ModelProviderInfo;
-use codex_core::built_in_model_providers;
-use codex_core::config::Config;
-use codex_core::features::Feature;
-use codex_core::models_manager::manager::ModelsManager;
-use codex_core::models_manager::manager::RefreshStrategy;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ExecCommandSource;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_protocol::openai_models::TruncationPolicyConfig;
-use codex_protocol::openai_models::default_input_modalities;
-use codex_protocol::user_input::UserInput;
+use rune_core::RuneAuth;
+use rune_core::ModelProviderInfo;
+use rune_core::built_in_model_providers;
+use rune_core::config::Config;
+use rune_core::features::Feature;
+use rune_core::models_manager::manager::ModelsManager;
+use rune_core::models_manager::manager::RefreshStrategy;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ExecCommandSource;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::openai_models::ConfigShellToolType;
+use rune_protocol::openai_models::ModelInfo;
+use rune_protocol::openai_models::ModelPreset;
+use rune_protocol::openai_models::ModelVisibility;
+use rune_protocol::openai_models::ModelsResponse;
+use rune_protocol::openai_models::ReasoningEffort;
+use rune_protocol::openai_models::ReasoningEffortPreset;
+use rune_protocol::openai_models::TruncationPolicyConfig;
+use rune_protocol::openai_models::default_input_modalities;
+use rune_protocol::user_input::UserInput;
 use core_test_support::load_default_config_for_test;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -39,8 +39,8 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_sandbox;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRune;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
 use pretty_assertions::assert_eq;
@@ -102,14 +102,14 @@ async fn remote_models_remote_model_uses_unified_exec() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_rune()
+        .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.features.enable(Feature::RemoteModels);
             config.model = Some("gpt-5.1".to_string());
         });
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         cwd,
         config,
         thread_manager,
@@ -135,7 +135,7 @@ async fn remote_models_remote_model_uses_unified_exec() -> Result<()> {
         .await;
     assert_eq!(model_info.shell_type, ConfigShellToolType::UnifiedExec);
 
-    codex
+    rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: None,
@@ -168,7 +168,7 @@ async fn remote_models_remote_model_uses_unified_exec() -> Result<()> {
     ];
     mount_sse_sequence(&server, responses).await;
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "run call".into(),
@@ -186,7 +186,7 @@ async fn remote_models_remote_model_uses_unified_exec() -> Result<()> {
         })
         .await?;
 
-    let begin_event = wait_for_event_match(&codex, |msg| match msg {
+    let begin_event = wait_for_event_match(&rune, |msg| match msg {
         EventMsg::ExecCommandBegin(event) if event.call_id == call_id => Some(event.clone()),
         _ => None,
     })
@@ -194,7 +194,7 @@ async fn remote_models_remote_model_uses_unified_exec() -> Result<()> {
 
     assert_eq!(begin_event.source, ExecCommandSource::UnifiedExecStartup);
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     Ok(())
 }
@@ -224,8 +224,8 @@ async fn remote_models_truncation_policy_without_override_preserves_remote() -> 
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_rune()
+        .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.features.enable(Feature::RemoteModels);
             config.model = Some("gpt-5.1".to_string());
@@ -269,8 +269,8 @@ async fn remote_models_truncation_policy_with_tool_output_override() -> Result<(
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_rune()
+        .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.features.enable(Feature::RemoteModels);
             config.model = Some("gpt-5.1".to_string());
@@ -349,14 +349,14 @@ async fn remote_models_apply_remote_base_instructions() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let mut builder = test_rune()
+        .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             config.features.enable(Feature::RemoteModels);
             config.model = Some("gpt-5.1".to_string());
         });
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         cwd,
         config,
         thread_manager,
@@ -366,7 +366,7 @@ async fn remote_models_apply_remote_base_instructions() -> Result<()> {
     let models_manager = thread_manager.get_models_manager();
     wait_for_model_available(&models_manager, model, &config).await;
 
-    codex
+    rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: None,
@@ -380,7 +380,7 @@ async fn remote_models_apply_remote_base_instructions() -> Result<()> {
         })
         .await?;
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello remote".into(),
@@ -398,7 +398,7 @@ async fn remote_models_apply_remote_base_instructions() -> Result<()> {
         })
         .await?;
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let base_model_info = models_manager.get_model_info("gpt-5.1", &config).await;
     let body = response_mock.single_request().body_json();
@@ -423,18 +423,18 @@ async fn remote_models_preserve_builtin_presets() -> Result<()> {
     )
     .await;
 
-    let codex_home = TempDir::new()?;
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new()?;
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.features.enable(Feature::RemoteModels);
 
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = RuneAuth::create_dummy_chatgpt_auth_for_testing();
     let provider = ModelProviderInfo {
         base_url: Some(format!("{}/v1", server.uri())),
         ..built_in_model_providers()["openai"].clone()
     };
     let manager = ModelsManager::with_provider(
-        codex_home.path().to_path_buf(),
-        codex_core::auth::AuthManager::from_auth_for_testing(auth),
+        rune_home.path().to_path_buf(),
+        rune_core::auth::AuthManager::from_auth_for_testing(auth),
         provider,
     );
 
@@ -488,18 +488,18 @@ async fn remote_models_merge_adds_new_high_priority_first() -> Result<()> {
     )
     .await;
 
-    let codex_home = TempDir::new()?;
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new()?;
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.features.enable(Feature::RemoteModels);
 
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = RuneAuth::create_dummy_chatgpt_auth_for_testing();
     let provider = ModelProviderInfo {
         base_url: Some(format!("{}/v1", server.uri())),
         ..built_in_model_providers()["openai"].clone()
     };
     let manager = ModelsManager::with_provider(
-        codex_home.path().to_path_buf(),
-        codex_core::auth::AuthManager::from_auth_for_testing(auth),
+        rune_home.path().to_path_buf(),
+        rune_core::auth::AuthManager::from_auth_for_testing(auth),
         provider,
     );
 
@@ -537,18 +537,18 @@ async fn remote_models_merge_replaces_overlapping_model() -> Result<()> {
     )
     .await;
 
-    let codex_home = TempDir::new()?;
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new()?;
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.features.enable(Feature::RemoteModels);
 
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = RuneAuth::create_dummy_chatgpt_auth_for_testing();
     let provider = ModelProviderInfo {
         base_url: Some(format!("{}/v1", server.uri())),
         ..built_in_model_providers()["openai"].clone()
     };
     let manager = ModelsManager::with_provider(
-        codex_home.path().to_path_buf(),
-        codex_core::auth::AuthManager::from_auth_for_testing(auth),
+        rune_home.path().to_path_buf(),
+        rune_core::auth::AuthManager::from_auth_for_testing(auth),
         provider,
     );
 
@@ -583,18 +583,18 @@ async fn remote_models_merge_preserves_bundled_models_on_empty_response() -> Res
     let server = MockServer::start().await;
     let models_mock = mount_models_once(&server, ModelsResponse { models: Vec::new() }).await;
 
-    let codex_home = TempDir::new()?;
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new()?;
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.features.enable(Feature::RemoteModels);
 
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = RuneAuth::create_dummy_chatgpt_auth_for_testing();
     let provider = ModelProviderInfo {
         base_url: Some(format!("{}/v1", server.uri())),
         ..built_in_model_providers()["openai"].clone()
     };
     let manager = ModelsManager::with_provider(
-        codex_home.path().to_path_buf(),
-        codex_core::auth::AuthManager::from_auth_for_testing(auth),
+        rune_home.path().to_path_buf(),
+        rune_core::auth::AuthManager::from_auth_for_testing(auth),
         provider,
     );
 
@@ -631,18 +631,18 @@ async fn remote_models_request_times_out_after_5s() -> Result<()> {
     )
     .await;
 
-    let codex_home = TempDir::new()?;
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new()?;
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.features.enable(Feature::RemoteModels);
 
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = RuneAuth::create_dummy_chatgpt_auth_for_testing();
     let provider = ModelProviderInfo {
         base_url: Some(format!("{}/v1", server.uri())),
         ..built_in_model_providers()["openai"].clone()
     };
     let manager = ModelsManager::with_provider(
-        codex_home.path().to_path_buf(),
-        codex_core::auth::AuthManager::from_auth_for_testing(auth),
+        rune_home.path().to_path_buf(),
+        rune_core::auth::AuthManager::from_auth_for_testing(auth),
         provider,
     );
 
@@ -656,7 +656,7 @@ async fn remote_models_request_times_out_after_5s() -> Result<()> {
     // get_model should return a default model even when refresh times out
     let default_model = model.expect("get_model should finish and return default model");
     assert!(
-        default_model == "gpt-5.2-codex",
+        default_model == "gpt-5.2-rune",
         "get_model should return default model when refresh times out, got: {default_model}"
     );
     let _ = server
@@ -698,25 +698,25 @@ async fn remote_models_hide_picker_only_models() -> Result<()> {
     )
     .await;
 
-    let codex_home = TempDir::new()?;
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new()?;
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.features.enable(Feature::RemoteModels);
 
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = RuneAuth::create_dummy_chatgpt_auth_for_testing();
     let provider = ModelProviderInfo {
         base_url: Some(format!("{}/v1", server.uri())),
         ..built_in_model_providers()["openai"].clone()
     };
     let manager = ModelsManager::with_provider(
-        codex_home.path().to_path_buf(),
-        codex_core::auth::AuthManager::from_auth_for_testing(auth),
+        rune_home.path().to_path_buf(),
+        rune_core::auth::AuthManager::from_auth_for_testing(auth),
         provider,
     );
 
     let selected = manager
         .get_default_model(&None, &config, RefreshStrategy::OnlineIfUncached)
         .await;
-    assert_eq!(selected, "gpt-5.2-codex");
+    assert_eq!(selected, "gpt-5.2-rune");
 
     let available = manager
         .list_models(&config, RefreshStrategy::OnlineIfUncached)

@@ -33,26 +33,26 @@ use windows_sys::Win32::Security::FreeSid;
 use windows_sys::Win32::Security::SECURITY_NT_AUTHORITY;
 
 pub const SETUP_VERSION: u32 = 5;
-pub const OFFLINE_USERNAME: &str = "CodexSandboxOffline";
-pub const ONLINE_USERNAME: &str = "CodexSandboxOnline";
+pub const OFFLINE_USERNAME: &str = "RuneSandboxOffline";
+pub const ONLINE_USERNAME: &str = "RuneSandboxOnline";
 const ERROR_CANCELLED: u32 = 1223;
 const SECURITY_BUILTIN_DOMAIN_RID: u32 = 0x0000_0020;
 const DOMAIN_ALIAS_RID_ADMINS: u32 = 0x0000_0220;
 
-pub fn sandbox_dir(codex_home: &Path) -> PathBuf {
-    codex_home.join(".sandbox")
+pub fn sandbox_dir(rune_home: &Path) -> PathBuf {
+    rune_home.join(".sandbox")
 }
 
-pub fn sandbox_secrets_dir(codex_home: &Path) -> PathBuf {
-    codex_home.join(".sandbox-secrets")
+pub fn sandbox_secrets_dir(rune_home: &Path) -> PathBuf {
+    rune_home.join(".sandbox-secrets")
 }
 
-pub fn setup_marker_path(codex_home: &Path) -> PathBuf {
-    sandbox_dir(codex_home).join("setup_marker.json")
+pub fn setup_marker_path(rune_home: &Path) -> PathBuf {
+    sandbox_dir(rune_home).join("setup_marker.json")
 }
 
-pub fn sandbox_users_path(codex_home: &Path) -> PathBuf {
-    sandbox_secrets_dir(codex_home).join("sandbox_users.json")
+pub fn sandbox_users_path(rune_home: &Path) -> PathBuf {
+    sandbox_secrets_dir(rune_home).join("sandbox_users.json")
 }
 
 pub fn run_setup_refresh(
@@ -60,7 +60,7 @@ pub fn run_setup_refresh(
     policy_cwd: &Path,
     command_cwd: &Path,
     env_map: &HashMap<String, String>,
-    codex_home: &Path,
+    rune_home: &Path,
 ) -> Result<()> {
     // Skip in danger-full-access.
     if matches!(
@@ -74,7 +74,7 @@ pub fn run_setup_refresh(
         policy_cwd,
         command_cwd,
         env_map,
-        codex_home,
+        rune_home,
         None,
         None,
     );
@@ -82,7 +82,7 @@ pub fn run_setup_refresh(
         version: SETUP_VERSION,
         offline_username: OFFLINE_USERNAME.to_string(),
         online_username: ONLINE_USERNAME.to_string(),
-        codex_home: codex_home.to_path_buf(),
+        rune_home: rune_home.to_path_buf(),
         command_cwd: command_cwd.to_path_buf(),
         read_roots,
         write_roots,
@@ -95,7 +95,7 @@ pub fn run_setup_refresh(
     // Refresh should never request elevation; ensure verb isn't set and we don't trigger UAC.
     let mut cmd = Command::new(&exe);
     cmd.arg(&b64).stdout(Stdio::null()).stderr(Stdio::null());
-    let cwd = std::env::current_dir().unwrap_or_else(|_| codex_home.to_path_buf());
+    let cwd = std::env::current_dir().unwrap_or_else(|_| rune_home.to_path_buf());
     log_note(
         &format!(
             "setup refresh: spawning {} (cwd={}, payload_len={})",
@@ -103,14 +103,14 @@ pub fn run_setup_refresh(
             cwd.display(),
             b64.len()
         ),
-        Some(&sandbox_dir(codex_home)),
+        Some(&sandbox_dir(rune_home)),
     );
     let status = cmd
         .status()
         .map_err(|e| {
             log_note(
                 &format!("setup refresh: failed to spawn {}: {e}", exe.display()),
-                Some(&sandbox_dir(codex_home)),
+                Some(&sandbox_dir(rune_home)),
             );
             e
         })
@@ -118,7 +118,7 @@ pub fn run_setup_refresh(
     if !status.success() {
         log_note(
             &format!("setup refresh: exited with status {status:?}"),
-            Some(&sandbox_dir(codex_home)),
+            Some(&sandbox_dir(rune_home)),
         );
         return Err(anyhow!("setup refresh failed with status {}", status));
     }
@@ -260,7 +260,7 @@ struct ElevationPayload {
     version: u32,
     offline_username: String,
     online_username: String,
-    codex_home: PathBuf,
+    rune_home: PathBuf,
     command_cwd: PathBuf,
     read_roots: Vec<PathBuf>,
     write_roots: Vec<PathBuf>,
@@ -318,7 +318,7 @@ fn find_setup_exe() -> PathBuf {
 }
 
 fn report_helper_failure(
-    codex_home: &Path,
+    rune_home: &Path,
     cleared_report: bool,
     exit_code: Option<i32>,
 ) -> anyhow::Error {
@@ -326,7 +326,7 @@ fn report_helper_failure(
     if !cleared_report {
         return failure(SetupErrorCode::OrchestratorHelperExitNonzero, exit_detail);
     }
-    match read_setup_error_report(codex_home) {
+    match read_setup_error_report(rune_home) {
         Ok(Some(report)) => anyhow::Error::new(SetupFailure::from_report(report)),
         Ok(None) => failure(SetupErrorCode::OrchestratorHelperExitNonzero, exit_detail),
         Err(err) => failure(
@@ -339,7 +339,7 @@ fn report_helper_failure(
 fn run_setup_exe(
     payload: &ElevationPayload,
     needs_elevation: bool,
-    codex_home: &Path,
+    rune_home: &Path,
 ) -> Result<()> {
     use windows_sys::Win32::System::Threading::GetExitCodeProcess;
     use windows_sys::Win32::System::Threading::WaitForSingleObject;
@@ -355,14 +355,14 @@ fn run_setup_exe(
         )
     })?;
     let payload_b64 = BASE64_STANDARD.encode(payload_json.as_bytes());
-    let cleared_report = match clear_setup_error_report(codex_home) {
+    let cleared_report = match clear_setup_error_report(rune_home) {
         Ok(()) => true,
         Err(err) => {
             log_note(
                 &format!(
                     "setup orchestrator: failed to clear setup_error.json before launch: {err}"
                 ),
-                Some(&sandbox_dir(codex_home)),
+                Some(&sandbox_dir(rune_home)),
             );
             false
         }
@@ -384,17 +384,17 @@ fn run_setup_exe(
             })?;
         if !status.success() {
             return Err(report_helper_failure(
-                codex_home,
+                rune_home,
                 cleared_report,
                 status.code(),
             ));
         }
-        if let Err(err) = clear_setup_error_report(codex_home) {
+        if let Err(err) = clear_setup_error_report(rune_home) {
             log_note(
                 &format!(
                     "setup orchestrator: failed to clear setup_error.json after success: {err}"
                 ),
-                Some(&sandbox_dir(codex_home)),
+                Some(&sandbox_dir(rune_home)),
             );
         }
         return Ok(());
@@ -432,16 +432,16 @@ fn run_setup_exe(
         CloseHandle(sei.hProcess);
         if code != 0 {
             return Err(report_helper_failure(
-                codex_home,
+                rune_home,
                 cleared_report,
                 Some(code as i32),
             ));
         }
     }
-    if let Err(err) = clear_setup_error_report(codex_home) {
+    if let Err(err) = clear_setup_error_report(rune_home) {
         log_note(
             &format!("setup orchestrator: failed to clear setup_error.json after success: {err}"),
-            Some(&sandbox_dir(codex_home)),
+            Some(&sandbox_dir(rune_home)),
         );
     }
     Ok(())
@@ -452,12 +452,12 @@ pub fn run_elevated_setup(
     policy_cwd: &Path,
     command_cwd: &Path,
     env_map: &HashMap<String, String>,
-    codex_home: &Path,
+    rune_home: &Path,
     read_roots_override: Option<Vec<PathBuf>>,
     write_roots_override: Option<Vec<PathBuf>>,
 ) -> Result<()> {
     // Ensure the shared sandbox directory exists before we send it to the elevated helper.
-    let sbx_dir = sandbox_dir(codex_home);
+    let sbx_dir = sandbox_dir(rune_home);
     std::fs::create_dir_all(&sbx_dir).map_err(|err| {
         failure(
             SetupErrorCode::OrchestratorSandboxDirCreateFailed,
@@ -469,7 +469,7 @@ pub fn run_elevated_setup(
         policy_cwd,
         command_cwd,
         env_map,
-        codex_home,
+        rune_home,
         read_roots_override,
         write_roots_override,
     );
@@ -477,7 +477,7 @@ pub fn run_elevated_setup(
         version: SETUP_VERSION,
         offline_username: OFFLINE_USERNAME.to_string(),
         online_username: ONLINE_USERNAME.to_string(),
-        codex_home: codex_home.to_path_buf(),
+        rune_home: rune_home.to_path_buf(),
         command_cwd: command_cwd.to_path_buf(),
         read_roots,
         write_roots,
@@ -490,7 +490,7 @@ pub fn run_elevated_setup(
             format!("failed to determine elevation state: {err}"),
         )
     })?;
-    run_setup_exe(&payload, needs_elevation, codex_home)
+    run_setup_exe(&payload, needs_elevation, rune_home)
 }
 
 fn build_payload_roots(
@@ -498,7 +498,7 @@ fn build_payload_roots(
     policy_cwd: &Path,
     command_cwd: &Path,
     env_map: &HashMap<String, String>,
-    codex_home: &Path,
+    rune_home: &Path,
     read_roots_override: Option<Vec<PathBuf>>,
     write_roots_override: Option<Vec<PathBuf>>,
 ) -> (Vec<PathBuf>, Vec<PathBuf>) {
@@ -507,7 +507,7 @@ fn build_payload_roots(
     } else {
         gather_write_roots(policy, policy_cwd, command_cwd, env_map)
     };
-    let write_roots = filter_sensitive_write_roots(write_roots, codex_home);
+    let write_roots = filter_sensitive_write_roots(write_roots, rune_home);
     let mut read_roots = if let Some(roots) = read_roots_override {
         canonical_existing(&roots)
     } else {
@@ -518,18 +518,18 @@ fn build_payload_roots(
     (read_roots, write_roots)
 }
 
-fn filter_sensitive_write_roots(mut roots: Vec<PathBuf>, codex_home: &Path) -> Vec<PathBuf> {
-    // Never grant capability write access to CODEX_HOME or anything under CODEX_HOME/.sandbox.
+fn filter_sensitive_write_roots(mut roots: Vec<PathBuf>, rune_home: &Path) -> Vec<PathBuf> {
+    // Never grant capability write access to RUNE_HOME or anything under RUNE_HOME/.sandbox.
     // These locations contain sandbox control/state and must remain tamper-resistant.
-    let codex_home_key = canonical_path_key(codex_home);
-    let sbx_dir_key = canonical_path_key(&sandbox_dir(codex_home));
+    let rune_home_key = canonical_path_key(rune_home);
+    let sbx_dir_key = canonical_path_key(&sandbox_dir(rune_home));
     let sbx_dir_prefix = format!("{}/", sbx_dir_key.trim_end_matches('/'));
-    let secrets_dir_key = canonical_path_key(&sandbox_secrets_dir(codex_home));
+    let secrets_dir_key = canonical_path_key(&sandbox_secrets_dir(rune_home));
     let secrets_dir_prefix = format!("{}/", secrets_dir_key.trim_end_matches('/'));
 
     roots.retain(|root| {
         let key = canonical_path_key(root);
-        key != codex_home_key
+        key != rune_home_key
             && key != sbx_dir_key
             && !key.starts_with(&sbx_dir_prefix)
             && key != secrets_dir_key

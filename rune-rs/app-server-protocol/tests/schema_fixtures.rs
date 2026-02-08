@@ -1,7 +1,7 @@
 use anyhow::Context;
 use anyhow::Result;
-use codex_app_server_protocol::read_schema_fixture_tree;
-use codex_app_server_protocol::write_schema_fixtures;
+use rune_app_server_protocol::read_schema_fixture_tree;
+use rune_app_server_protocol::write_schema_fixtures;
 use similar::TextDiff;
 use std::path::Path;
 
@@ -66,7 +66,7 @@ Run `just write-app-server-schema` to overwrite with your changes.\n\n{diff}",
 fn schema_root() -> Result<std::path::PathBuf> {
     // In Bazel runfiles (especially manifest-only mode), resolving directories is not
     // reliable. Resolve a known file, then walk up to the schema root.
-    let typescript_index = codex_utils_cargo_bin::find_resource!("schema/typescript/index.ts")
+    let typescript_index = rune_utils_cargo_bin::find_resource!("schema/typescript/index.ts")
         .context("resolve TypeScript schema index.ts")?;
     let schema_root = typescript_index
         .parent()
@@ -76,12 +76,12 @@ fn schema_root() -> Result<std::path::PathBuf> {
 
     // Sanity check that the JSON fixtures resolve to the same schema root.
     let json_bundle =
-        codex_utils_cargo_bin::find_resource!("schema/json/codex_app_server_protocol.schemas.json")
+        rune_utils_cargo_bin::find_resource!("schema/json/rune_app_server_protocol.schemas.json")
             .context("resolve JSON schema bundle")?;
     let json_root = json_bundle
         .parent()
         .and_then(|p| p.parent())
-        .context("derive schema root from schema/json/codex_app_server_protocol.schemas.json")?;
+        .context("derive schema root from schema/json/rune_app_server_protocol.schemas.json")?;
     anyhow::ensure!(
         schema_root == json_root,
         "schema roots disagree: typescript={} json={}",

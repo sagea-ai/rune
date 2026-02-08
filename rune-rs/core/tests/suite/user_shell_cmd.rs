@@ -1,15 +1,15 @@
 use anyhow::Context;
-use codex_core::features::Feature;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ExecCommandEndEvent;
-use codex_core::protocol::ExecCommandSource;
-use codex_core::protocol::ExecOutputStream;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_core::protocol::TurnAbortReason;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::user_input::UserInput;
+use rune_core::features::Feature;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ExecCommandEndEvent;
+use rune_core::protocol::ExecCommandSource;
+use rune_core::protocol::ExecOutputStream;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_core::protocol::TurnAbortReason;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::user_input::UserInput;
 use core_test_support::assert_regex_match;
 use core_test_support::responses;
 use core_test_support::responses::ev_assistant_message;
@@ -20,7 +20,7 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
 use core_test_support::wait_for_event_with_timeout;
@@ -44,22 +44,22 @@ async fn user_shell_cmd_ls_and_cat_in_temp_dir() {
     // Pin cwd to the temp dir so ls/cat operate there.
     let server = start_mock_server().await;
     let cwd_path = cwd.path().to_path_buf();
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.cwd = cwd_path;
     });
-    let codex = builder
+    let rune = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .rune;
 
     // 1) shell command should list the file
     let list_cmd = "ls".to_string();
-    codex
+    rune
         .submit(Op::RunUserShellCommand { command: list_cmd })
         .await
         .unwrap();
-    let msg = wait_for_event(&codex, |ev| matches!(ev, EventMsg::ExecCommandEnd(_))).await;
+    let msg = wait_for_event(&rune, |ev| matches!(ev, EventMsg::ExecCommandEnd(_))).await;
     let EventMsg::ExecCommandEnd(ExecCommandEndEvent {
         stdout, exit_code, ..
     }) = msg
@@ -74,11 +74,11 @@ async fn user_shell_cmd_ls_and_cat_in_temp_dir() {
 
     // 2) shell command should print the file contents verbatim
     let cat_cmd = format!("cat {file_name}");
-    codex
+    rune
         .submit(Op::RunUserShellCommand { command: cat_cmd })
         .await
         .unwrap();
-    let msg = wait_for_event(&codex, |ev| matches!(ev, EventMsg::ExecCommandEnd(_))).await;
+    let msg = wait_for_event(&rune, |ev| matches!(ev, EventMsg::ExecCommandEnd(_))).await;
     let EventMsg::ExecCommandEnd(ExecCommandEndEvent {
         mut stdout,
         exit_code,
@@ -99,33 +99,33 @@ async fn user_shell_cmd_ls_and_cat_in_temp_dir() {
 async fn user_shell_cmd_can_be_interrupted() {
     // Set up isolated config and conversation.
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_rune();
     let fixture = builder
         .build(&server)
         .await
         .expect("create new conversation");
-    let codex = &fixture.codex;
+    let rune = &fixture.rune;
 
     // Start a long-running command and then interrupt it.
     let sleep_cmd = "sleep 5".to_string();
-    codex
+    rune
         .submit(Op::RunUserShellCommand { command: sleep_cmd })
         .await
         .unwrap();
 
     // Wait until it has started (ExecCommandBegin), then interrupt.
-    let _begin = wait_for_event_match(codex, |ev| match ev {
+    let _begin = wait_for_event_match(rune, |ev| match ev {
         EventMsg::ExecCommandBegin(event) if event.source == ExecCommandSource::UserShell => {
             Some(event.clone())
         }
         _ => None,
     })
     .await;
-    codex.submit(Op::Interrupt).await.unwrap();
+    rune.submit(Op::Interrupt).await.unwrap();
 
     // Expect a TurnAborted(Interrupted) notification.
     let msg = wait_for_event_with_timeout(
-        codex,
+        rune,
         |ev| matches!(ev, EventMsg::TurnAborted(_)),
         Duration::from_secs(60),
     )
@@ -139,7 +139,7 @@ async fn user_shell_cmd_can_be_interrupted() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn user_shell_command_does_not_replace_active_turn() -> anyhow::Result<()> {
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.1");
+    let mut builder = test_rune().with_model("gpt-5.1");
     let fixture = builder.build(&server).await?;
 
     let call_id = "active-turn-shell-call";
@@ -166,7 +166,7 @@ async fn user_shell_command_does_not_replace_active_turn() -> anyhow::Result<()>
     let mock = responses::mount_sse_sequence(&server, vec![first, second]).await;
 
     fixture
-        .codex
+        .rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "run model shell command".to_string(),
@@ -184,7 +184,7 @@ async fn user_shell_command_does_not_replace_active_turn() -> anyhow::Result<()>
         })
         .await?;
 
-    let _ = wait_for_event_match(&fixture.codex, |ev| match ev {
+    let _ = wait_for_event_match(&fixture.rune, |ev| match ev {
         EventMsg::ExecCommandBegin(event) if event.source == ExecCommandSource::Agent => {
             Some(event.clone())
         }
@@ -197,7 +197,7 @@ async fn user_shell_command_does_not_replace_active_turn() -> anyhow::Result<()>
     #[cfg(not(windows))]
     let user_shell_command = "printf user-shell".to_string();
     fixture
-        .codex
+        .rune
         .submit(Op::RunUserShellCommand {
             command: user_shell_command,
         })
@@ -207,7 +207,7 @@ async fn user_shell_command_does_not_replace_active_turn() -> anyhow::Result<()>
     let mut saw_user_shell_end = false;
     let mut saw_turn_complete = false;
     for _ in 0..200 {
-        let event = timeout(Duration::from_secs(20), fixture.codex.next_event())
+        let event = timeout(Duration::from_secs(20), fixture.rune.next_event())
             .await
             .context("timed out waiting for event")?
             .context("event stream ended unexpectedly")?;
@@ -249,23 +249,23 @@ async fn user_shell_command_does_not_replace_active_turn() -> anyhow::Result<()>
 async fn user_shell_command_history_is_persisted_and_shared_with_model() -> anyhow::Result<()> {
     let server = responses::start_mock_server().await;
     // Disable it to ease command matching.
-    let mut builder = core_test_support::test_codex::test_codex().with_config(move |config| {
+    let mut builder = core_test_support::test_rune::test_rune().with_config(move |config| {
         config.features.disable(Feature::ShellSnapshot);
     });
     let test = builder.build(&server).await?;
 
     #[cfg(windows)]
-    let command = r#"$val = $env:CODEX_SANDBOX; if ([string]::IsNullOrEmpty($val)) { $val = 'not-set' } ; [System.Console]::Write($val)"#.to_string();
+    let command = r#"$val = $env:RUNE_SANDBOX; if ([string]::IsNullOrEmpty($val)) { $val = 'not-set' } ; [System.Console]::Write($val)"#.to_string();
     #[cfg(not(windows))]
-    let command = r#"sh -c "printf '%s' \"${CODEX_SANDBOX:-not-set}\"""#.to_string();
+    let command = r#"sh -c "printf '%s' \"${RUNE_SANDBOX:-not-set}\"""#.to_string();
 
-    test.codex
+    test.rune
         .submit(Op::RunUserShellCommand {
             command: command.clone(),
         })
         .await?;
 
-    let begin_event = wait_for_event_match(&test.codex, |ev| match ev {
+    let begin_event = wait_for_event_match(&test.rune, |ev| match ev {
         EventMsg::ExecCommandBegin(event) => Some(event.clone()),
         _ => None,
     })
@@ -279,7 +279,7 @@ async fn user_shell_command_history_is_persisted_and_shared_with_model() -> anyh
         begin_event.command
     );
 
-    let delta_event = wait_for_event_match(&test.codex, |ev| match ev {
+    let delta_event = wait_for_event_match(&test.rune, |ev| match ev {
         EventMsg::ExecCommandOutputDelta(event) => Some(event.clone()),
         _ => None,
     })
@@ -289,7 +289,7 @@ async fn user_shell_command_history_is_persisted_and_shared_with_model() -> anyh
         String::from_utf8(delta_event.chunk.clone()).expect("user command chunk is valid utf-8");
     assert_eq!(chunk_text.trim(), "not-set");
 
-    let end_event = wait_for_event_match(&test.codex, |ev| match ev {
+    let end_event = wait_for_event_match(&test.rune, |ev| match ev {
         EventMsg::ExecCommandEnd(event) => Some(event.clone()),
         _ => None,
     })
@@ -297,7 +297,7 @@ async fn user_shell_command_history_is_persisted_and_shared_with_model() -> anyh
     assert_eq!(end_event.exit_code, 0);
     assert_eq!(end_event.stdout.trim(), "not-set");
 
-    let _ = wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _ = wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let responses = vec![responses::sse(vec![
         responses::ev_response_created("resp-1"),
@@ -329,7 +329,7 @@ async fn user_shell_command_history_is_persisted_and_shared_with_model() -> anyh
 #[cfg(not(target_os = "windows"))] // TODO: unignore on windows
 async fn user_shell_command_output_is_truncated_in_history() -> anyhow::Result<()> {
     let server = responses::start_mock_server().await;
-    let builder = core_test_support::test_codex::test_codex();
+    let builder = core_test_support::test_rune::test_rune();
     let test = builder
         .with_config(|config| {
             config.tool_output_token_limit = Some(100);
@@ -342,20 +342,20 @@ async fn user_shell_command_output_is_truncated_in_history() -> anyhow::Result<(
     #[cfg(not(windows))]
     let command = "seq 1 400".to_string();
 
-    test.codex
+    test.rune
         .submit(Op::RunUserShellCommand {
             command: command.clone(),
         })
         .await?;
 
-    let end_event = wait_for_event_match(&test.codex, |ev| match ev {
+    let end_event = wait_for_event_match(&test.rune, |ev| match ev {
         EventMsg::ExecCommandEnd(event) => Some(event.clone()),
         _ => None,
     })
     .await;
     assert_eq!(end_event.exit_code, 0);
 
-    let _ = wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _ = wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let responses = vec![responses::sse(vec![
         responses::ev_response_created("resp-1"),
@@ -394,8 +394,8 @@ async fn user_shell_command_is_truncated_only_once() -> anyhow::Result<()> {
 
     let server = start_mock_server().await;
 
-    let mut builder = test_codex()
-        .with_model("gpt-5.1-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5.1-rune")
         .with_config(|config| {
             config.tool_output_token_limit = Some(100);
         });

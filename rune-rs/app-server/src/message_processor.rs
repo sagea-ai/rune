@@ -2,50 +2,50 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::RwLock;
 
-use crate::codex_message_processor::CodexMessageProcessor;
-use crate::codex_message_processor::CodexMessageProcessorArgs;
+use crate::rune_message_processor::RuneMessageProcessor;
+use crate::rune_message_processor::RuneMessageProcessorArgs;
 use crate::config_api::ConfigApi;
 use crate::error_code::INVALID_REQUEST_ERROR_CODE;
 use crate::outgoing_message::ConnectionId;
 use crate::outgoing_message::ConnectionRequestId;
 use crate::outgoing_message::OutgoingMessageSender;
 use async_trait::async_trait;
-use codex_app_server_protocol::ChatgptAuthTokensRefreshParams;
-use codex_app_server_protocol::ChatgptAuthTokensRefreshReason;
-use codex_app_server_protocol::ChatgptAuthTokensRefreshResponse;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::ConfigBatchWriteParams;
-use codex_app_server_protocol::ConfigReadParams;
-use codex_app_server_protocol::ConfigValueWriteParams;
-use codex_app_server_protocol::ConfigWarningNotification;
-use codex_app_server_protocol::ExperimentalApi;
-use codex_app_server_protocol::InitializeResponse;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCRequest;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequestPayload;
-use codex_app_server_protocol::experimental_required_message;
-use codex_core::AuthManager;
-use codex_core::ThreadManager;
-use codex_core::auth::ExternalAuthRefreshContext;
-use codex_core::auth::ExternalAuthRefreshReason;
-use codex_core::auth::ExternalAuthRefresher;
-use codex_core::auth::ExternalAuthTokens;
-use codex_core::config::Config;
-use codex_core::config_loader::CloudRequirementsLoader;
-use codex_core::config_loader::LoaderOverrides;
-use codex_core::default_client::SetOriginatorError;
-use codex_core::default_client::USER_AGENT_SUFFIX;
-use codex_core::default_client::get_codex_user_agent;
-use codex_core::default_client::set_default_client_residency_requirement;
-use codex_core::default_client::set_default_originator;
-use codex_feedback::CodexFeedback;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::SessionSource;
+use rune_app_server_protocol::ChatgptAuthTokensRefreshParams;
+use rune_app_server_protocol::ChatgptAuthTokensRefreshReason;
+use rune_app_server_protocol::ChatgptAuthTokensRefreshResponse;
+use rune_app_server_protocol::ClientInfo;
+use rune_app_server_protocol::ClientRequest;
+use rune_app_server_protocol::ConfigBatchWriteParams;
+use rune_app_server_protocol::ConfigReadParams;
+use rune_app_server_protocol::ConfigValueWriteParams;
+use rune_app_server_protocol::ConfigWarningNotification;
+use rune_app_server_protocol::ExperimentalApi;
+use rune_app_server_protocol::InitializeResponse;
+use rune_app_server_protocol::JSONRPCError;
+use rune_app_server_protocol::JSONRPCErrorError;
+use rune_app_server_protocol::JSONRPCNotification;
+use rune_app_server_protocol::JSONRPCRequest;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::ServerNotification;
+use rune_app_server_protocol::ServerRequestPayload;
+use rune_app_server_protocol::experimental_required_message;
+use rune_core::AuthManager;
+use rune_core::ThreadManager;
+use rune_core::auth::ExternalAuthRefreshContext;
+use rune_core::auth::ExternalAuthRefreshReason;
+use rune_core::auth::ExternalAuthRefresher;
+use rune_core::auth::ExternalAuthTokens;
+use rune_core::config::Config;
+use rune_core::config_loader::CloudRequirementsLoader;
+use rune_core::config_loader::LoaderOverrides;
+use rune_core::default_client::SetOriginatorError;
+use rune_core::default_client::USER_AGENT_SUFFIX;
+use rune_core::default_client::get_rune_user_agent;
+use rune_core::default_client::set_default_client_residency_requirement;
+use rune_core::default_client::set_default_originator;
+use rune_feedback::RuneFeedback;
+use rune_protocol::ThreadId;
+use rune_protocol::protocol::SessionSource;
 use tokio::sync::broadcast;
 use tokio::time::Duration;
 use tokio::time::timeout;
@@ -107,7 +107,7 @@ impl ExternalAuthRefresher for ExternalAuthRefreshBridge {
 
 pub(crate) struct MessageProcessor {
     outgoing: Arc<OutgoingMessageSender>,
-    codex_message_processor: CodexMessageProcessor,
+    rune_message_processor: RuneMessageProcessor,
     config_api: ConfigApi,
     config: Arc<Config>,
     config_warnings: Arc<Vec<ConfigWarningNotification>>,
@@ -121,12 +121,12 @@ pub(crate) struct ConnectionSessionState {
 
 pub(crate) struct MessageProcessorArgs {
     pub(crate) outgoing: Arc<OutgoingMessageSender>,
-    pub(crate) codex_linux_sandbox_exe: Option<PathBuf>,
+    pub(crate) rune_linux_sandbox_exe: Option<PathBuf>,
     pub(crate) config: Arc<Config>,
     pub(crate) cli_overrides: Vec<(String, TomlValue)>,
     pub(crate) loader_overrides: LoaderOverrides,
     pub(crate) cloud_requirements: CloudRequirementsLoader,
-    pub(crate) feedback: CodexFeedback,
+    pub(crate) feedback: RuneFeedback,
     pub(crate) config_warnings: Vec<ConfigWarningNotification>,
 }
 
@@ -136,7 +136,7 @@ impl MessageProcessor {
     pub(crate) fn new(args: MessageProcessorArgs) -> Self {
         let MessageProcessorArgs {
             outgoing,
-            codex_linux_sandbox_exe,
+            rune_linux_sandbox_exe,
             config,
             cli_overrides,
             loader_overrides,
@@ -145,7 +145,7 @@ impl MessageProcessor {
             config_warnings,
         } = args;
         let auth_manager = AuthManager::shared(
-            config.codex_home.clone(),
+            config.rune_home.clone(),
             false,
             config.cli_auth_credentials_store_mode,
         );
@@ -154,23 +154,23 @@ impl MessageProcessor {
             outgoing: outgoing.clone(),
         }));
         let thread_manager = Arc::new(ThreadManager::new(
-            config.codex_home.clone(),
+            config.rune_home.clone(),
             auth_manager.clone(),
             SessionSource::VSCode,
         ));
         let cloud_requirements = Arc::new(RwLock::new(cloud_requirements));
-        let codex_message_processor = CodexMessageProcessor::new(CodexMessageProcessorArgs {
+        let rune_message_processor = RuneMessageProcessor::new(RuneMessageProcessorArgs {
             auth_manager,
             thread_manager,
             outgoing: outgoing.clone(),
-            codex_linux_sandbox_exe,
+            rune_linux_sandbox_exe,
             config: Arc::clone(&config),
             cli_overrides: cli_overrides.clone(),
             cloud_requirements: cloud_requirements.clone(),
             feedback,
         });
         let config_api = ConfigApi::new(
-            config.codex_home.clone(),
+            config.rune_home.clone(),
             cli_overrides,
             loader_overrides,
             cloud_requirements,
@@ -178,7 +178,7 @@ impl MessageProcessor {
 
         Self {
             outgoing,
-            codex_message_processor,
+            rune_message_processor,
             config_api,
             config,
             config_warnings: Arc::new(config_warnings),
@@ -208,8 +208,8 @@ impl MessageProcessor {
             }
         };
 
-        let codex_request = match serde_json::from_value::<ClientRequest>(request_json) {
-            Ok(codex_request) => codex_request,
+        let rune_request = match serde_json::from_value::<ClientRequest>(request_json) {
+            Ok(rune_request) => rune_request,
             Err(err) => {
                 let error = JSONRPCErrorError {
                     code: INVALID_REQUEST_ERROR_CODE,
@@ -221,8 +221,8 @@ impl MessageProcessor {
             }
         };
 
-        match codex_request {
-            // Handle Initialize internally so CodexMessageProcessor does not have to concern
+        match rune_request {
+            // Handle Initialize internally so RuneMessageProcessor does not have to concern
             // itself with the `initialized` bool.
             ClientRequest::Initialize { request_id, params } => {
                 let request_id = ConnectionRequestId {
@@ -268,7 +268,7 @@ impl MessageProcessor {
                             }
                             SetOriginatorError::AlreadyInitialized => {
                                 // No-op. This is expected to happen if the originator is already set via env var.
-                                // TODO(owen): Once we remove support for CODEX_INTERNAL_ORIGINATOR_OVERRIDE,
+                                // TODO(owen): Once we remove support for RUNE_INTERNAL_ORIGINATOR_OVERRIDE,
                                 // this will be an unexpected state and we can return a JSON-RPC error indicating
                                 // internal server error.
                             }
@@ -280,7 +280,7 @@ impl MessageProcessor {
                         *suffix = Some(user_agent_suffix);
                     }
 
-                    let user_agent = get_codex_user_agent();
+                    let user_agent = get_rune_user_agent();
                     let response = InitializeResponse { user_agent };
                     self.outgoing.send_response(request_id, response).await;
 
@@ -309,7 +309,7 @@ impl MessageProcessor {
             }
         }
 
-        if let Some(reason) = codex_request.experimental_reason()
+        if let Some(reason) = rune_request.experimental_reason()
             && !session.experimental_api_enabled
         {
             let error = JSONRPCErrorError {
@@ -321,7 +321,7 @@ impl MessageProcessor {
             return;
         }
 
-        match codex_request {
+        match rune_request {
             ClientRequest::ConfigRead { request_id, params } => {
                 self.handle_config_read(
                     ConnectionRequestId {
@@ -363,7 +363,7 @@ impl MessageProcessor {
                 .await;
             }
             other => {
-                self.codex_message_processor
+                self.rune_message_processor
                     .process_request(connection_id, other)
                     .await;
             }
@@ -377,11 +377,11 @@ impl MessageProcessor {
     }
 
     pub(crate) fn thread_created_receiver(&self) -> broadcast::Receiver<ThreadId> {
-        self.codex_message_processor.thread_created_receiver()
+        self.rune_message_processor.thread_created_receiver()
     }
 
     pub(crate) async fn try_attach_thread_listener(&mut self, thread_id: ThreadId) {
-        self.codex_message_processor
+        self.rune_message_processor
             .try_attach_thread_listener(thread_id)
             .await;
     }

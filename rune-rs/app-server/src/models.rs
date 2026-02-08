@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use codex_app_server_protocol::Model;
-use codex_app_server_protocol::ReasoningEffortOption;
-use codex_core::ThreadManager;
-use codex_core::config::Config;
-use codex_core::models_manager::manager::RefreshStrategy;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ReasoningEffortPreset;
+use rune_app_server_protocol::Model;
+use rune_app_server_protocol::ReasoningEffortOption;
+use rune_core::ThreadManager;
+use rune_core::config::Config;
+use rune_core::models_manager::manager::RefreshStrategy;
+use rune_protocol::openai_models::ModelPreset;
+use rune_protocol::openai_models::ReasoningEffortPreset;
 
 pub async fn supported_models(thread_manager: Arc<ThreadManager>, config: &Config) -> Vec<Model> {
     thread_manager

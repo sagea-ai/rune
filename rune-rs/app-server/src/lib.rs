@@ -1,13 +1,13 @@
 #![deny(clippy::print_stdout, clippy::print_stderr)]
 
-use codex_cloud_requirements::cloud_requirements_loader;
-use codex_common::CliConfigOverrides;
-use codex_core::AuthManager;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_core::config_loader::CloudRequirementsLoader;
-use codex_core::config_loader::ConfigLayerStackOrdering;
-use codex_core::config_loader::LoaderOverrides;
+use rune_cloud_requirements::cloud_requirements_loader;
+use rune_common::CliConfigOverrides;
+use rune_core::AuthManager;
+use rune_core::config::Config;
+use rune_core::config::ConfigBuilder;
+use rune_core::config_loader::CloudRequirementsLoader;
+use rune_core::config_loader::ConfigLayerStackOrdering;
+use rune_core::config_loader::LoaderOverrides;
 use std::collections::HashMap;
 use std::io::ErrorKind;
 use std::io::Result as IoResult;
@@ -26,16 +26,16 @@ use crate::transport::has_initialized_connections;
 use crate::transport::route_outgoing_envelope;
 use crate::transport::start_stdio_connection;
 use crate::transport::start_websocket_acceptor;
-use codex_app_server_protocol::ConfigLayerSource;
-use codex_app_server_protocol::ConfigWarningNotification;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::TextPosition as AppTextPosition;
-use codex_app_server_protocol::TextRange as AppTextRange;
-use codex_core::ExecPolicyError;
-use codex_core::check_execpolicy_for_warnings;
-use codex_core::config_loader::ConfigLoadError;
-use codex_core::config_loader::TextRange as CoreTextRange;
-use codex_feedback::CodexFeedback;
+use rune_app_server_protocol::ConfigLayerSource;
+use rune_app_server_protocol::ConfigWarningNotification;
+use rune_app_server_protocol::JSONRPCMessage;
+use rune_app_server_protocol::TextPosition as AppTextPosition;
+use rune_app_server_protocol::TextRange as AppTextRange;
+use rune_core::ExecPolicyError;
+use rune_core::check_execpolicy_for_warnings;
+use rune_core::config_loader::ConfigLoadError;
+use rune_core::config_loader::TextRange as CoreTextRange;
+use rune_feedback::RuneFeedback;
 use tokio::sync::mpsc;
 use tokio::task::JoinHandle;
 use toml::Value as TomlValue;
@@ -48,7 +48,7 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 mod bespoke_event_handling;
-mod codex_message_processor;
+mod rune_message_processor;
 mod config_api;
 mod dynamic_tools;
 mod error_code;
@@ -136,9 +136,9 @@ fn project_config_warning(config: &Config) -> Option<ConfigWarningNotification> 
         {
             continue;
         }
-        if let ConfigLayerSource::Project { dot_codex_folder } = &layer.name {
+        if let ConfigLayerSource::Project { dot_rune_folder } = &layer.name {
             disabled_folders.push((
-                dot_codex_folder.as_path().display().to_string(),
+                dot_rune_folder.as_path().display().to_string(),
                 layer
                     .disabled_reason
                     .as_ref()
@@ -172,13 +172,13 @@ fn project_config_warning(config: &Config) -> Option<ConfigWarningNotification> 
 }
 
 pub async fn run_main(
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
     cli_config_overrides: CliConfigOverrides,
     loader_overrides: LoaderOverrides,
     default_analytics_enabled: bool,
 ) -> IoResult<()> {
     run_main_with_transport(
-        codex_linux_sandbox_exe,
+        rune_linux_sandbox_exe,
         cli_config_overrides,
         loader_overrides,
         default_analytics_enabled,
@@ -188,7 +188,7 @@ pub async fn run_main(
 }
 
 pub async fn run_main_with_transport(
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
     cli_config_overrides: CliConfigOverrides,
     loader_overrides: LoaderOverrides,
     default_analytics_enabled: bool,
@@ -229,8 +229,8 @@ pub async fn run_main_with_transport(
             let effective_toml = config.config_layer_stack.effective_config();
             match effective_toml.try_into() {
                 Ok(config_toml) => {
-                    if let Err(err) = codex_core::personality_migration::maybe_migrate_personality(
-                        &config.codex_home,
+                    if let Err(err) = rune_core::personality_migration::maybe_migrate_personality(
+                        &config.rune_home,
                         &config_toml,
                     )
                     .await
@@ -244,7 +244,7 @@ pub async fn run_main_with_transport(
             }
 
             let auth_manager = AuthManager::shared(
-                config.codex_home.clone(),
+                config.rune_home.clone(),
                 false,
                 config.cli_auth_credentials_store_mode,
             );
@@ -293,12 +293,12 @@ pub async fn run_main_with_transport(
         config_warnings.push(warning);
     }
 
-    let feedback = CodexFeedback::new();
+    let feedback = RuneFeedback::new();
 
-    let otel = codex_core::otel_init::build_provider(
+    let otel = rune_core::otel_init::build_provider(
         &config,
         env!("CARGO_PKG_VERSION"),
-        Some("codex_app_server"),
+        Some("rune_app_server"),
         default_analytics_enabled,
     )
     .map_err(|e| {
@@ -342,7 +342,7 @@ pub async fn run_main_with_transport(
         let loader_overrides = loader_overrides_for_config_api;
         let mut processor = MessageProcessor::new(MessageProcessorArgs {
             outgoing: outgoing_message_sender,
-            codex_linux_sandbox_exe,
+            rune_linux_sandbox_exe,
             config: Arc::new(config),
             cli_overrides,
             loader_overrides,

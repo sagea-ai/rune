@@ -1,17 +1,17 @@
 use super::*;
 use crate::truncate;
 use crate::truncate::TruncationPolicy;
-use codex_git::GhostCommit;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::FunctionCallOutputContentItem;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::LocalShellAction;
-use codex_protocol::models::LocalShellExecAction;
-use codex_protocol::models::LocalShellStatus;
-use codex_protocol::models::ReasoningItemContent;
-use codex_protocol::models::ReasoningItemReasoningSummary;
+use rune_git::GhostCommit;
+use rune_protocol::models::BaseInstructions;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputContentItem;
+use rune_protocol::models::FunctionCallOutputPayload;
+use rune_protocol::models::LocalShellAction;
+use rune_protocol::models::LocalShellExecAction;
+use rune_protocol::models::LocalShellStatus;
+use rune_protocol::models::ReasoningItemContent;
+use rune_protocol::models::ReasoningItemReasoningSummary;
 use pretty_assertions::assert_eq;
 use regex_lite::Regex;
 
@@ -189,7 +189,7 @@ fn non_last_reasoning_tokens_ignore_entries_after_last_user() {
 }
 
 #[test]
-fn trailing_codex_generated_tokens_stop_at_first_non_generated_item() {
+fn trailing_rune_generated_tokens_stop_at_first_non_generated_item() {
     let earlier_output = function_call_output("call-earlier", "earlier output");
     let trailing_function_output = function_call_output("call-tail-1", "tail function output");
     let trailing_custom_output = custom_tool_call_output("call-tail-2", "tail custom output");
@@ -203,13 +203,13 @@ fn trailing_codex_generated_tokens_stop_at_first_non_generated_item() {
         .saturating_add(estimate_item_token_count(&trailing_custom_output));
 
     assert_eq!(
-        history.get_trailing_codex_generated_items_tokens(),
+        history.get_trailing_rune_generated_items_tokens(),
         expected_tokens
     );
 }
 
 #[test]
-fn trailing_codex_generated_tokens_exclude_function_call_tail() {
+fn trailing_rune_generated_tokens_exclude_function_call_tail() {
     let history = create_history_with_items(vec![ResponseItem::FunctionCall {
         id: None,
         name: "not-generated".to_string(),
@@ -217,11 +217,11 @@ fn trailing_codex_generated_tokens_exclude_function_call_tail() {
         call_id: "call-tail".to_string(),
     }]);
 
-    assert_eq!(history.get_trailing_codex_generated_items_tokens(), 0);
+    assert_eq!(history.get_trailing_rune_generated_items_tokens(), 0);
 }
 
 #[test]
-fn total_token_usage_includes_only_trailing_codex_generated_items() {
+fn total_token_usage_includes_only_trailing_rune_generated_items() {
     let non_trailing_output = function_call_output("call-before-message", "not trailing");
     let trailing_assistant = assistant_msg("assistant boundary");
     let trailing_output = custom_tool_call_output("tool-tail", "trailing output");

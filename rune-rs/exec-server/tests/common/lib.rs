@@ -1,7 +1,7 @@
-use codex_core::MCP_SANDBOX_STATE_METHOD;
-use codex_core::SandboxState;
-use codex_core::protocol::SandboxPolicy;
-use codex_utils_cargo_bin::find_resource;
+use rune_core::MCP_SANDBOX_STATE_METHOD;
+use rune_core::SandboxState;
+use rune_core::protocol::SandboxPolicy;
+use rune_utils_cargo_bin::find_resource;
 use rmcp::ClientHandler;
 use rmcp::ErrorData as McpError;
 use rmcp::RoleClient;
@@ -27,14 +27,14 @@ use std::sync::Mutex;
 use tokio::process::Command;
 
 pub async fn create_transport<P>(
-    codex_home: P,
+    rune_home: P,
     dotslash_cache: P,
 ) -> anyhow::Result<TokioChildProcess>
 where
     P: AsRef<Path>,
 {
-    let mcp_executable = codex_utils_cargo_bin::cargo_bin("rune-exec-mcp-server")?;
-    let execve_wrapper = codex_utils_cargo_bin::cargo_bin("rune-execve-wrapper")?;
+    let mcp_executable = rune_utils_cargo_bin::cargo_bin("rune-exec-mcp-server")?;
+    let execve_wrapper = rune_utils_cargo_bin::cargo_bin("rune-execve-wrapper")?;
 
     // `bash` is a test resource rather than a binary target, so we must use
     // `find_resource!` to locate it instead of `cargo_bin()`.
@@ -54,7 +54,7 @@ where
     let transport = TokioChildProcess::new(Command::new(&mcp_executable).configure(|cmd| {
         cmd.arg("--bash").arg(bash);
         cmd.arg("--execve").arg(&execve_wrapper);
-        cmd.env("CODEX_HOME", codex_home.as_ref());
+        cmd.env("RUNE_HOME", rune_home.as_ref());
         cmd.env("DOTSLASH_CACHE", dotslash_cache.as_ref());
 
         // Important: pipe stdio so rmcp can speak JSON-RPC over stdin/stdout
@@ -68,11 +68,11 @@ where
     Ok(transport)
 }
 
-pub async fn write_default_execpolicy<P>(policy: &str, codex_home: P) -> anyhow::Result<()>
+pub async fn write_default_execpolicy<P>(policy: &str, rune_home: P) -> anyhow::Result<()>
 where
     P: AsRef<Path>,
 {
-    let policy_dir = codex_home.as_ref().join("rules");
+    let policy_dir = rune_home.as_ref().join("rules");
     tokio::fs::create_dir_all(&policy_dir).await?;
     tokio::fs::write(policy_dir.join("default.rules"), policy).await?;
     Ok(())
@@ -80,7 +80,7 @@ where
 
 pub async fn notify_readable_sandbox<P, S>(
     sandbox_cwd: P,
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
     service: &RunningService<RoleClient, S>,
 ) -> anyhow::Result<ServerResult>
 where
@@ -89,7 +89,7 @@ where
 {
     let sandbox_state = SandboxState {
         sandbox_policy: SandboxPolicy::ReadOnly,
-        codex_linux_sandbox_exe,
+        rune_linux_sandbox_exe,
         sandbox_cwd: sandbox_cwd.as_ref().to_path_buf(),
         use_linux_sandbox_bwrap: false,
     };
@@ -98,7 +98,7 @@ where
 
 pub async fn notify_writable_sandbox_only_one_folder<P, S>(
     writable_folder: P,
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
     service: &RunningService<RoleClient, S>,
 ) -> anyhow::Result<ServerResult>
 where
@@ -117,7 +117,7 @@ where
             exclude_tmpdir_env_var: true,
             exclude_slash_tmp: true,
         },
-        codex_linux_sandbox_exe,
+        rune_linux_sandbox_exe,
         sandbox_cwd: writable_folder.as_ref().to_path_buf(),
         use_linux_sandbox_bwrap: false,
     };

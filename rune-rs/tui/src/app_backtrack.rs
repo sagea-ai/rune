@@ -33,12 +33,12 @@ use crate::history_cell::UserHistoryCell;
 use crate::pager_overlay::Overlay;
 use crate::tui;
 use crate::tui::TuiEvent;
-use codex_core::protocol::CodexErrorInfo;
-use codex_core::protocol::ErrorEvent;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_protocol::ThreadId;
-use codex_protocol::user_input::TextElement;
+use rune_core::protocol::RuneErrorInfo;
+use rune_core::protocol::ErrorEvent;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_protocol::ThreadId;
+use rune_protocol::user_input::TextElement;
 use color_eyre::eyre::Result;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
@@ -455,7 +455,7 @@ impl App {
         match event {
             EventMsg::ThreadRolledBack(_) => self.finish_pending_backtrack(),
             EventMsg::Error(ErrorEvent {
-                codex_error_info: Some(CodexErrorInfo::ThreadRollbackFailed),
+                rune_error_info: Some(RuneErrorInfo::ThreadRollbackFailed),
                 ..
             }) => {
                 // Core rejected the rollback; clear the guard so the user can retry.

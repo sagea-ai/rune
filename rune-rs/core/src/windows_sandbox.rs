@@ -2,7 +2,7 @@ use crate::config::Config;
 use crate::features::Feature;
 use crate::features::Features;
 use crate::protocol::SandboxPolicy;
-use codex_protocol::config_types::WindowsSandboxLevel;
+use rune_protocol::config_types::WindowsSandboxLevel;
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -43,20 +43,20 @@ pub fn windows_sandbox_level_from_features(features: &Features) -> WindowsSandbo
 }
 
 #[cfg(target_os = "windows")]
-pub fn sandbox_setup_is_complete(codex_home: &Path) -> bool {
-    codex_windows_sandbox::sandbox_setup_is_complete(codex_home)
+pub fn sandbox_setup_is_complete(rune_home: &Path) -> bool {
+    rune_windows_sandbox::sandbox_setup_is_complete(rune_home)
 }
 
 #[cfg(not(target_os = "windows"))]
-pub fn sandbox_setup_is_complete(_codex_home: &Path) -> bool {
+pub fn sandbox_setup_is_complete(_rune_home: &Path) -> bool {
     false
 }
 
 #[cfg(target_os = "windows")]
 pub fn elevated_setup_failure_details(err: &anyhow::Error) -> Option<(String, String)> {
-    let failure = codex_windows_sandbox::extract_setup_failure(err)?;
+    let failure = rune_windows_sandbox::extract_setup_failure(err)?;
     let code = failure.code.as_str().to_string();
-    let message = codex_windows_sandbox::sanitize_setup_metric_tag_value(&failure.message);
+    let message = rune_windows_sandbox::sanitize_setup_metric_tag_value(&failure.message);
     Some((code, message))
 }
 
@@ -67,15 +67,15 @@ pub fn elevated_setup_failure_details(_err: &anyhow::Error) -> Option<(String, S
 
 #[cfg(target_os = "windows")]
 pub fn elevated_setup_failure_metric_name(err: &anyhow::Error) -> &'static str {
-    if codex_windows_sandbox::extract_setup_failure(err).is_some_and(|failure| {
+    if rune_windows_sandbox::extract_setup_failure(err).is_some_and(|failure| {
         matches!(
             failure.code,
-            codex_windows_sandbox::SetupErrorCode::OrchestratorHelperLaunchCanceled
+            rune_windows_sandbox::SetupErrorCode::OrchestratorHelperLaunchCanceled
         )
     }) {
-        "codex.windows_sandbox.elevated_setup_canceled"
+        "rune.windows_sandbox.elevated_setup_canceled"
     } else {
-        "codex.windows_sandbox.elevated_setup_failure"
+        "rune.windows_sandbox.elevated_setup_failure"
     }
 }
 
@@ -90,14 +90,14 @@ pub fn run_elevated_setup(
     policy_cwd: &Path,
     command_cwd: &Path,
     env_map: &HashMap<String, String>,
-    codex_home: &Path,
+    rune_home: &Path,
 ) -> anyhow::Result<()> {
-    codex_windows_sandbox::run_elevated_setup(
+    rune_windows_sandbox::run_elevated_setup(
         policy,
         policy_cwd,
         command_cwd,
         env_map,
-        codex_home,
+        rune_home,
         None,
         None,
     )
@@ -109,7 +109,7 @@ pub fn run_elevated_setup(
     _policy_cwd: &Path,
     _command_cwd: &Path,
     _env_map: &HashMap<String, String>,
-    _codex_home: &Path,
+    _rune_home: &Path,
 ) -> anyhow::Result<()> {
     anyhow::bail!("elevated Windows sandbox setup is only supported on Windows")
 }

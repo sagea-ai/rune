@@ -3,7 +3,7 @@
 //! This module mirrors the semantics used by the macOS Seatbelt sandbox:
 //! - the filesystem is read-only by default,
 //! - explicit writable roots are layered on top, and
-//! - sensitive subpaths such as `.git` and `.codex` remain read-only even when
+//! - sensitive subpaths such as `.git` and `.rune` remain read-only even when
 //!   their parent root is writable.
 //!
 //! The overall Linux sandbox is composed of:
@@ -13,10 +13,10 @@ use std::collections::BTreeSet;
 use std::path::Path;
 use std::path::PathBuf;
 
-use codex_core::error::CodexErr;
-use codex_core::error::Result;
-use codex_core::protocol::SandboxPolicy;
-use codex_core::protocol::WritableRoot;
+use rune_core::error::RuneErr;
+use rune_core::error::Result;
+use rune_core::protocol::SandboxPolicy;
+use rune_core::protocol::WritableRoot;
 
 /// Options that control how bubblewrap is invoked.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -161,7 +161,7 @@ fn ensure_mount_targets_exist(writable_roots: &[WritableRoot]) -> Result<()> {
     for writable_root in writable_roots {
         let root = writable_root.root.as_path();
         if !root.exists() {
-            return Err(CodexErr::UnsupportedOperation(format!(
+            return Err(RuneErr::UnsupportedOperation(format!(
                 "Sandbox expected writable root {root}, but it does not exist.",
                 root = root.display()
             )));
@@ -184,7 +184,7 @@ fn is_within_allowed_write_paths(path: &Path, allowed_write_paths: &[PathBuf]) -
 /// Find the first symlink along `target_path` that is also under a writable root.
 ///
 /// This blocks symlink replacement attacks where a protected path is a symlink
-/// inside a writable root (e.g., `.codex -> ./decoy`). In that case we mount
+/// inside a writable root (e.g., `.rune -> ./decoy`). In that case we mount
 /// `/dev/null` on the symlink itself to prevent rewiring it.
 fn find_symlink_in_path(target_path: &Path, allowed_write_paths: &[PathBuf]) -> Option<PathBuf> {
     let mut current = PathBuf::new();

@@ -1,6 +1,6 @@
 mod archive_thread;
 mod auth;
-mod codex_message_processor_flow;
+mod rune_message_processor_flow;
 mod config;
 mod create_thread;
 mod fork_thread;

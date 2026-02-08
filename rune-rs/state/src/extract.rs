@@ -1,11 +1,11 @@
 use crate::model::ThreadMetadata;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::TurnContextItem;
-use codex_protocol::protocol::USER_MESSAGE_BEGIN;
-use codex_protocol::protocol::UserMessageEvent;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::protocol::EventMsg;
+use rune_protocol::protocol::RolloutItem;
+use rune_protocol::protocol::SessionMetaLine;
+use rune_protocol::protocol::TurnContextItem;
+use rune_protocol::protocol::USER_MESSAGE_BEGIN;
+use rune_protocol::protocol::UserMessageEvent;
 use serde::Serialize;
 use serde_json::Value;
 
@@ -122,13 +122,13 @@ mod tests {
     use crate::model::ThreadMetadata;
     use chrono::DateTime;
     use chrono::Utc;
-    use codex_protocol::ThreadId;
-    use codex_protocol::models::ContentItem;
-    use codex_protocol::models::ResponseItem;
-    use codex_protocol::protocol::EventMsg;
-    use codex_protocol::protocol::RolloutItem;
-    use codex_protocol::protocol::USER_MESSAGE_BEGIN;
-    use codex_protocol::protocol::UserMessageEvent;
+    use rune_protocol::ThreadId;
+    use rune_protocol::models::ContentItem;
+    use rune_protocol::models::ResponseItem;
+    use rune_protocol::protocol::EventMsg;
+    use rune_protocol::protocol::RolloutItem;
+    use rune_protocol::protocol::USER_MESSAGE_BEGIN;
+    use rune_protocol::protocol::UserMessageEvent;
 
     use pretty_assertions::assert_eq;
     use std::path::PathBuf;

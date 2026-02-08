@@ -1,4 +1,4 @@
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use include_dir::Dir;
 use std::collections::hash_map::DefaultHasher;
 use std::fs;
@@ -19,25 +19,25 @@ const SYSTEM_SKILLS_MARKER_SALT: &str = "v1";
 
 /// Returns the on-disk cache location for embedded system skills.
 ///
-/// This is typically located at `CODEX_HOME/skills/.system`.
-pub(crate) fn system_cache_root_dir(codex_home: &Path) -> PathBuf {
-    AbsolutePathBuf::try_from(codex_home)
-        .and_then(|codex_home| system_cache_root_dir_abs(&codex_home))
+/// This is typically located at `RUNE_HOME/skills/.system`.
+pub(crate) fn system_cache_root_dir(rune_home: &Path) -> PathBuf {
+    AbsolutePathBuf::try_from(rune_home)
+        .and_then(|rune_home| system_cache_root_dir_abs(&rune_home))
         .map(AbsolutePathBuf::into_path_buf)
         .unwrap_or_else(|_| {
-            codex_home
+            rune_home
                 .join(SKILLS_DIR_NAME)
                 .join(SYSTEM_SKILLS_DIR_NAME)
         })
 }
 
-fn system_cache_root_dir_abs(codex_home: &AbsolutePathBuf) -> std::io::Result<AbsolutePathBuf> {
-    codex_home
+fn system_cache_root_dir_abs(rune_home: &AbsolutePathBuf) -> std::io::Result<AbsolutePathBuf> {
+    rune_home
         .join(SKILLS_DIR_NAME)?
         .join(SYSTEM_SKILLS_DIR_NAME)
 }
 
-/// Installs embedded system skills into `CODEX_HOME/skills/.system`.
+/// Installs embedded system skills into `RUNE_HOME/skills/.system`.
 ///
 /// Clears any existing system skills directory first and then writes the embedded
 /// skills directory into place.
@@ -45,16 +45,16 @@ fn system_cache_root_dir_abs(codex_home: &AbsolutePathBuf) -> std::io::Result<Ab
 /// To avoid doing unnecessary work on every startup, a marker file is written
 /// with a fingerprint of the embedded directory. When the marker matches, the
 /// install is skipped.
-pub(crate) fn install_system_skills(codex_home: &Path) -> Result<(), SystemSkillsError> {
-    let codex_home = AbsolutePathBuf::try_from(codex_home)
-        .map_err(|source| SystemSkillsError::io("normalize codex home dir", source))?;
-    let skills_root_dir = codex_home
+pub(crate) fn install_system_skills(rune_home: &Path) -> Result<(), SystemSkillsError> {
+    let rune_home = AbsolutePathBuf::try_from(rune_home)
+        .map_err(|source| SystemSkillsError::io("normalize rune home dir", source))?;
+    let skills_root_dir = rune_home
         .join(SKILLS_DIR_NAME)
         .map_err(|source| SystemSkillsError::io("resolve skills root dir", source))?;
     fs::create_dir_all(skills_root_dir.as_path())
         .map_err(|source| SystemSkillsError::io("create skills root dir", source))?;
 
-    let dest_system = system_cache_root_dir_abs(&codex_home)
+    let dest_system = system_cache_root_dir_abs(&rune_home)
         .map_err(|source| SystemSkillsError::io("resolve system skills cache root dir", source))?;
 
     let marker_path = dest_system

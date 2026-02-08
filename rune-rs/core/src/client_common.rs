@@ -1,10 +1,10 @@
 use crate::client_common::tools::ToolSpec;
 use crate::config::types::Personality;
 use crate::error::Result;
-pub use codex_api::common::ResponseEvent;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::ResponseItem;
+pub use rune_api::common::ResponseEvent;
+use rune_protocol::models::BaseInstructions;
+use rune_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::ResponseItem;
 use futures::Stream;
 use serde::Deserialize;
 use serde_json::Value;
@@ -236,10 +236,10 @@ impl Stream for ResponseStream {
 
 #[cfg(test)]
 mod tests {
-    use codex_api::ResponsesApiRequest;
-    use codex_api::common::OpenAiVerbosity;
-    use codex_api::common::TextControls;
-    use codex_api::create_text_param_for_request;
+    use rune_api::ResponsesApiRequest;
+    use rune_api::common::OpenAiVerbosity;
+    use rune_api::common::TextControls;
+    use rune_api::create_text_param_for_request;
     use pretty_assertions::assert_eq;
 
     use super::*;
@@ -311,7 +311,7 @@ mod tests {
 
         assert_eq!(
             format.get("name"),
-            Some(&serde_json::Value::String("codex_output_schema".into()))
+            Some(&serde_json::Value::String("rune_output_schema".into()))
         );
         assert_eq!(
             format.get("type"),

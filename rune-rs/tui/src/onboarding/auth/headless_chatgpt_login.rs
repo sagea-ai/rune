@@ -1,8 +1,8 @@
-use codex_core::AuthManager;
-use codex_login::ServerOptions;
-use codex_login::complete_device_code_login;
-use codex_login::request_device_code;
-use codex_login::run_login_server;
+use rune_core::AuthManager;
+use rune_login::ServerOptions;
+use rune_login::complete_device_code_login;
+use rune_login::request_device_code;
+use rune_login::run_login_server;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
 use ratatui::prelude::Widget;
@@ -249,7 +249,7 @@ fn set_device_code_success_message_for_active_attempt(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_core::auth::AuthCredentialsStoreMode;
+    use rune_core::auth::AuthCredentialsStoreMode;
     use pretty_assertions::assert_eq;
     use tempfile::TempDir;
 

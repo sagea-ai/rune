@@ -1,11 +1,11 @@
 #![allow(clippy::unwrap_used)]
 
-use codex_core::features::Feature;
-use codex_protocol::config_types::WebSearchMode;
+use rune_core::features::Feature;
+use rune_protocol::config_types::WebSearchMode;
 use core_test_support::responses;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 
 #[allow(clippy::expect_used)]
 fn tool_identifiers(body: &serde_json::Value) -> Vec<String> {
@@ -32,7 +32,7 @@ async fn collect_tool_identifiers_for_model(model: &str) -> Vec<String> {
     ]);
     let resp_mock = responses::mount_sse_once(&server, sse).await;
 
-    let mut builder = test_codex()
+    let mut builder = test_rune()
         .with_model(model)
         // Keep tool expectations stable when the default web_search mode changes.
         .with_config(|config| {
@@ -45,7 +45,7 @@ async fn collect_tool_identifiers_for_model(model: &str) -> Vec<String> {
     let test = builder
         .build(&server)
         .await
-        .expect("create test Codex conversation");
+        .expect("create test Rune conversation");
 
     test.submit_turn("hello tools").await.expect("submit turn");
 
@@ -68,9 +68,9 @@ async fn model_selects_expected_tools() {
     skip_if_no_network!();
     use pretty_assertions::assert_eq;
 
-    let codex_tools = collect_tool_identifiers_for_model("rune-mini-latest").await;
+    let rune_tools = collect_tool_identifiers_for_model("rune-mini-latest").await;
     assert_eq!(
-        codex_tools,
+        rune_tools,
         expected_default_tools(
             "local_shell",
             &[
@@ -86,9 +86,9 @@ async fn model_selects_expected_tools() {
         "rune-mini-latest should expose the local shell tool",
     );
 
-    let gpt5_codex_tools = collect_tool_identifiers_for_model("gpt-5-codex").await;
+    let gpt5_rune_tools = collect_tool_identifiers_for_model("gpt-5-rune").await;
     assert_eq!(
-        gpt5_codex_tools,
+        gpt5_rune_tools,
         expected_default_tools(
             "shell_command",
             &[
@@ -102,12 +102,12 @@ async fn model_selects_expected_tools() {
                 "view_image",
             ],
         ),
-        "gpt-5-codex should expose the apply_patch tool",
+        "gpt-5-rune should expose the apply_patch tool",
     );
 
-    let gpt51_codex_tools = collect_tool_identifiers_for_model("gpt-5.1-codex").await;
+    let gpt51_rune_tools = collect_tool_identifiers_for_model("gpt-5.1-rune").await;
     assert_eq!(
-        gpt51_codex_tools,
+        gpt51_rune_tools,
         expected_default_tools(
             "shell_command",
             &[
@@ -121,7 +121,7 @@ async fn model_selects_expected_tools() {
                 "view_image",
             ],
         ),
-        "gpt-5.1-codex should expose the apply_patch tool",
+        "gpt-5.1-rune should expose the apply_patch tool",
     );
 
     let gpt5_tools = collect_tool_identifiers_for_model("gpt-5").await;

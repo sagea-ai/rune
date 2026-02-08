@@ -2,50 +2,50 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::protocol::common::AuthMode;
-use codex_experimental_api_macros::ExperimentalApi;
-use codex_protocol::account::PlanType;
-use codex_protocol::approvals::ExecPolicyAmendment as CoreExecPolicyAmendment;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::CollaborationModeMask;
-use codex_protocol::config_types::ForcedLoginMethod;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::SandboxMode as CoreSandboxMode;
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::items::AgentMessageContent as CoreAgentMessageContent;
-use codex_protocol::items::TurnItem as CoreTurnItem;
-use codex_protocol::mcp::Resource as McpResource;
-use codex_protocol::mcp::ResourceTemplate as McpResourceTemplate;
-use codex_protocol::mcp::Tool as McpTool;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::openai_models::default_input_modalities;
-use codex_protocol::parse_command::ParsedCommand as CoreParsedCommand;
-use codex_protocol::plan_tool::PlanItemArg as CorePlanItemArg;
-use codex_protocol::plan_tool::StepStatus as CorePlanStepStatus;
-use codex_protocol::protocol::AgentStatus as CoreAgentStatus;
-use codex_protocol::protocol::AskForApproval as CoreAskForApproval;
-use codex_protocol::protocol::CodexErrorInfo as CoreCodexErrorInfo;
-use codex_protocol::protocol::CreditsSnapshot as CoreCreditsSnapshot;
-use codex_protocol::protocol::NetworkAccess as CoreNetworkAccess;
-use codex_protocol::protocol::RateLimitSnapshot as CoreRateLimitSnapshot;
-use codex_protocol::protocol::RateLimitWindow as CoreRateLimitWindow;
-use codex_protocol::protocol::SessionSource as CoreSessionSource;
-use codex_protocol::protocol::SkillDependencies as CoreSkillDependencies;
-use codex_protocol::protocol::SkillErrorInfo as CoreSkillErrorInfo;
-use codex_protocol::protocol::SkillInterface as CoreSkillInterface;
-use codex_protocol::protocol::SkillMetadata as CoreSkillMetadata;
-use codex_protocol::protocol::SkillScope as CoreSkillScope;
-use codex_protocol::protocol::SkillToolDependency as CoreSkillToolDependency;
-use codex_protocol::protocol::SubAgentSource as CoreSubAgentSource;
-use codex_protocol::protocol::TokenUsage as CoreTokenUsage;
-use codex_protocol::protocol::TokenUsageInfo as CoreTokenUsageInfo;
-use codex_protocol::user_input::ByteRange as CoreByteRange;
-use codex_protocol::user_input::TextElement as CoreTextElement;
-use codex_protocol::user_input::UserInput as CoreUserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_experimental_api_macros::ExperimentalApi;
+use rune_protocol::account::PlanType;
+use rune_protocol::approvals::ExecPolicyAmendment as CoreExecPolicyAmendment;
+use rune_protocol::config_types::CollaborationMode;
+use rune_protocol::config_types::CollaborationModeMask;
+use rune_protocol::config_types::ForcedLoginMethod;
+use rune_protocol::config_types::Personality;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::config_types::SandboxMode as CoreSandboxMode;
+use rune_protocol::config_types::Verbosity;
+use rune_protocol::config_types::WebSearchMode;
+use rune_protocol::items::AgentMessageContent as CoreAgentMessageContent;
+use rune_protocol::items::TurnItem as CoreTurnItem;
+use rune_protocol::mcp::Resource as McpResource;
+use rune_protocol::mcp::ResourceTemplate as McpResourceTemplate;
+use rune_protocol::mcp::Tool as McpTool;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::openai_models::InputModality;
+use rune_protocol::openai_models::ReasoningEffort;
+use rune_protocol::openai_models::default_input_modalities;
+use rune_protocol::parse_command::ParsedCommand as CoreParsedCommand;
+use rune_protocol::plan_tool::PlanItemArg as CorePlanItemArg;
+use rune_protocol::plan_tool::StepStatus as CorePlanStepStatus;
+use rune_protocol::protocol::AgentStatus as CoreAgentStatus;
+use rune_protocol::protocol::AskForApproval as CoreAskForApproval;
+use rune_protocol::protocol::RuneErrorInfo as CoreRuneErrorInfo;
+use rune_protocol::protocol::CreditsSnapshot as CoreCreditsSnapshot;
+use rune_protocol::protocol::NetworkAccess as CoreNetworkAccess;
+use rune_protocol::protocol::RateLimitSnapshot as CoreRateLimitSnapshot;
+use rune_protocol::protocol::RateLimitWindow as CoreRateLimitWindow;
+use rune_protocol::protocol::SessionSource as CoreSessionSource;
+use rune_protocol::protocol::SkillDependencies as CoreSkillDependencies;
+use rune_protocol::protocol::SkillErrorInfo as CoreSkillErrorInfo;
+use rune_protocol::protocol::SkillInterface as CoreSkillInterface;
+use rune_protocol::protocol::SkillMetadata as CoreSkillMetadata;
+use rune_protocol::protocol::SkillScope as CoreSkillScope;
+use rune_protocol::protocol::SkillToolDependency as CoreSkillToolDependency;
+use rune_protocol::protocol::SubAgentSource as CoreSubAgentSource;
+use rune_protocol::protocol::TokenUsage as CoreTokenUsage;
+use rune_protocol::protocol::TokenUsageInfo as CoreTokenUsageInfo;
+use rune_protocol::user_input::ByteRange as CoreByteRange;
+use rune_protocol::user_input::TextElement as CoreTextElement;
+use rune_protocol::user_input::UserInput as CoreUserInput;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -78,14 +78,14 @@ macro_rules! v2_enum_from_core {
     };
 }
 
-/// This translation layer make sure that we expose codex error code in camel case.
+/// This translation layer make sure that we expose rune error code in camel case.
 ///
 /// When an upstream HTTP status is available (for example, from the Responses API or a provider),
-/// it is forwarded in `httpStatusCode` on the relevant `codexErrorInfo` variant.
+/// it is forwarded in `httpStatusCode` on the relevant `runeErrorInfo` variant.
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, JsonSchema, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
-pub enum CodexErrorInfo {
+pub enum RuneErrorInfo {
     ContextWindowExceeded,
     UsageLimitExceeded,
     ModelCap {
@@ -123,36 +123,36 @@ pub enum CodexErrorInfo {
     Other,
 }
 
-impl From<CoreCodexErrorInfo> for CodexErrorInfo {
-    fn from(value: CoreCodexErrorInfo) -> Self {
+impl From<CoreRuneErrorInfo> for RuneErrorInfo {
+    fn from(value: CoreRuneErrorInfo) -> Self {
         match value {
-            CoreCodexErrorInfo::ContextWindowExceeded => CodexErrorInfo::ContextWindowExceeded,
-            CoreCodexErrorInfo::UsageLimitExceeded => CodexErrorInfo::UsageLimitExceeded,
-            CoreCodexErrorInfo::ModelCap {
+            CoreRuneErrorInfo::ContextWindowExceeded => RuneErrorInfo::ContextWindowExceeded,
+            CoreRuneErrorInfo::UsageLimitExceeded => RuneErrorInfo::UsageLimitExceeded,
+            CoreRuneErrorInfo::ModelCap {
                 model,
                 reset_after_seconds,
-            } => CodexErrorInfo::ModelCap {
+            } => RuneErrorInfo::ModelCap {
                 model,
                 reset_after_seconds,
             },
-            CoreCodexErrorInfo::HttpConnectionFailed { http_status_code } => {
-                CodexErrorInfo::HttpConnectionFailed { http_status_code }
+            CoreRuneErrorInfo::HttpConnectionFailed { http_status_code } => {
+                RuneErrorInfo::HttpConnectionFailed { http_status_code }
             }
-            CoreCodexErrorInfo::ResponseStreamConnectionFailed { http_status_code } => {
-                CodexErrorInfo::ResponseStreamConnectionFailed { http_status_code }
+            CoreRuneErrorInfo::ResponseStreamConnectionFailed { http_status_code } => {
+                RuneErrorInfo::ResponseStreamConnectionFailed { http_status_code }
             }
-            CoreCodexErrorInfo::InternalServerError => CodexErrorInfo::InternalServerError,
-            CoreCodexErrorInfo::Unauthorized => CodexErrorInfo::Unauthorized,
-            CoreCodexErrorInfo::BadRequest => CodexErrorInfo::BadRequest,
-            CoreCodexErrorInfo::ThreadRollbackFailed => CodexErrorInfo::ThreadRollbackFailed,
-            CoreCodexErrorInfo::SandboxError => CodexErrorInfo::SandboxError,
-            CoreCodexErrorInfo::ResponseStreamDisconnected { http_status_code } => {
-                CodexErrorInfo::ResponseStreamDisconnected { http_status_code }
+            CoreRuneErrorInfo::InternalServerError => RuneErrorInfo::InternalServerError,
+            CoreRuneErrorInfo::Unauthorized => RuneErrorInfo::Unauthorized,
+            CoreRuneErrorInfo::BadRequest => RuneErrorInfo::BadRequest,
+            CoreRuneErrorInfo::ThreadRollbackFailed => RuneErrorInfo::ThreadRollbackFailed,
+            CoreRuneErrorInfo::SandboxError => RuneErrorInfo::SandboxError,
+            CoreRuneErrorInfo::ResponseStreamDisconnected { http_status_code } => {
+                RuneErrorInfo::ResponseStreamDisconnected { http_status_code }
             }
-            CoreCodexErrorInfo::ResponseTooManyFailedAttempts { http_status_code } => {
-                CodexErrorInfo::ResponseTooManyFailedAttempts { http_status_code }
+            CoreRuneErrorInfo::ResponseTooManyFailedAttempts { http_status_code } => {
+                RuneErrorInfo::ResponseTooManyFailedAttempts { http_status_code }
             }
-            CoreCodexErrorInfo::Other => CodexErrorInfo::Other,
+            CoreRuneErrorInfo::Other => RuneErrorInfo::Other,
         }
     }
 }
@@ -221,13 +221,13 @@ impl From<CoreSandboxMode> for SandboxMode {
 }
 
 v2_enum_from_core!(
-    pub enum ReviewDelivery from codex_protocol::protocol::ReviewDelivery {
+    pub enum ReviewDelivery from rune_protocol::protocol::ReviewDelivery {
         Inline, Detached
     }
 );
 
 v2_enum_from_core!(
-    pub enum McpAuthStatus from codex_protocol::protocol::McpAuthStatus {
+    pub enum McpAuthStatus from rune_protocol::protocol::McpAuthStatus {
         Unsupported,
         NotLoggedIn,
         BearerToken,
@@ -257,7 +257,7 @@ pub enum ConfigLayerSource {
         file: AbsolutePathBuf,
     },
 
-    /// User config layer from $CODEX_HOME/config.toml. This layer is special
+    /// User config layer from $RUNE_HOME/config.toml. This layer is special
     /// in that it is expected to be:
     /// - writable by the user
     /// - generally outside the workspace directory
@@ -269,12 +269,12 @@ pub enum ConfigLayerSource {
         file: AbsolutePathBuf,
     },
 
-    /// Path to a .codex/ folder within a project. There could be multiple of
+    /// Path to a .rune/ folder within a project. There could be multiple of
     /// these between `cwd` and the project/repo root.
     #[serde(rename_all = "camelCase")]
     #[ts(rename_all = "camelCase")]
     Project {
-        dot_codex_folder: AbsolutePathBuf,
+        dot_rune_folder: AbsolutePathBuf,
     },
 
     /// Session-layer overrides supplied via `-c`/`--config`.
@@ -675,14 +675,14 @@ pub enum SandboxPolicy {
 }
 
 impl SandboxPolicy {
-    pub fn to_core(&self) -> codex_protocol::protocol::SandboxPolicy {
+    pub fn to_core(&self) -> rune_protocol::protocol::SandboxPolicy {
         match self {
             SandboxPolicy::DangerFullAccess => {
-                codex_protocol::protocol::SandboxPolicy::DangerFullAccess
+                rune_protocol::protocol::SandboxPolicy::DangerFullAccess
             }
-            SandboxPolicy::ReadOnly => codex_protocol::protocol::SandboxPolicy::ReadOnly,
+            SandboxPolicy::ReadOnly => rune_protocol::protocol::SandboxPolicy::ReadOnly,
             SandboxPolicy::ExternalSandbox { network_access } => {
-                codex_protocol::protocol::SandboxPolicy::ExternalSandbox {
+                rune_protocol::protocol::SandboxPolicy::ExternalSandbox {
                     network_access: match network_access {
                         NetworkAccess::Restricted => CoreNetworkAccess::Restricted,
                         NetworkAccess::Enabled => CoreNetworkAccess::Enabled,
@@ -694,7 +694,7 @@ impl SandboxPolicy {
                 network_access,
                 exclude_tmpdir_env_var,
                 exclude_slash_tmp,
-            } => codex_protocol::protocol::SandboxPolicy::WorkspaceWrite {
+            } => rune_protocol::protocol::SandboxPolicy::WorkspaceWrite {
                 writable_roots: writable_roots.clone(),
                 network_access: *network_access,
                 exclude_tmpdir_env_var: *exclude_tmpdir_env_var,
@@ -704,14 +704,14 @@ impl SandboxPolicy {
     }
 }
 
-impl From<codex_protocol::protocol::SandboxPolicy> for SandboxPolicy {
-    fn from(value: codex_protocol::protocol::SandboxPolicy) -> Self {
+impl From<rune_protocol::protocol::SandboxPolicy> for SandboxPolicy {
+    fn from(value: rune_protocol::protocol::SandboxPolicy) -> Self {
         match value {
-            codex_protocol::protocol::SandboxPolicy::DangerFullAccess => {
+            rune_protocol::protocol::SandboxPolicy::DangerFullAccess => {
                 SandboxPolicy::DangerFullAccess
             }
-            codex_protocol::protocol::SandboxPolicy::ReadOnly => SandboxPolicy::ReadOnly,
-            codex_protocol::protocol::SandboxPolicy::ExternalSandbox { network_access } => {
+            rune_protocol::protocol::SandboxPolicy::ReadOnly => SandboxPolicy::ReadOnly,
+            rune_protocol::protocol::SandboxPolicy::ExternalSandbox { network_access } => {
                 SandboxPolicy::ExternalSandbox {
                     network_access: match network_access {
                         CoreNetworkAccess::Restricted => NetworkAccess::Restricted,
@@ -719,7 +719,7 @@ impl From<codex_protocol::protocol::SandboxPolicy> for SandboxPolicy {
                     },
                 }
             }
-            codex_protocol::protocol::SandboxPolicy::WorkspaceWrite {
+            rune_protocol::protocol::SandboxPolicy::WorkspaceWrite {
                 writable_roots,
                 network_access,
                 exclude_tmpdir_env_var,
@@ -903,7 +903,7 @@ pub enum LoginAccountParams {
     #[ts(rename = "chatgpt")]
     Chatgpt,
     /// [UNSTABLE] FOR OPENAI INTERNAL USE ONLY - DO NOT USE.
-    /// The access token must contain the same scopes that Codex-managed ChatGPT auth tokens have.
+    /// The access token must contain the same scopes that Rune-managed ChatGPT auth tokens have.
     #[experimental("account/login/start.chatgptAuthTokens")]
     #[serde(rename = "chatgptAuthTokens")]
     #[ts(rename = "chatgptAuthTokens")]
@@ -977,7 +977,7 @@ pub struct LogoutAccountResponse {}
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
 pub enum ChatgptAuthTokensRefreshReason {
-    /// Codex attempted a backend request and received `401 Unauthorized`.
+    /// Rune attempted a backend request and received `401 Unauthorized`.
     Unauthorized,
 }
 
@@ -986,7 +986,7 @@ pub enum ChatgptAuthTokensRefreshReason {
 #[ts(export_to = "v2/")]
 pub struct ChatgptAuthTokensRefreshParams {
     pub reason: ChatgptAuthTokensRefreshReason,
-    /// Workspace/account identifier that Codex was previously using.
+    /// Workspace/account identifier that Rune was previously using.
     ///
     /// Clients that manage multiple accounts/workspaces can use this as a hint
     /// to refresh the token for the correct workspace.
@@ -1336,7 +1336,7 @@ pub struct ThreadStartParams {
     #[ts(optional = nullable)]
     pub mock_experimental_field: Option<String>,
     /// If true, opt into emitting raw Responses API items on the event stream.
-    /// This is for internal use only (e.g. Codex Cloud).
+    /// This is for internal use only (e.g. Rune Cloud).
     #[experimental("thread/start.experimentalRawEvents")]
     #[serde(default)]
     pub experimental_raw_events: bool,
@@ -1389,7 +1389,7 @@ pub struct ThreadStartResponse {
 pub struct ThreadResumeParams {
     pub thread_id: String,
 
-    /// [UNSTABLE] FOR CODEX CLOUD - DO NOT USE.
+    /// [UNSTABLE] FOR RUNE CLOUD - DO NOT USE.
     /// If specified, the thread will be resumed with the provided history
     /// instead of loaded from disk.
     #[experimental("thread/resume.history")]
@@ -1930,7 +1930,7 @@ pub struct Thread {
     pub cwd: PathBuf,
     /// Version of the CLI that created the thread.
     pub cli_version: String,
-    /// Origin of the thread (CLI, VSCode, codex exec, codex app-server, etc.).
+    /// Origin of the thread (CLI, VSCode, rune exec, rune app-server, etc.).
     pub source: SessionSource,
     /// Optional Git metadata captured when the thread was created.
     pub git_info: Option<GitInfo>,
@@ -2026,7 +2026,7 @@ pub struct Turn {
 #[error("{message}")]
 pub struct TurnError {
     pub message: String,
-    pub codex_error_info: Option<CodexErrorInfo>,
+    pub rune_error_info: Option<RuneErrorInfo>,
     #[serde(default)]
     pub additional_details: Option<String>,
 }
@@ -2450,19 +2450,19 @@ pub enum WebSearchAction {
     Other,
 }
 
-impl From<codex_protocol::models::WebSearchAction> for WebSearchAction {
-    fn from(value: codex_protocol::models::WebSearchAction) -> Self {
+impl From<rune_protocol::models::WebSearchAction> for WebSearchAction {
+    fn from(value: rune_protocol::models::WebSearchAction) -> Self {
         match value {
-            codex_protocol::models::WebSearchAction::Search { query, queries } => {
+            rune_protocol::models::WebSearchAction::Search { query, queries } => {
                 WebSearchAction::Search { query, queries }
             }
-            codex_protocol::models::WebSearchAction::OpenPage { url } => {
+            rune_protocol::models::WebSearchAction::OpenPage { url } => {
                 WebSearchAction::OpenPage { url }
             }
-            codex_protocol::models::WebSearchAction::FindInPage { url, pattern } => {
+            rune_protocol::models::WebSearchAction::FindInPage { url, pattern } => {
                 WebSearchAction::FindInPage { url, pattern }
             }
-            codex_protocol::models::WebSearchAction::Other => WebSearchAction::Other,
+            rune_protocol::models::WebSearchAction::Other => WebSearchAction::Other,
         }
     }
 }
@@ -2987,7 +2987,7 @@ pub enum DynamicToolCallOutputContentItem {
 }
 
 impl From<DynamicToolCallOutputContentItem>
-    for codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem
+    for rune_protocol::dynamic_tools::DynamicToolCallOutputContentItem
 {
     fn from(item: DynamicToolCallOutputContentItem) -> Self {
         match item {
@@ -3178,15 +3178,15 @@ pub struct ConfigWarningNotification {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::items::AgentMessageContent;
-    use codex_protocol::items::AgentMessageItem;
-    use codex_protocol::items::ReasoningItem;
-    use codex_protocol::items::TurnItem;
-    use codex_protocol::items::UserMessageItem;
-    use codex_protocol::items::WebSearchItem;
-    use codex_protocol::models::WebSearchAction as CoreWebSearchAction;
-    use codex_protocol::protocol::NetworkAccess as CoreNetworkAccess;
-    use codex_protocol::user_input::UserInput as CoreUserInput;
+    use rune_protocol::items::AgentMessageContent;
+    use rune_protocol::items::AgentMessageItem;
+    use rune_protocol::items::ReasoningItem;
+    use rune_protocol::items::TurnItem;
+    use rune_protocol::items::UserMessageItem;
+    use rune_protocol::items::WebSearchItem;
+    use rune_protocol::models::WebSearchAction as CoreWebSearchAction;
+    use rune_protocol::protocol::NetworkAccess as CoreNetworkAccess;
+    use rune_protocol::user_input::UserInput as CoreUserInput;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use std::path::PathBuf;
@@ -3200,7 +3200,7 @@ mod tests {
         let core_policy = v2_policy.to_core();
         assert_eq!(
             core_policy,
-            codex_protocol::protocol::SandboxPolicy::ExternalSandbox {
+            rune_protocol::protocol::SandboxPolicy::ExternalSandbox {
                 network_access: CoreNetworkAccess::Enabled,
             }
         );
@@ -3226,7 +3226,7 @@ mod tests {
                 },
                 CoreUserInput::Skill {
                     name: "skill-creator".to_string(),
-                    path: PathBuf::from("/repo/.codex/skills/skill-creator/SKILL.md"),
+                    path: PathBuf::from("/repo/.rune/skills/skill-creator/SKILL.md"),
                 },
                 CoreUserInput::Mention {
                     name: "Demo App".to_string(),
@@ -3252,7 +3252,7 @@ mod tests {
                     },
                     UserInput::Skill {
                         name: "skill-creator".to_string(),
-                        path: PathBuf::from("/repo/.codex/skills/skill-creator/SKILL.md"),
+                        path: PathBuf::from("/repo/.rune/skills/skill-creator/SKILL.md"),
                     },
                     UserInput::Mention {
                         name: "Demo App".to_string(),
@@ -3345,8 +3345,8 @@ mod tests {
     }
 
     #[test]
-    fn codex_error_info_serializes_http_status_code_in_camel_case() {
-        let value = CodexErrorInfo::ResponseTooManyFailedAttempts {
+    fn rune_error_info_serializes_http_status_code_in_camel_case() {
+        let value = RuneErrorInfo::ResponseTooManyFailedAttempts {
             http_status_code: Some(401),
         };
 

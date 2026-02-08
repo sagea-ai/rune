@@ -6,16 +6,16 @@ use crate::runtime::ConfigState;
 use crate::runtime::LayerMtime;
 use anyhow::Context;
 use anyhow::Result;
-use codex_app_server_protocol::ConfigLayerSource;
-use codex_core::config::CONFIG_TOML_FILE;
-use codex_core::config::ConstraintError;
-use codex_core::config::find_codex_home;
-use codex_core::config_loader::CloudRequirementsLoader;
-use codex_core::config_loader::ConfigLayerStack;
-use codex_core::config_loader::ConfigLayerStackOrdering;
-use codex_core::config_loader::LoaderOverrides;
-use codex_core::config_loader::RequirementSource;
-use codex_core::config_loader::load_config_layers_state;
+use rune_app_server_protocol::ConfigLayerSource;
+use rune_core::config::CONFIG_TOML_FILE;
+use rune_core::config::ConstraintError;
+use rune_core::config::find_rune_home;
+use rune_core::config_loader::CloudRequirementsLoader;
+use rune_core::config_loader::ConfigLayerStack;
+use rune_core::config_loader::ConfigLayerStackOrdering;
+use rune_core::config_loader::LoaderOverrides;
+use rune_core::config_loader::RequirementSource;
+use rune_core::config_loader::load_config_layers_state;
 use serde::Deserialize;
 use std::collections::HashSet;
 
@@ -27,21 +27,21 @@ pub(crate) use crate::runtime::network_proxy_state_for_policy;
 
 pub(crate) async fn build_config_state() -> Result<ConfigState> {
     // Load config through `rune-core` so we inherit the same layer ordering and semantics as the
-    // rest of Codex (system/managed layers, user layers, session flags, etc.).
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
+    // rest of Rune (system/managed layers, user layers, session flags, etc.).
+    let rune_home = find_rune_home().context("failed to resolve RUNE_HOME")?;
     let cli_overrides = Vec::new();
     let overrides = LoaderOverrides::default();
     let config_layer_stack = load_config_layers_state(
-        &codex_home,
+        &rune_home,
         None,
         &cli_overrides,
         overrides,
         CloudRequirementsLoader::default(),
     )
     .await
-    .context("failed to load Codex config")?;
+    .context("failed to load Rune config")?;
 
-    let cfg_path = codex_home.join(CONFIG_TOML_FILE);
+    let cfg_path = rune_home.join(CONFIG_TOML_FILE);
 
     // Deserialize from the merged effective config, rather than parsing config.toml ourselves.
     // This avoids a second parser/merger implementation (and the drift that comes with it).
@@ -76,7 +76,7 @@ fn collect_layer_mtimes(stack: &ConfigLayerStack) -> Vec<LayerMtime> {
             let path = match &layer.name {
                 ConfigLayerSource::System { file } => Some(file.as_path().to_path_buf()),
                 ConfigLayerSource::User { file } => Some(file.as_path().to_path_buf()),
-                ConfigLayerSource::Project { dot_codex_folder } => dot_codex_folder
+                ConfigLayerSource::Project { dot_rune_folder } => dot_rune_folder
                     .join(CONFIG_TOML_FILE)
                     .ok()
                     .map(|p| p.as_path().to_path_buf()),
@@ -127,7 +127,7 @@ pub(crate) struct NetworkProxyConstraints {
 }
 
 fn enforce_trusted_constraints(
-    layers: &codex_core::config_loader::ConfigLayerStack,
+    layers: &rune_core::config_loader::ConfigLayerStack,
     config: &NetworkProxyConfig,
 ) -> Result<NetworkProxyConstraints> {
     let constraints = network_constraints_from_trusted_layers(layers)?;
@@ -137,11 +137,11 @@ fn enforce_trusted_constraints(
 }
 
 fn network_constraints_from_trusted_layers(
-    layers: &codex_core::config_loader::ConfigLayerStack,
+    layers: &rune_core::config_loader::ConfigLayerStack,
 ) -> Result<NetworkProxyConstraints> {
     let mut constraints = NetworkProxyConstraints::default();
     for layer in layers.get_layers(
-        codex_core::config_loader::ConfigLayerStackOrdering::LowestPrecedenceFirst,
+        rune_core::config_loader::ConfigLayerStackOrdering::LowestPrecedenceFirst,
         false,
     ) {
         // Only trusted layers contribute constraints. User-controlled layers can narrow policy but

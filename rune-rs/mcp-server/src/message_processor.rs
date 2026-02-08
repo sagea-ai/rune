@@ -1,14 +1,14 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use codex_core::AuthManager;
-use codex_core::ThreadManager;
-use codex_core::config::Config;
-use codex_core::default_client::USER_AGENT_SUFFIX;
-use codex_core::default_client::get_codex_user_agent;
-use codex_core::protocol::Submission;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::SessionSource;
+use rune_core::AuthManager;
+use rune_core::ThreadManager;
+use rune_core::config::Config;
+use rune_core::default_client::USER_AGENT_SUFFIX;
+use rune_core::default_client::get_rune_user_agent;
+use rune_core::protocol::Submission;
+use rune_protocol::ThreadId;
+use rune_protocol::protocol::SessionSource;
 use rmcp::model::CallToolRequestParam;
 use rmcp::model::CallToolResult;
 use rmcp::model::ClientNotification;
@@ -29,18 +29,18 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::task;
 
-use crate::codex_tool_config::CodexToolCallParam;
-use crate::codex_tool_config::CodexToolCallReplyParam;
-use crate::codex_tool_config::create_tool_for_codex_tool_call_param;
-use crate::codex_tool_config::create_tool_for_codex_tool_call_reply_param;
+use crate::rune_tool_config::RuneToolCallParam;
+use crate::rune_tool_config::RuneToolCallReplyParam;
+use crate::rune_tool_config::create_tool_for_rune_tool_call_param;
+use crate::rune_tool_config::create_tool_for_rune_tool_call_reply_param;
 use crate::outgoing_message::OutgoingMessageSender;
 
 pub(crate) struct MessageProcessor {
     outgoing: Arc<OutgoingMessageSender>,
     initialized: bool,
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
     thread_manager: Arc<ThreadManager>,
-    running_requests_id_to_codex_uuid: Arc<Mutex<HashMap<RequestId, ThreadId>>>,
+    running_requests_id_to_rune_uuid: Arc<Mutex<HashMap<RequestId, ThreadId>>>,
 }
 
 impl MessageProcessor {
@@ -48,26 +48,26 @@ impl MessageProcessor {
     /// `Sender` so handlers can enqueue messages to be written to stdout.
     pub(crate) fn new(
         outgoing: OutgoingMessageSender,
-        codex_linux_sandbox_exe: Option<PathBuf>,
+        rune_linux_sandbox_exe: Option<PathBuf>,
         config: Arc<Config>,
     ) -> Self {
         let outgoing = Arc::new(outgoing);
         let auth_manager = AuthManager::shared(
-            config.codex_home.clone(),
+            config.rune_home.clone(),
             false,
             config.cli_auth_credentials_store_mode,
         );
         let thread_manager = Arc::new(ThreadManager::new(
-            config.codex_home.clone(),
+            config.rune_home.clone(),
             auth_manager,
             SessionSource::Mcp,
         ));
         Self {
             outgoing,
             initialized: false,
-            codex_linux_sandbox_exe,
+            rune_linux_sandbox_exe,
             thread_manager,
-            running_requests_id_to_codex_uuid: Arc::new(Mutex::new(HashMap::new())),
+            running_requests_id_to_rune_uuid: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -191,13 +191,13 @@ impl MessageProcessor {
 
         let server_info = Implementation {
             name: "rune-mcp-server".to_string(),
-            title: Some("Codex".to_string()),
+            title: Some("Rune".to_string()),
             version: env!("CARGO_PKG_VERSION").to_string(),
             icons: None,
             website_url: None,
         };
 
-        // Preserve Codex's existing non-spec `serverInfo.user_agent` field.
+        // Preserve Rune's existing non-spec `serverInfo.user_agent` field.
         let mut server_info_value = match serde_json::to_value(&server_info) {
             Ok(value) => value,
             Err(err) => {
@@ -214,7 +214,7 @@ impl MessageProcessor {
             }
         };
         if let serde_json::Value::Object(ref mut obj) = server_info_value {
-            obj.insert("user_agent".to_string(), json!(get_codex_user_agent()));
+            obj.insert("user_agent".to_string(), json!(get_rune_user_agent()));
         }
 
         let mut result_value = match serde_json::to_value(InitializeResult {
@@ -293,8 +293,8 @@ impl MessageProcessor {
         let result = rmcp::model::ListToolsResult {
             meta: None,
             tools: vec![
-                create_tool_for_codex_tool_call_param(),
-                create_tool_for_codex_tool_call_reply_param(),
+                create_tool_for_rune_tool_call_param(),
+                create_tool_for_rune_tool_call_reply_param(),
             ],
             next_cursor: None,
         };
@@ -307,9 +307,9 @@ impl MessageProcessor {
         let CallToolRequestParam { name, arguments } = params;
 
         match name.as_ref() {
-            "codex" => self.handle_tool_call_codex(id, arguments).await,
+            "rune" => self.handle_tool_call_rune(id, arguments).await,
             "rune-reply" => {
-                self.handle_tool_call_codex_session_reply(id, arguments)
+                self.handle_tool_call_rune_session_reply(id, arguments)
                     .await
             }
             _ => {
@@ -324,23 +324,23 @@ impl MessageProcessor {
         }
     }
 
-    async fn handle_tool_call_codex(
+    async fn handle_tool_call_rune(
         &self,
         id: RequestId,
         arguments: Option<rmcp::model::JsonObject>,
     ) {
         let arguments = arguments.map(serde_json::Value::Object);
         let (initial_prompt, config): (String, Config) = match arguments {
-            Some(json_val) => match serde_json::from_value::<CodexToolCallParam>(json_val) {
+            Some(json_val) => match serde_json::from_value::<RuneToolCallParam>(json_val) {
                 Ok(tool_cfg) => match tool_cfg
-                    .into_config(self.codex_linux_sandbox_exe.clone())
+                    .into_config(self.rune_linux_sandbox_exe.clone())
                     .await
                 {
                     Ok(cfg) => cfg,
                     Err(e) => {
                         let result = CallToolResult {
                             content: vec![rmcp::model::Content::text(format!(
-                                "Failed to load Codex configuration from overrides: {e}"
+                                "Failed to load Rune configuration from overrides: {e}"
                             ))],
                             structured_content: None,
                             is_error: Some(true),
@@ -353,7 +353,7 @@ impl MessageProcessor {
                 Err(e) => {
                     let result = CallToolResult {
                         content: vec![rmcp::model::Content::text(format!(
-                            "Failed to parse configuration for Codex tool: {e}"
+                            "Failed to parse configuration for Rune tool: {e}"
                         ))],
                         structured_content: None,
                         is_error: Some(true),
@@ -366,7 +366,7 @@ impl MessageProcessor {
             None => {
                 let result = CallToolResult {
                     content: vec![rmcp::model::Content::text(
-                        "Missing arguments for codex tool-call; the `prompt` field is required.",
+                        "Missing arguments for rune tool-call; the `prompt` field is required.",
                     )],
                     structured_content: None,
                     is_error: Some(true),
@@ -380,25 +380,25 @@ impl MessageProcessor {
         // Clone outgoing and server to move into async task.
         let outgoing = self.outgoing.clone();
         let thread_manager = self.thread_manager.clone();
-        let running_requests_id_to_codex_uuid = self.running_requests_id_to_codex_uuid.clone();
+        let running_requests_id_to_rune_uuid = self.running_requests_id_to_rune_uuid.clone();
 
-        // Spawn an async task to handle the Codex session so that we do not
+        // Spawn an async task to handle the Rune session so that we do not
         // block the synchronous message-processing loop.
         task::spawn(async move {
-            // Run the Codex session and stream events back to the client.
-            crate::codex_tool_runner::run_codex_tool_session(
+            // Run the Rune session and stream events back to the client.
+            crate::rune_tool_runner::run_rune_tool_session(
                 id,
                 initial_prompt,
                 config,
                 outgoing,
                 thread_manager,
-                running_requests_id_to_codex_uuid,
+                running_requests_id_to_rune_uuid,
             )
             .await;
         });
     }
 
-    async fn handle_tool_call_codex_session_reply(
+    async fn handle_tool_call_rune_session_reply(
         &self,
         request_id: RequestId,
         arguments: Option<rmcp::model::JsonObject>,
@@ -407,14 +407,14 @@ impl MessageProcessor {
         tracing::info!("tools/call -> params: {:?}", arguments);
 
         // parse arguments
-        let codex_tool_call_reply_param: CodexToolCallReplyParam = match arguments {
-            Some(json_val) => match serde_json::from_value::<CodexToolCallReplyParam>(json_val) {
+        let rune_tool_call_reply_param: RuneToolCallReplyParam = match arguments {
+            Some(json_val) => match serde_json::from_value::<RuneToolCallReplyParam>(json_val) {
                 Ok(params) => params,
                 Err(e) => {
-                    tracing::error!("Failed to parse Codex tool call reply parameters: {e}");
+                    tracing::error!("Failed to parse Rune tool call reply parameters: {e}");
                     let result = CallToolResult {
                         content: vec![rmcp::model::Content::text(format!(
-                            "Failed to parse configuration for Codex tool: {e}"
+                            "Failed to parse configuration for Rune tool: {e}"
                         ))],
                         structured_content: None,
                         is_error: Some(true),
@@ -441,7 +441,7 @@ impl MessageProcessor {
             }
         };
 
-        let thread_id = match codex_tool_call_reply_param.get_thread_id() {
+        let thread_id = match rune_tool_call_reply_param.get_thread_id() {
             Ok(id) => id,
             Err(e) => {
                 tracing::error!("Failed to parse thread_id: {e}");
@@ -460,13 +460,13 @@ impl MessageProcessor {
 
         // Clone outgoing to move into async task.
         let outgoing = self.outgoing.clone();
-        let running_requests_id_to_codex_uuid = self.running_requests_id_to_codex_uuid.clone();
+        let running_requests_id_to_rune_uuid = self.running_requests_id_to_rune_uuid.clone();
 
-        let codex = match self.thread_manager.get_thread(thread_id).await {
+        let rune = match self.thread_manager.get_thread(thread_id).await {
             Ok(c) => c,
             Err(_) => {
                 tracing::warn!("Session not found for thread_id: {thread_id}");
-                let result = crate::codex_tool_runner::create_call_tool_result_with_thread_id(
+                let result = crate::rune_tool_runner::create_call_tool_result_with_thread_id(
                     thread_id,
                     format!("Session not found for thread_id: {thread_id}"),
                     Some(true),
@@ -477,19 +477,19 @@ impl MessageProcessor {
         };
 
         // Spawn the long-running reply handler.
-        let prompt = codex_tool_call_reply_param.prompt.clone();
+        let prompt = rune_tool_call_reply_param.prompt.clone();
         tokio::spawn({
             let outgoing = outgoing.clone();
-            let running_requests_id_to_codex_uuid = running_requests_id_to_codex_uuid.clone();
+            let running_requests_id_to_rune_uuid = running_requests_id_to_rune_uuid.clone();
 
             async move {
-                crate::codex_tool_runner::run_codex_tool_session_reply(
+                crate::rune_tool_runner::run_rune_tool_session_reply(
                     thread_id,
-                    codex,
+                    rune,
                     outgoing,
                     request_id,
                     prompt,
-                    running_requests_id_to_codex_uuid,
+                    running_requests_id_to_rune_uuid,
                 )
                 .await;
             }
@@ -515,7 +515,7 @@ impl MessageProcessor {
 
         // Obtain the thread id while holding the first lock, then release.
         let thread_id = {
-            let map_guard = self.running_requests_id_to_codex_uuid.lock().await;
+            let map_guard = self.running_requests_id_to_rune_uuid.lock().await;
             match map_guard.get(&request_id) {
                 Some(id) => *id,
                 None => {
@@ -526,8 +526,8 @@ impl MessageProcessor {
         };
         tracing::info!("thread_id: {thread_id}");
 
-        // Obtain the Codex thread from the server.
-        let codex_arc = match self.thread_manager.get_thread(thread_id).await {
+        // Obtain the Rune thread from the server.
+        let rune_arc = match self.thread_manager.get_thread(thread_id).await {
             Ok(c) => c,
             Err(_) => {
                 tracing::warn!("Session not found for thread_id: {thread_id}");
@@ -535,19 +535,19 @@ impl MessageProcessor {
             }
         };
 
-        // Submit interrupt to Codex.
-        if let Err(e) = codex_arc
+        // Submit interrupt to Rune.
+        if let Err(e) = rune_arc
             .submit_with_id(Submission {
                 id: request_id_string,
-                op: codex_core::protocol::Op::Interrupt,
+                op: rune_core::protocol::Op::Interrupt,
             })
             .await
         {
-            tracing::error!("Failed to submit interrupt to Codex: {e}");
+            tracing::error!("Failed to submit interrupt to Rune: {e}");
             return;
         }
         // unregister the id so we don't keep it in the map
-        self.running_requests_id_to_codex_uuid
+        self.running_requests_id_to_rune_uuid
             .lock()
             .await
             .remove(&request_id);

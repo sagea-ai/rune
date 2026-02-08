@@ -9,7 +9,6 @@ workspace = true
 
 [dependencies]
 async-trait = { workspace = true }
-rune-backend-client = { workspace = true }
 rune-core = { workspace = true }
 rune-otel = { workspace = true }
 rune-protocol = { workspace = true }

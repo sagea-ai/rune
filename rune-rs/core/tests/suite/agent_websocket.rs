@@ -1,5 +1,5 @@
 use anyhow::Result;
-use codex_core::features::Feature;
+use rune_core::features::Feature;
 use core_test_support::responses::WebSocketConnectionConfig;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -9,7 +9,7 @@ use core_test_support::responses::ev_shell_command_call;
 use core_test_support::responses::start_websocket_server;
 use core_test_support::responses::start_websocket_server_with_headers;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use std::time::Duration;
@@ -17,7 +17,7 @@ use std::time::Duration;
 const WS_V2_BETA_HEADER_VALUE: &str = "responses_websockets=2026-02-06";
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn websocket_test_codex_shell_chain() -> Result<()> {
+async fn websocket_test_rune_shell_chain() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let call_id = "shell-command-call";
@@ -35,7 +35,7 @@ async fn websocket_test_codex_shell_chain() -> Result<()> {
     ]])
     .await;
 
-    let mut builder = test_codex();
+    let mut builder = test_rune();
 
     let test = builder.build_with_websocket_server(&server).await?;
     test.submit_turn("run the echo command").await?;
@@ -84,7 +84,7 @@ async fn websocket_preconnect_happens_on_session_start() -> Result<()> {
     ]]])
     .await;
 
-    let mut builder = test_codex();
+    let mut builder = test_rune();
     let test = builder.build_with_websocket_server(&server).await?;
 
     assert!(
@@ -113,7 +113,7 @@ async fn websocket_first_turn_waits_for_inflight_preconnect() -> Result<()> {
     }])
     .await;
 
-    let mut builder = test_codex();
+    let mut builder = test_rune();
     let test = builder.build_with_websocket_server(&server).await?;
     test.submit_turn("hello").await?;
 
@@ -125,7 +125,7 @@ async fn websocket_first_turn_waits_for_inflight_preconnect() -> Result<()> {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn websocket_v2_test_codex_shell_chain() -> Result<()> {
+async fn websocket_v2_test_rune_shell_chain() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let call_id = "shell-command-call";
@@ -143,7 +143,7 @@ async fn websocket_v2_test_codex_shell_chain() -> Result<()> {
     ]])
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_rune().with_config(|config| {
         config.features.enable(Feature::ResponsesWebsocketsV2);
     });
 

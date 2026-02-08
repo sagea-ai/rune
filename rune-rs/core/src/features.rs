@@ -12,7 +12,7 @@ use crate::config::profile::ConfigProfile;
 use crate::protocol::Event;
 use crate::protocol::EventMsg;
 use crate::protocol::WarningEvent;
-use codex_otel::OtelManager;
+use rune_otel::OtelManager;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -238,7 +238,7 @@ impl Features {
         for feature in FEATURES {
             if self.enabled(feature.id) != feature.default_enabled {
                 otel.counter(
-                    "codex.feature.state",
+                    "rune.feature.state",
                     1,
                     &[
                         ("feature", feature.key),
@@ -351,7 +351,7 @@ fn legacy_usage_notice(alias: &str, feature: Feature) -> (String, Option<String>
                 None
             } else {
                 Some(format!(
-                    "Enable it with `--enable {canonical}` or `[features].{canonical}` in config.toml. See https://github.com/openai/codex/blob/main/docs/config.md#feature-flags for details."
+                    "Enable it with `--enable {canonical}` or `[features].{canonical}` in config.toml. See https://github.com/openai/rune/blob/main/docs/config.md#feature-flags for details."
                 ))
             };
             (summary, details)
@@ -433,7 +433,7 @@ pub const FEATURES: &[FeatureSpec] = &[
         stage: Stage::Experimental {
             name: "Shell snapshot",
             menu_description: "Snapshot your shell environment to avoid re-running login scripts for every command.",
-            announcement: "NEW! Try shell snapshotting to make your Codex faster. Enable in /experimental!",
+            announcement: "NEW! Try shell snapshotting to make your Rune faster. Enable in /experimental!",
         },
         default_enabled: false,
     },
@@ -520,8 +520,8 @@ pub const FEATURES: &[FeatureSpec] = &[
         key: "collab",
         stage: Stage::Experimental {
             name: "Sub-agents",
-            menu_description: "Ask Codex to spawn multiple agents to parallelize the work and win in efficiency.",
-            announcement: "NEW: Sub-agents can now be spawned by Codex. Enable in /experimental and restart Codex!",
+            menu_description: "Ask Rune to spawn multiple agents to parallelize the work and win in efficiency.",
+            announcement: "NEW: Sub-agents can now be spawned by Rune. Enable in /experimental and restart Rune!",
         },
         default_enabled: false,
     },
@@ -530,8 +530,8 @@ pub const FEATURES: &[FeatureSpec] = &[
         key: "apps",
         stage: Stage::Experimental {
             name: "Apps",
-            menu_description: "Use a connected ChatGPT App using \"$\". Install Apps via /apps command. Restart Codex after enabling.",
-            announcement: "NEW: Use ChatGPT Apps (Connectors) in Codex via $ mentions. Enable in /experimental and restart Codex!",
+            menu_description: "Use a connected ChatGPT App using \"$\". Install Apps via /apps command. Restart Rune after enabling.",
+            announcement: "NEW: Use ChatGPT Apps (Connectors) in Rune via $ mentions. Enable in /experimental and restart Rune!",
         },
         default_enabled: false,
     },
@@ -617,7 +617,7 @@ pub fn maybe_push_unstable_features_warning(
 
     let under_development_feature_keys = under_development_feature_keys.join(", ");
     let config_path = config
-        .codex_home
+        .rune_home
         .join(CONFIG_TOML_FILE)
         .display()
         .to_string();

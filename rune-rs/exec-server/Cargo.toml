@@ -13,7 +13,7 @@ name = "rune-exec-mcp-server"
 path = "src/bin/main_mcp_server.rs"
 
 [lib]
-name = "codex_exec_server"
+name = "rune_exec_server"
 path = "src/lib.rs"
 
 [lints]

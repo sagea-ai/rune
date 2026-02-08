@@ -5,25 +5,25 @@ use anyhow::Result;
 use anyhow::anyhow;
 use anyhow::bail;
 use clap::ArgGroup;
-use codex_common::CliConfigOverrides;
-use codex_common::format_env_display::format_env_display;
-use codex_core::config::Config;
-use codex_core::config::edit::ConfigEditsBuilder;
-use codex_core::config::find_codex_home;
-use codex_core::config::load_global_mcp_servers;
-use codex_core::config::types::McpServerConfig;
-use codex_core::config::types::McpServerTransportConfig;
-use codex_core::mcp::auth::McpOAuthLoginSupport;
-use codex_core::mcp::auth::compute_auth_statuses;
-use codex_core::mcp::auth::oauth_login_support;
-use codex_core::protocol::McpAuthStatus;
-use codex_rmcp_client::delete_oauth_tokens;
-use codex_rmcp_client::perform_oauth_login;
+use rune_common::CliConfigOverrides;
+use rune_common::format_env_display::format_env_display;
+use rune_core::config::Config;
+use rune_core::config::edit::ConfigEditsBuilder;
+use rune_core::config::find_rune_home;
+use rune_core::config::load_global_mcp_servers;
+use rune_core::config::types::McpServerConfig;
+use rune_core::config::types::McpServerTransportConfig;
+use rune_core::mcp::auth::McpOAuthLoginSupport;
+use rune_core::mcp::auth::compute_auth_statuses;
+use rune_core::mcp::auth::oauth_login_support;
+use rune_core::protocol::McpAuthStatus;
+use rune_rmcp_client::delete_oauth_tokens;
+use rune_rmcp_client::perform_oauth_login;
 
 /// Subcommands:
 /// - `list`   — list configured servers (with `--json`)
 /// - `get`    — show a single server (with `--json`)
-/// - `add`    — add a server launcher entry to `~/.codex/config.toml`
+/// - `add`    — add a server launcher entry to `~/.rune/config.toml`
 /// - `remove` — delete a server entry
 /// - `login`  — authenticate with MCP server using OAuth
 /// - `logout` — remove OAuth credentials for MCP server
@@ -64,7 +64,7 @@ pub struct GetArgs {
 }
 
 #[derive(Debug, clap::Parser)]
-#[command(override_usage = "codex mcp add [OPTIONS] <NAME> (--url <URL> | -- <COMMAND>...)")]
+#[command(override_usage = "rune mcp add [OPTIONS] <NAME> (--url <URL> | -- <COMMAND>...)")]
 pub struct AddArgs {
     /// Name for the MCP server configuration.
     pub name: String,
@@ -196,10 +196,10 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
 
     validate_server_name(&name)?;
 
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
-    let mut servers = load_global_mcp_servers(&codex_home)
+    let rune_home = find_rune_home().context("failed to resolve RUNE_HOME")?;
+    let mut servers = load_global_mcp_servers(&rune_home)
         .await
-        .with_context(|| format!("failed to load MCP servers from {}", codex_home.display()))?;
+        .with_context(|| format!("failed to load MCP servers from {}", rune_home.display()))?;
 
     let transport = match transport_args {
         AddMcpTransportArgs {
@@ -254,11 +254,11 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
 
     servers.insert(name.clone(), new_entry);
 
-    ConfigEditsBuilder::new(&codex_home)
+    ConfigEditsBuilder::new(&rune_home)
         .replace_mcp_servers(&servers)
         .apply()
         .await
-        .with_context(|| format!("failed to write MCP servers to {}", codex_home.display()))?;
+        .with_context(|| format!("failed to write MCP servers to {}", rune_home.display()))?;
 
     println!("Added global MCP server '{name}'.");
 
@@ -279,7 +279,7 @@ async fn run_add(config_overrides: &CliConfigOverrides, add_args: AddArgs) -> Re
         }
         McpOAuthLoginSupport::Unsupported => {}
         McpOAuthLoginSupport::Unknown(_) => println!(
-            "MCP server may or may not require login. Run `codex mcp login {name}` to login."
+            "MCP server may or may not require login. Run `rune mcp login {name}` to login."
         ),
     }
 
@@ -295,19 +295,19 @@ async fn run_remove(config_overrides: &CliConfigOverrides, remove_args: RemoveAr
 
     validate_server_name(&name)?;
 
-    let codex_home = find_codex_home().context("failed to resolve CODEX_HOME")?;
-    let mut servers = load_global_mcp_servers(&codex_home)
+    let rune_home = find_rune_home().context("failed to resolve RUNE_HOME")?;
+    let mut servers = load_global_mcp_servers(&rune_home)
         .await
-        .with_context(|| format!("failed to load MCP servers from {}", codex_home.display()))?;
+        .with_context(|| format!("failed to load MCP servers from {}", rune_home.display()))?;
 
     let removed = servers.remove(&name).is_some();
 
     if removed {
-        ConfigEditsBuilder::new(&codex_home)
+        ConfigEditsBuilder::new(&rune_home)
             .replace_mcp_servers(&servers)
             .apply()
             .await
-            .with_context(|| format!("failed to write MCP servers to {}", codex_home.display()))?;
+            .with_context(|| format!("failed to write MCP servers to {}", rune_home.display()))?;
     }
 
     if removed {
@@ -468,7 +468,7 @@ async fn run_list(config_overrides: &CliConfigOverrides, list_args: ListArgs) ->
     }
 
     if entries.is_empty() {
-        println!("No MCP servers configured yet. Try `codex mcp add my-tool -- my-command`.");
+        println!("No MCP servers configured yet. Try `rune mcp add my-tool -- my-command`.");
         return Ok(());
     }
 
@@ -796,7 +796,7 @@ async fn run_get(config_overrides: &CliConfigOverrides, get_args: GetArgs) -> Re
     if let Some(timeout) = server.tool_timeout_sec {
         println!("  tool_timeout_sec: {}", timeout.as_secs_f64());
     }
-    println!("  remove: codex mcp remove {}", get_args.name);
+    println!("  remove: rune mcp remove {}", get_args.name);
 
     Ok(())
 }

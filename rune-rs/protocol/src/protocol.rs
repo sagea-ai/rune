@@ -1,4 +1,4 @@
-//! Defines the protocol for a Codex session between a client and an agent.
+//! Defines the protocol for a Rune session between a client and an agent.
 //!
 //! Uses a SQ (Submission Queue) / EQ (Event Queue) pattern to asynchronously communicate
 //! between user and agent.
@@ -39,7 +39,7 @@ use crate::parse_command::ParsedCommand;
 use crate::plan_tool::UpdatePlanArgs;
 use crate::request_user_input::RequestUserInputResponse;
 use crate::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -63,7 +63,7 @@ pub const ENVIRONMENT_CONTEXT_OPEN_TAG: &str = "<environment_context>";
 pub const ENVIRONMENT_CONTEXT_CLOSE_TAG: &str = "</environment_context>";
 pub const COLLABORATION_MODE_OPEN_TAG: &str = "<collaboration_mode>";
 pub const COLLABORATION_MODE_CLOSE_TAG: &str = "</collaboration_mode>";
-pub const USER_MESSAGE_BEGIN: &str = "## My request for Codex:";
+pub const USER_MESSAGE_BEGIN: &str = "## My request for Rune:";
 
 /// Submission Queue Entry - requests from user
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
@@ -104,7 +104,7 @@ pub enum Op {
     },
 
     /// Similar to [`Op::UserInput`], but contains additional context required
-    /// for a turn of a [`crate::codex_thread::CodexThread`].
+    /// for a turn of a [`crate::rune_thread::RuneThread`].
     UserTurn {
         /// User input items, see `InputItem`
         items: Vec<UserInput>,
@@ -288,10 +288,10 @@ pub enum Op {
     /// involve the model.
     SetThreadName { name: String },
 
-    /// Request Codex to undo a turn (turn are stacked so it is the same effect as CMD + Z).
+    /// Request Rune to undo a turn (turn are stacked so it is the same effect as CMD + Z).
     Undo,
 
-    /// Request Codex to drop the last N user turns from in-memory context.
+    /// Request Rune to drop the last N user turns from in-memory context.
     ///
     /// This does not attempt to revert local filesystem changes. Clients are
     /// responsible for undoing any edits on disk.
@@ -300,7 +300,7 @@ pub enum Op {
     /// Request a code review from the agent.
     Review { review_request: ReviewRequest },
 
-    /// Request to shut down codex instance.
+    /// Request to shut down rune instance.
     Shutdown,
 
     /// Execute a user-initiated one-off shell command (triggered by "!cmd").
@@ -318,7 +318,7 @@ pub enum Op {
 }
 
 /// Determines the conditions under which the user is consulted to approve
-/// running the command proposed by Codex.
+/// running the command proposed by Rune.
 #[derive(
     Debug,
     Clone,
@@ -428,7 +428,7 @@ pub enum SandboxPolicy {
 /// A writable root path accompanied by a list of subpaths that should remain
 /// read‑only even when the root is writable. This is primarily used to ensure
 /// that folders containing files that could be modified to escalate the
-/// privileges of the agent (e.g. `.codex`, `.git`, notably `.git/hooks`) under
+/// privileges of the agent (e.g. `.rune`, `.git`, notably `.git/hooks`) under
 /// a writable root are not modified by the agent.
 #[derive(Debug, Clone, PartialEq, Eq, JsonSchema)]
 pub struct WritableRoot {
@@ -599,14 +599,14 @@ impl SandboxPolicy {
                             subpaths.push(top_level_git);
                         }
 
-                        // Make .agents/skills and .codex/config.toml and
+                        // Make .agents/skills and .rune/config.toml and
                         // related files read-only to the agent, by default.
-                        for subdir in &[".agents", ".codex"] {
+                        for subdir in &[".agents", ".rune"] {
                             #[allow(clippy::expect_used)]
-                            let top_level_codex =
+                            let top_level_rune =
                                 writable_root.join(subdir).expect("valid relative path");
-                            if top_level_codex.as_path().is_dir() {
-                                subpaths.push(top_level_codex);
+                            if top_level_rune.as_path().is_dir() {
+                                subpaths.push(top_level_rune);
                             }
                         }
 
@@ -965,11 +965,11 @@ pub enum AgentStatus {
     NotFound,
 }
 
-/// Codex errors that we expose to clients.
+/// Rune errors that we expose to clients.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema, TS)]
 #[serde(rename_all = "snake_case")]
 #[ts(rename_all = "snake_case")]
-pub enum CodexErrorInfo {
+pub enum RuneErrorInfo {
     ContextWindowExceeded,
     UsageLimitExceeded,
     ModelCap {
@@ -1133,7 +1133,7 @@ pub struct ExitedReviewModeEvent {
 pub struct ErrorEvent {
     pub message: String,
     #[serde(default)]
-    pub codex_error_info: Option<CodexErrorInfo>,
+    pub rune_error_info: Option<RuneErrorInfo>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema, TS)]
@@ -2021,7 +2021,7 @@ pub struct ThreadRolledBackEvent {
 pub struct StreamErrorEvent {
     pub message: String,
     #[serde(default)]
-    pub codex_error_info: Option<CodexErrorInfo>,
+    pub rune_error_info: Option<RuneErrorInfo>,
     /// Optional details about the underlying stream failure (often the same
     /// human-readable message that is surfaced as the terminal error if retries
     /// are exhausted).

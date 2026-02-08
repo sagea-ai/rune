@@ -9,7 +9,7 @@ name = "rune-stdio-to-uds"
 path = "src/main.rs"
 
 [lib]
-name = "codex_stdio_to_uds"
+name = "rune_stdio_to_uds"
 path = "src/lib.rs"
 
 [lints]

@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "codex_cloud_tasks"
+name = "rune_cloud_tasks"
 path = "src/lib.rs"
 
 [lints]
@@ -22,7 +22,6 @@ rune-cloud-tasks-client = { path = "../cloud-tasks-client", features = [
 ] }
 rune-common = { path = "../common", features = ["cli"] }
 rune-core = { path = "../core" }
-rune-login = { path = "../login" }
 rune-tui = { path = "../tui" }
 crossterm = { workspace = true, features = ["event-stream"] }
 ratatui = { workspace = true }

@@ -2,11 +2,11 @@ use crate::exec_command::relativize_to_home;
 use crate::text_formatting;
 use chrono::DateTime;
 use chrono::Local;
-use codex_core::AuthManager;
-use codex_core::auth::AuthMode as CoreAuthMode;
-use codex_core::config::Config;
-use codex_core::project_doc::discover_project_doc_paths;
-use codex_protocol::account::PlanType;
+use rune_core::AuthManager;
+use rune_core::auth::AuthMode as CoreAuthMode;
+use rune_core::config::Config;
+use rune_core::project_doc::discover_project_doc_paths;
+use rune_protocol::account::PlanType;
 use std::path::Path;
 use unicode_width::UnicodeWidthStr;
 

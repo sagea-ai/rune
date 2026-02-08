@@ -1,24 +1,24 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ForcedLoginMethod;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::parse_command::ParsedCommand;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::FileChange;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::TurnAbortReason;
-use codex_protocol::user_input::ByteRange as CoreByteRange;
-use codex_protocol::user_input::TextElement as CoreTextElement;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_protocol::ThreadId;
+use rune_protocol::config_types::ForcedLoginMethod;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::config_types::SandboxMode;
+use rune_protocol::config_types::Verbosity;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::openai_models::ReasoningEffort;
+use rune_protocol::parse_command::ParsedCommand;
+use rune_protocol::protocol::AskForApproval;
+use rune_protocol::protocol::EventMsg;
+use rune_protocol::protocol::FileChange;
+use rune_protocol::protocol::ReviewDecision;
+use rune_protocol::protocol::SandboxPolicy;
+use rune_protocol::protocol::SessionSource;
+use rune_protocol::protocol::TurnAbortReason;
+use rune_protocol::user_input::ByteRange as CoreByteRange;
+use rune_protocol::user_input::TextElement as CoreTextElement;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde::Serialize;
@@ -230,8 +230,8 @@ pub struct GitDiffToRemoteResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ApplyPatchApprovalParams {
     pub conversation_id: ThreadId,
-    /// Use to correlate this with [codex_core::protocol::PatchApplyBeginEvent]
-    /// and [codex_core::protocol::PatchApplyEndEvent].
+    /// Use to correlate this with [rune_core::protocol::PatchApplyBeginEvent]
+    /// and [rune_core::protocol::PatchApplyEndEvent].
     pub call_id: String,
     pub file_changes: HashMap<PathBuf, FileChange>,
     /// Optional explanatory reason (e.g. request for extra write access).
@@ -251,8 +251,8 @@ pub struct ApplyPatchApprovalResponse {
 #[serde(rename_all = "camelCase")]
 pub struct ExecCommandApprovalParams {
     pub conversation_id: ThreadId,
-    /// Use to correlate this with [codex_core::protocol::ExecCommandBeginEvent]
-    /// and [codex_core::protocol::ExecCommandEndEvent].
+    /// Use to correlate this with [rune_core::protocol::ExecCommandBeginEvent]
+    /// and [rune_core::protocol::ExecCommandEndEvent].
     pub call_id: String,
     pub command: Vec<String>,
     pub cwd: PathBuf,

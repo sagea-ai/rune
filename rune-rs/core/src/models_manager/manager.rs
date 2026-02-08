@@ -5,19 +5,19 @@ use crate::auth::AuthManager;
 use crate::auth::AuthMode;
 use crate::config::Config;
 use crate::default_client::build_reqwest_client;
-use crate::error::CodexErr;
+use crate::error::RuneErr;
 use crate::error::Result as CoreResult;
 use crate::features::Feature;
 use crate::model_provider_info::ModelProviderInfo;
 use crate::models_manager::collaboration_mode_presets::builtin_collaboration_mode_presets;
 use crate::models_manager::model_info;
 use crate::models_manager::model_presets::builtin_model_presets;
-use codex_api::ModelsClient;
-use codex_api::ReqwestTransport;
-use codex_protocol::config_types::CollaborationModeMask;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ModelsResponse;
+use rune_api::ModelsClient;
+use rune_api::ReqwestTransport;
+use rune_protocol::config_types::CollaborationModeMask;
+use rune_protocol::openai_models::ModelInfo;
+use rune_protocol::openai_models::ModelPreset;
+use rune_protocol::openai_models::ModelsResponse;
 use http::HeaderMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -56,9 +56,9 @@ pub struct ModelsManager {
 impl ModelsManager {
     /// Construct a manager scoped to the provided `AuthManager`.
     ///
-    /// Uses `codex_home` to store cached model metadata and initializes with built-in presets.
-    pub fn new(codex_home: PathBuf, auth_manager: Arc<AuthManager>) -> Self {
-        let cache_path = codex_home.join(MODEL_CACHE_FILE);
+    /// Uses `rune_home` to store cached model metadata and initializes with built-in presets.
+    pub fn new(rune_home: PathBuf, auth_manager: Arc<AuthManager>) -> Self {
+        let cache_path = rune_home.join(MODEL_CACHE_FILE);
         let cache_manager = ModelsCacheManager::new(cache_path, DEFAULT_MODEL_CACHE_TTL);
         Self {
             local_models: builtin_model_presets(auth_manager.auth_mode()),
@@ -202,7 +202,7 @@ impl ModelsManager {
 
     async fn fetch_and_update_models(&self) -> CoreResult<()> {
         let _timer =
-            codex_otel::start_global_timer("codex.remote_models.fetch_update.duration_ms", &[]);
+            rune_otel::start_global_timer("rune.remote_models.fetch_update.duration_ms", &[]);
         let auth = self.auth_manager.auth().await;
         let auth_mode = self.auth_manager.auth_mode();
         let api_provider = self.provider.to_api_provider(auth_mode)?;
@@ -216,7 +216,7 @@ impl ModelsManager {
             client.list_models(&client_version, HeaderMap::new()),
         )
         .await
-        .map_err(|_| CodexErr::Timeout)?
+        .map_err(|_| RuneErr::Timeout)?
         .map_err(map_api_error)?;
 
         self.apply_remote_models(models.clone()).await;
@@ -256,7 +256,7 @@ impl ModelsManager {
     /// Attempt to satisfy the refresh from the cache when it matches the provider and TTL.
     async fn try_load_cache(&self) -> bool {
         let _timer =
-            codex_otel::start_global_timer("codex.remote_models.load_cache.duration_ms", &[]);
+            rune_otel::start_global_timer("rune.remote_models.load_cache.duration_ms", &[]);
         let client_version = crate::models_manager::client_version_to_whole();
         let cache = match self.cache_manager.load_fresh(&client_version).await {
             Some(cache) => cache,
@@ -312,11 +312,11 @@ impl ModelsManager {
     #[cfg(any(test, feature = "test-support"))]
     /// Construct a manager with a specific provider for testing.
     pub fn with_provider(
-        codex_home: PathBuf,
+        rune_home: PathBuf,
         auth_manager: Arc<AuthManager>,
         provider: ModelProviderInfo,
     ) -> Self {
-        let cache_path = codex_home.join(MODEL_CACHE_FILE);
+        let cache_path = rune_home.join(MODEL_CACHE_FILE);
         let cache_manager = ModelsCacheManager::new(cache_path, DEFAULT_MODEL_CACHE_TTL);
         Self {
             local_models: builtin_model_presets(auth_manager.auth_mode()),
@@ -353,13 +353,13 @@ impl ModelsManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::CodexAuth;
+    use crate::RuneAuth;
     use crate::auth::AuthCredentialsStoreMode;
     use crate::config::ConfigBuilder;
     use crate::features::Feature;
     use crate::model_provider_info::WireApi;
     use chrono::Utc;
-    use codex_protocol::openai_models::ModelsResponse;
+    use rune_protocol::openai_models::ModelsResponse;
     use core_test_support::responses::mount_models_once;
     use pretty_assertions::assert_eq;
     use serde_json::json;
@@ -445,18 +445,18 @@ mod tests {
         )
         .await;
 
-        let codex_home = tempdir().expect("temp dir");
+        let rune_home = tempdir().expect("temp dir");
         let mut config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
+            .rune_home(rune_home.path().to_path_buf())
             .build()
             .await
             .expect("load default test config");
         config.features.enable(Feature::RemoteModels);
         let auth_manager =
-            AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+            AuthManager::from_auth_for_testing(RuneAuth::create_dummy_chatgpt_auth_for_testing());
         let provider = provider_for(server.uri());
         let manager =
-            ModelsManager::with_provider(codex_home.path().to_path_buf(), auth_manager, provider);
+            ModelsManager::with_provider(rune_home.path().to_path_buf(), auth_manager, provider);
 
         manager
             .refresh_available_models(&config, RefreshStrategy::OnlineIfUncached)
@@ -499,21 +499,21 @@ mod tests {
         )
         .await;
 
-        let codex_home = tempdir().expect("temp dir");
+        let rune_home = tempdir().expect("temp dir");
         let mut config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
+            .rune_home(rune_home.path().to_path_buf())
             .build()
             .await
             .expect("load default test config");
         config.features.enable(Feature::RemoteModels);
         let auth_manager = Arc::new(AuthManager::new(
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
             false,
             AuthCredentialsStoreMode::File,
         ));
         let provider = provider_for(server.uri());
         let manager =
-            ModelsManager::with_provider(codex_home.path().to_path_buf(), auth_manager, provider);
+            ModelsManager::with_provider(rune_home.path().to_path_buf(), auth_manager, provider);
 
         manager
             .refresh_available_models(&config, RefreshStrategy::OnlineIfUncached)
@@ -546,21 +546,21 @@ mod tests {
         )
         .await;
 
-        let codex_home = tempdir().expect("temp dir");
+        let rune_home = tempdir().expect("temp dir");
         let mut config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
+            .rune_home(rune_home.path().to_path_buf())
             .build()
             .await
             .expect("load default test config");
         config.features.enable(Feature::RemoteModels);
         let auth_manager = Arc::new(AuthManager::new(
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
             false,
             AuthCredentialsStoreMode::File,
         ));
         let provider = provider_for(server.uri());
         let manager =
-            ModelsManager::with_provider(codex_home.path().to_path_buf(), auth_manager, provider);
+            ModelsManager::with_provider(rune_home.path().to_path_buf(), auth_manager, provider);
 
         manager
             .refresh_available_models(&config, RefreshStrategy::OnlineIfUncached)
@@ -615,21 +615,21 @@ mod tests {
         )
         .await;
 
-        let codex_home = tempdir().expect("temp dir");
+        let rune_home = tempdir().expect("temp dir");
         let mut config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
+            .rune_home(rune_home.path().to_path_buf())
             .build()
             .await
             .expect("load default test config");
         config.features.enable(Feature::RemoteModels);
         let auth_manager = Arc::new(AuthManager::new(
-            codex_home.path().to_path_buf(),
+            rune_home.path().to_path_buf(),
             false,
             AuthCredentialsStoreMode::File,
         ));
         let provider = provider_for(server.uri());
         let manager =
-            ModelsManager::with_provider(codex_home.path().to_path_buf(), auth_manager, provider);
+            ModelsManager::with_provider(rune_home.path().to_path_buf(), auth_manager, provider);
 
         manager
             .refresh_available_models(&config, RefreshStrategy::OnlineIfUncached)
@@ -684,18 +684,18 @@ mod tests {
         )
         .await;
 
-        let codex_home = tempdir().expect("temp dir");
+        let rune_home = tempdir().expect("temp dir");
         let mut config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
+            .rune_home(rune_home.path().to_path_buf())
             .build()
             .await
             .expect("load default test config");
         config.features.enable(Feature::RemoteModels);
         let auth_manager =
-            AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+            AuthManager::from_auth_for_testing(RuneAuth::create_dummy_chatgpt_auth_for_testing());
         let provider = provider_for(server.uri());
         let mut manager =
-            ModelsManager::with_provider(codex_home.path().to_path_buf(), auth_manager, provider);
+            ModelsManager::with_provider(rune_home.path().to_path_buf(), auth_manager, provider);
         manager.cache_manager.set_ttl(Duration::ZERO);
 
         manager
@@ -743,12 +743,12 @@ mod tests {
 
     #[test]
     fn build_available_models_picks_default_after_hiding_hidden_models() {
-        let codex_home = tempdir().expect("temp dir");
+        let rune_home = tempdir().expect("temp dir");
         let auth_manager =
-            AuthManager::from_auth_for_testing(CodexAuth::from_api_key("Test API Key"));
+            AuthManager::from_auth_for_testing(RuneAuth::from_api_key("Test API Key"));
         let provider = provider_for("http://example.test".to_string());
         let mut manager =
-            ModelsManager::with_provider(codex_home.path().to_path_buf(), auth_manager, provider);
+            ModelsManager::with_provider(rune_home.path().to_path_buf(), auth_manager, provider);
         manager.local_models = Vec::new();
 
         let hidden_model = remote_model_with_visibility("hidden", "Hidden", 0, "hide");

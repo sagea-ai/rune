@@ -1,4 +1,4 @@
-//! Transcript/history cells for the Codex TUI.
+//! Transcript/history cells for the Rune TUI.
 //!
 //! A `HistoryCell` is the unit of display in the conversation UI, representing both committed
 //! transcript entries and, transiently, an in-flight active cell that can mutate in place while
@@ -32,31 +32,31 @@ use crate::text_formatting::truncate_text;
 use crate::tooltips;
 use crate::ui_consts::LIVE_PREFIX_COLS;
 use crate::update_action::UpdateAction;
-use crate::version::CODEX_CLI_VERSION;
+use crate::version::RUNE_CLI_VERSION;
 use crate::wrapping::RtOptions;
 use crate::wrapping::word_wrap_line;
 use crate::wrapping::word_wrap_lines;
 use base64::Engine;
-use codex_common::format_env_display::format_env_display;
-use codex_core::config::Config;
-use codex_core::config::types::McpServerTransportConfig;
-use codex_core::protocol::FileChange;
-use codex_core::protocol::McpAuthStatus;
-use codex_core::protocol::McpInvocation;
-use codex_core::protocol::SessionConfiguredEvent;
-use codex_core::web_search::web_search_detail;
-use codex_otel::RuntimeMetricsSummary;
-use codex_protocol::account::PlanType;
-use codex_protocol::mcp::Resource;
-use codex_protocol::mcp::ResourceTemplate;
-use codex_protocol::models::WebSearchAction;
-use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
-use codex_protocol::plan_tool::PlanItemArg;
-use codex_protocol::plan_tool::StepStatus;
-use codex_protocol::plan_tool::UpdatePlanArgs;
-use codex_protocol::request_user_input::RequestUserInputAnswer;
-use codex_protocol::request_user_input::RequestUserInputQuestion;
-use codex_protocol::user_input::TextElement;
+use rune_common::format_env_display::format_env_display;
+use rune_core::config::Config;
+use rune_core::config::types::McpServerTransportConfig;
+use rune_core::protocol::FileChange;
+use rune_core::protocol::McpAuthStatus;
+use rune_core::protocol::McpInvocation;
+use rune_core::protocol::SessionConfiguredEvent;
+use rune_core::web_search::web_search_detail;
+use rune_otel::RuntimeMetricsSummary;
+use rune_protocol::account::PlanType;
+use rune_protocol::mcp::Resource;
+use rune_protocol::mcp::ResourceTemplate;
+use rune_protocol::models::WebSearchAction;
+use rune_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use rune_protocol::plan_tool::PlanItemArg;
+use rune_protocol::plan_tool::StepStatus;
+use rune_protocol::plan_tool::UpdatePlanArgs;
+use rune_protocol::request_user_input::RequestUserInputAnswer;
+use rune_protocol::request_user_input::RequestUserInputQuestion;
+use rune_protocol::user_input::TextElement;
 use image::DynamicImage;
 use image::ImageReader;
 use ratatui::prelude::*;
@@ -425,7 +425,7 @@ impl HistoryCell for UpdateAvailableHistoryCell {
         } else {
             line![
                 "See ",
-                "https://github.com/openai/codex".cyan().underlined(),
+                "https://github.com/openai/rune".cyan().underlined(),
                 " for installation options."
             ]
         };
@@ -435,12 +435,12 @@ impl HistoryCell for UpdateAvailableHistoryCell {
                 padded_emoji("✨").bold().cyan(),
                 "Update available!".bold().cyan(),
                 " ",
-                format!("{CODEX_CLI_VERSION} -> {}", self.latest_version).bold(),
+                format!("{RUNE_CLI_VERSION} -> {}", self.latest_version).bold(),
             ],
             update_instruction,
             "",
             "See full release notes:",
-            "https://github.com/openai/codex/releases/latest"
+            "https://github.com/openai/rune/releases/latest"
                 .cyan()
                 .underlined(),
         ];
@@ -710,9 +710,9 @@ fn exec_snippet(command: &[String]) -> String {
 
 pub fn new_approval_decision_cell(
     command: Vec<String>,
-    decision: codex_core::protocol::ReviewDecision,
+    decision: rune_core::protocol::ReviewDecision,
 ) -> Box<dyn HistoryCell> {
-    use codex_core::protocol::ReviewDecision::*;
+    use rune_core::protocol::ReviewDecision::*;
 
     let (symbol, summary): (Span<'static>, Vec<Span<'static>>) = match decision {
         Approved => {
@@ -722,7 +722,7 @@ pub fn new_approval_decision_cell(
                 vec![
                     "You ".into(),
                     "approved".bold(),
-                    " codex to run ".into(),
+                    " rune to run ".into(),
                     snippet,
                     " this time".bold(),
                 ],
@@ -737,7 +737,7 @@ pub fn new_approval_decision_cell(
                 vec![
                     "You ".into(),
                     "approved".bold(),
-                    " codex to always run commands that start with ".into(),
+                    " rune to always run commands that start with ".into(),
                     snippet,
                 ],
             )
@@ -749,7 +749,7 @@ pub fn new_approval_decision_cell(
                 vec![
                     "You ".into(),
                     "approved".bold(),
-                    " codex to run ".into(),
+                    " rune to run ".into(),
                     snippet,
                     " every time this session".bold(),
                 ],
@@ -762,7 +762,7 @@ pub fn new_approval_decision_cell(
                 vec![
                     "You ".into(),
                     "did not approve".bold(),
-                    " codex to run ".into(),
+                    " rune to run ".into(),
                     snippet,
                 ],
             )
@@ -956,7 +956,7 @@ pub(crate) fn new_session_info(
         model.clone(),
         reasoning_effort,
         config.cwd.clone(),
-        CODEX_CLI_VERSION,
+        RUNE_CLI_VERSION,
     );
     let mut parts: Vec<Box<dyn HistoryCell>> = vec![Box::new(header)];
 
@@ -970,7 +970,7 @@ pub(crate) fn new_session_info(
             Line::from(vec![
                 "  ".into(),
                 "/init".into(),
-                " - create an AGENTS.md file with instructions for Codex".dim(),
+                " - create an AGENTS.md file with instructions for Rune".dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
@@ -980,7 +980,7 @@ pub(crate) fn new_session_info(
             Line::from(vec![
                 "  ".into(),
                 "/permissions".into(),
-                " - choose what Codex is allowed to do".dim(),
+                " - choose what Rune is allowed to do".dim(),
             ]),
             Line::from(vec![
                 "  ".into(),
@@ -1114,10 +1114,10 @@ impl HistoryCell for SessionHeaderHistoryCell {
 
         let make_row = |spans: Vec<Span<'static>>| Line::from(spans);
 
-        // Title line rendered inside the box: ">_ OpenAI Codex (vX)"
+        // Title line rendered inside the box: ">_ OpenAI Rune (vX)"
         let title_spans: Vec<Span<'static>> = vec![
             Span::from(">_ ").dim(),
-            Span::from("OpenAI Codex").bold(),
+            Span::from("OpenAI Rune").bold(),
             Span::from(" ").dim(),
             Span::from(format!("(v{})", self.version)).dim(),
         ];
@@ -1201,7 +1201,7 @@ pub(crate) struct McpToolCallCell {
     invocation: McpInvocation,
     start_time: Instant,
     duration: Option<Duration>,
-    result: Option<Result<codex_protocol::mcp::CallToolResult, String>>,
+    result: Option<Result<rune_protocol::mcp::CallToolResult, String>>,
     animations_enabled: bool,
 }
 
@@ -1228,7 +1228,7 @@ impl McpToolCallCell {
     pub(crate) fn complete(
         &mut self,
         duration: Duration,
-        result: Result<codex_protocol::mcp::CallToolResult, String>,
+        result: Result<rune_protocol::mcp::CallToolResult, String>,
     ) -> Option<Box<dyn HistoryCell>> {
         let image_cell = try_new_completed_mcp_tool_call_with_image_output(&result)
             .map(|cell| Box::new(cell) as Box<dyn HistoryCell>);
@@ -1325,7 +1325,7 @@ impl HistoryCell for McpToolCallCell {
 
         if let Some(result) = &self.result {
             match result {
-                Ok(codex_protocol::mcp::CallToolResult { content, .. }) => {
+                Ok(rune_protocol::mcp::CallToolResult { content, .. }) => {
                     if !content.is_empty() {
                         for block in content {
                             let text = Self::render_content_block(block, detail_wrap_width);
@@ -1481,12 +1481,12 @@ pub(crate) fn new_web_search_call(
 ///
 /// Manual testing tip:
 /// - Run the rmcp stdio test server (`rune-rs/rmcp-client/src/bin/test_stdio_server.rs`) and
-///   register it as an MCP server via `codex mcp add`.
+///   register it as an MCP server via `rune mcp add`.
 /// - Use its `image_scenario` tool with cases like `text_then_image`,
 ///   `invalid_base64_then_image`, or `invalid_image_bytes_then_image` to ensure this path triggers
 ///   even when the first block is not a valid image.
 fn try_new_completed_mcp_tool_call_with_image_output(
-    result: &Result<codex_protocol::mcp::CallToolResult, String>,
+    result: &Result<rune_protocol::mcp::CallToolResult, String>,
 ) -> Option<CompletedMcpToolCallWithImageOutput> {
     let image = result
         .as_ref()
@@ -1583,7 +1583,7 @@ pub(crate) fn empty_mcp_output() -> PlainHistoryCell {
         "  • No MCP servers configured.".italic().into(),
         Line::from(vec![
             "    See the ".into(),
-            "\u{1b}]8;;https://developers.openai.com/codex/mcp\u{7}MCP docs\u{1b}]8;;\u{7}"
+            "\u{1b}]8;;https://developers.openai.com/rune/mcp\u{7}MCP docs\u{1b}]8;;\u{7}"
                 .underlined(),
             " to configure them.".into(),
         ])
@@ -1596,7 +1596,7 @@ pub(crate) fn empty_mcp_output() -> PlainHistoryCell {
 /// Render MCP tools grouped by connection using the fully-qualified tool names.
 pub(crate) fn new_mcp_tools_output(
     config: &Config,
-    tools: HashMap<String, codex_protocol::mcp::Tool>,
+    tools: HashMap<String, rune_protocol::mcp::Tool>,
     resources: HashMap<String, Vec<Resource>>,
     resource_templates: HashMap<String, Vec<ResourceTemplate>>,
     auth_statuses: &HashMap<String, McpAuthStatus>,
@@ -2296,30 +2296,30 @@ mod tests {
     use crate::exec_cell::CommandOutput;
     use crate::exec_cell::ExecCall;
     use crate::exec_cell::ExecCell;
-    use codex_core::config::Config;
-    use codex_core::config::ConfigBuilder;
-    use codex_core::config::types::McpServerConfig;
-    use codex_core::config::types::McpServerTransportConfig;
-    use codex_core::protocol::McpAuthStatus;
-    use codex_otel::RuntimeMetricTotals;
-    use codex_otel::RuntimeMetricsSummary;
-    use codex_protocol::models::WebSearchAction;
-    use codex_protocol::parse_command::ParsedCommand;
+    use rune_core::config::Config;
+    use rune_core::config::ConfigBuilder;
+    use rune_core::config::types::McpServerConfig;
+    use rune_core::config::types::McpServerTransportConfig;
+    use rune_core::protocol::McpAuthStatus;
+    use rune_otel::RuntimeMetricTotals;
+    use rune_otel::RuntimeMetricsSummary;
+    use rune_protocol::models::WebSearchAction;
+    use rune_protocol::parse_command::ParsedCommand;
     use dirs::home_dir;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use std::collections::HashMap;
 
-    use codex_core::protocol::ExecCommandSource;
-    use codex_protocol::mcp::CallToolResult;
-    use codex_protocol::mcp::Tool;
+    use rune_core::protocol::ExecCommandSource;
+    use rune_protocol::mcp::CallToolResult;
+    use rune_protocol::mcp::Tool;
     use rmcp::model::Content;
 
     const SMALL_PNG_BASE64: &str = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==";
     async fn test_config() -> Config {
-        let codex_home = std::env::temp_dir();
+        let rune_home = std::env::temp_dir();
         ConfigBuilder::default()
-            .codex_home(codex_home.clone())
+            .rune_home(rune_home.clone())
             .build()
             .await
             .expect("config")
@@ -2615,7 +2615,7 @@ mod tests {
         let summary = Line::from(vec![
             "You ".into(),
             "approved".bold(),
-            " codex to run ".into(),
+            " rune to run ".into(),
             "echo something really long to ensure wrapping happens".dim(),
             " this time".bold(),
         ]);
@@ -2624,7 +2624,7 @@ mod tests {
         assert_eq!(
             rendered,
             vec![
-                "✔ You approved codex to".to_string(),
+                "✔ You approved rune to".to_string(),
                 "  run echo something".to_string(),
                 "  really long to ensure".to_string(),
                 "  wrapping happens this".to_string(),

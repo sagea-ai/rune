@@ -9,7 +9,7 @@ name = "rune-tui"
 path = "src/main.rs"
 
 [lib]
-name = "codex_tui"
+name = "rune_tui"
 path = "src/lib.rs"
 
 [features]
@@ -29,8 +29,6 @@ clap = { workspace = true, features = ["derive"] }
 rune-ansi-escape = { workspace = true }
 rune-app-server-protocol = { workspace = true }
 rune-arg0 = { workspace = true }
-rune-backend-client = { workspace = true }
-rune-chatgpt = { workspace = true }
 rune-cloud-requirements = { workspace = true }
 rune-common = { workspace = true, features = [
     "cli",
@@ -40,7 +38,6 @@ rune-common = { workspace = true, features = [
 rune-core = { workspace = true }
 rune-feedback = { workspace = true }
 rune-file-search = { workspace = true }
-rune-login = { workspace = true }
 rune-otel = { workspace = true }
 rune-protocol = { workspace = true }
 rune-state = { workspace = true }

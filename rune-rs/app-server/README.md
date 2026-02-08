@@ -1,6 +1,6 @@
 # rune-app-server
 
-`codex app-server` is the interface Codex uses to power rich interfaces such as the [Codex VS Code extension](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt).
+`rune app-server` is the interface Rune uses to power rich interfaces such as the [Rune VS Code extension](https://marketplace.visualstudio.com/items?itemName=openai.chatgpt).
 
 ## Table of Contents
 
@@ -19,7 +19,7 @@
 
 ## Protocol
 
-Similar to [MCP](https://modelcontextprotocol.io/), `codex app-server` supports bidirectional communication using JSON-RPC 2.0 messages (with the `"jsonrpc":"2.0"` header omitted on the wire).
+Similar to [MCP](https://modelcontextprotocol.io/), `rune app-server` supports bidirectional communication using JSON-RPC 2.0 messages (with the `"jsonrpc":"2.0"` header omitted on the wire).
 
 Supported transports:
 
@@ -30,18 +30,18 @@ Websocket transport is currently experimental and unsupported. Do not rely on it
 
 ## Message Schema
 
-Currently, you can dump a TypeScript version of the schema using `codex app-server generate-ts`, or a JSON Schema bundle via `codex app-server generate-json-schema`. Each output is specific to the version of Codex you used to run the command, so the generated artifacts are guaranteed to match that version.
+Currently, you can dump a TypeScript version of the schema using `rune app-server generate-ts`, or a JSON Schema bundle via `rune app-server generate-json-schema`. Each output is specific to the version of Rune you used to run the command, so the generated artifacts are guaranteed to match that version.
 
 ```
-codex app-server generate-ts --out DIR
-codex app-server generate-json-schema --out DIR
+rune app-server generate-ts --out DIR
+rune app-server generate-json-schema --out DIR
 ```
 
 ## Core Primitives
 
-The API exposes three top level primitives representing an interaction between a user and Codex:
+The API exposes three top level primitives representing an interaction between a user and Rune:
 
-- **Thread**: A conversation between a user and the Codex agent. Each thread contains multiple turns.
+- **Thread**: A conversation between a user and the Rune agent. Each thread contains multiple turns.
 - **Turn**: One turn of the conversation, typically starting with a user message and finishing with an agent message. Each turn contains multiple items.
 - **Item**: Represents user inputs and agent outputs as part of the turn, persisted and used as the context for future conversations. Example items include user message, agent reasoning, agent message, shell command, file edit, etc.
 
@@ -59,11 +59,11 @@ Use the thread APIs to create, list, or archive conversations. Drive a conversat
 
 Clients must send a single `initialize` request per transport connection before invoking any other method on that connection, then acknowledge with an `initialized` notification. The server returns the user agent string it will present to upstream services; subsequent requests issued before initialization receive a `"Not initialized"` error, and repeated `initialize` calls on the same connection receive an `"Already initialized"` error.
 
-Applications building on top of `codex app-server` should identify themselves via the `clientInfo` parameter.
+Applications building on top of `rune app-server` should identify themselves via the `clientInfo` parameter.
 
 **Important**: `clientInfo.name` is used to identify the client for the OpenAI Compliance Logs Platform. If
-you are developing a new Codex integration that is intended for enterprise use, please contact us to get it
-added to a known clients list. For more context: https://chatgpt.com/admin/api-reference#tag/Logs:-Codex
+you are developing a new Rune integration that is intended for enterprise use, please contact us to get it
+added to a known clients list. For more context: https://chatgpt.com/admin/api-reference#tag/Logs:-Rune
 
 Example (from OpenAI's official VSCode extension):
 
@@ -73,8 +73,8 @@ Example (from OpenAI's official VSCode extension):
   "id": 0,
   "params": {
     "clientInfo": {
-      "name": "codex_vscode",
-      "title": "Codex VS Code Extension",
+      "name": "rune_vscode",
+      "title": "Rune VS Code Extension",
       "version": "0.1.0"
     }
   }
@@ -94,17 +94,17 @@ Example (from OpenAI's official VSCode extension):
 - `thread/unarchive` — move an archived rollout file back into the sessions directory; returns the restored `thread` on success.
 - `thread/compact/start` — trigger conversation history compaction for a thread; returns `{}` immediately while progress streams through standard turn/item notifications.
 - `thread/rollback` — drop the last N turns from the agent’s in-memory context and persist a rollback marker in the rollout so future resumes see the pruned history; returns the updated `thread` (with `turns` populated) on success.
-- `turn/start` — add user input to a thread and begin Codex generation; responds with the initial `turn` object and streams `turn/started`, `item/*`, and `turn/completed` notifications. For `collaborationMode`, `settings.developer_instructions: null` means "use built-in instructions for the selected mode".
+- `turn/start` — add user input to a thread and begin Rune generation; responds with the initial `turn` object and streams `turn/started`, `item/*`, and `turn/completed` notifications. For `collaborationMode`, `settings.developer_instructions: null` means "use built-in instructions for the selected mode".
 - `turn/steer` — add user input to an already in-flight turn without starting a new turn; returns the active `turnId` that accepted the input.
 - `turn/interrupt` — request cancellation of an in-flight turn by `(thread_id, turn_id)`; success is an empty `{}` response and the turn finishes with `status: "interrupted"`.
-- `review/start` — kick off Codex’s automated reviewer for a thread; responds like `turn/start` and emits `item/started`/`item/completed` notifications with `enteredReviewMode` and `exitedReviewMode` items, plus a final assistant `agentMessage` containing the review.
+- `review/start` — kick off Rune’s automated reviewer for a thread; responds like `turn/start` and emits `item/started`/`item/completed` notifications with `enteredReviewMode` and `exitedReviewMode` items, plus a final assistant `agentMessage` containing the review.
 - `command/exec` — run a single command under the server sandbox without starting a thread/turn (handy for utilities and validation).
 - `model/list` — list available models (with reasoning effort options and optional `upgrade` model ids).
 - `experimentalFeature/list` — list feature flags with stage metadata (`beta`, `underDevelopment`, `stable`, etc.), enabled/default-enabled state, and cursor pagination. For non-beta flags, `displayName`/`description`/`announcement` are `null`.
 - `collaborationMode/list` — list available collaboration mode presets (experimental, no pagination).
 - `skills/list` — list skills for one or more `cwd` values (optional `forceReload`).
 - `skills/remote/read` — list public remote skills (**under development; do not call from production clients yet**).
-- `skills/remote/write` — download a public remote skill by `hazelnutId`; `isPreload=true` writes to `.codex/vendor_imports/skills` under `codex_home` (**under development; do not call from production clients yet**).
+- `skills/remote/write` — download a public remote skill by `hazelnutId`; `isPreload=true` writes to `.rune/vendor_imports/skills` under `rune_home` (**under development; do not call from production clients yet**).
 - `app/list` — list available apps.
 - `skills/config/write` — write user-level skill config by path.
 - `mcpServer/oauth/login` — start an OAuth login for a configured MCP server; returns an `authorization_url` and later emits `mcpServer/oauthLogin/completed` once the browser flow finishes.
@@ -120,13 +120,13 @@ Example (from OpenAI's official VSCode extension):
 
 ### Example: Start or resume a thread
 
-Start a fresh thread when you need a new Codex conversation.
+Start a fresh thread when you need a new Rune conversation.
 
 ```json
 { "method": "thread/start", "id": 10, "params": {
     // Optionally set config settings. If not specified, will use the user's
     // current config settings.
-    "model": "gpt-5.1-codex",
+    "model": "gpt-5.1-rune",
     "cwd": "/Users/me/project",
     "approvalPolicy": "never",
     "sandbox": "workspaceWrite",
@@ -270,7 +270,7 @@ While compaction is running, the thread is effectively in a turn so clients shou
 
 ### Example: Start a turn (send user input)
 
-Turns attach user input (text or images) to a thread and trigger Codex generation. The `input` field is a list of discriminated unions:
+Turns attach user input (text or images) to a thread and trigger Rune generation. The `input` field is a list of discriminated unions:
 
 - `{"type":"text","text":"Explain this diff"}`
 - `{"type":"image","url":"https://…png"}`
@@ -290,7 +290,7 @@ You can optionally specify config overrides on the new turn. If specified, these
         "writableRoots": ["/Users/me/project"],
         "networkAccess": true
     },
-    "model": "gpt-5.1-codex",
+    "model": "gpt-5.1-rune",
     "effort": "medium",
     "summary": "concise",
     "personality": "friendly",
@@ -319,7 +319,7 @@ Invoke a skill explicitly by including `$<skill-name>` in the text input and add
     "threadId": "thr_123",
     "input": [
         { "type": "text", "text": "$skill-creator Add a new skill for triaging flaky CI and include step-by-step usage." },
-        { "type": "skill", "name": "skill-creator", "path": "/Users/me/.codex/skills/skill-creator/SKILL.md" }
+        { "type": "skill", "name": "skill-creator", "path": "/Users/me/.rune/skills/skill-creator/SKILL.md" }
     ]
 } }
 { "id": 33, "result": { "turn": {
@@ -362,7 +362,7 @@ You can cancel a running Turn with `turn/interrupt`.
 { "id": 31, "result": {} }
 ```
 
-The server requests cancellations for running subprocesses, then emits a `turn/completed` event with `status: "interrupted"`. Rely on the `turn/completed` to know when Codex-side cleanup is done.
+The server requests cancellations for running subprocesses, then emits a `turn/completed` event with `status: "interrupted"`. Rely on the `turn/completed` to know when Rune-side cleanup is done.
 
 ### Example: Steer an active turn
 
@@ -382,10 +382,10 @@ Use `turn/steer` to append additional user input to the currently active turn. T
 
 ### Example: Request a code review
 
-Use `review/start` to run Codex’s reviewer on the currently checked-out project. The request takes the thread id plus a `target` describing what should be reviewed:
+Use `review/start` to run Rune’s reviewer on the currently checked-out project. The request takes the thread id plus a `target` describing what should be reviewed:
 
 - `{"type":"uncommittedChanges"}` — staged, unstaged, and untracked files.
-- `{"type":"baseBranch","branch":"main"}` — diff against the provided branch’s upstream (see prompt for the exact `git merge-base`/`git diff` instructions Codex will run).
+- `{"type":"baseBranch","branch":"main"}` — diff against the provided branch’s upstream (see prompt for the exact `git merge-base`/`git diff` instructions Rune will run).
 - `{"type":"commit","sha":"abc1234","title":"Optional subject"}` — review a specific commit.
 - `{"type":"custom","instructions":"Free-form reviewer instructions"}` — fallback prompt equivalent to the legacy manual review request.
 - `delivery` (`"inline"` or `"detached"`, default `"inline"`) — where the review runs:
@@ -415,7 +415,7 @@ Example request/response:
 
 For a detached review, use `"delivery": "detached"`. The response is the same shape, but `reviewThreadId` will be the id of the new review thread (different from the original `threadId`). The server also emits a `thread/started` notification for that new thread before streaming the review turn.
 
-Codex streams the usual `turn/started` notification followed by an `item/started`
+Rune streams the usual `turn/started` notification followed by an `item/started`
 with an `enteredReviewMode` item so clients can show progress:
 
 ```json
@@ -463,7 +463,7 @@ Run a standalone command (argv vector) in the server’s sandbox without creatin
 { "id": 32, "result": { "exitCode": 0, "stdout": "...", "stderr": "" } }
 ```
 
-- For clients that are already sandboxed externally, set `sandboxPolicy` to `{"type":"externalSandbox","networkAccess":"enabled"}` (or omit `networkAccess` to keep it restricted). Codex will not enforce its own sandbox in this mode; it tells the model it has full file-system access and passes the `networkAccess` state through `environment_context`.
+- For clients that are already sandboxed externally, set `sandboxPolicy` to `{"type":"externalSandbox","networkAccess":"enabled"}` (or omit `networkAccess` to keep it restricted). Rune will not enforce its own sandbox in this mode; it tells the model it has full file-system access and passes the `networkAccess` state through `environment_context`.
 
 Notes:
 
@@ -480,7 +480,7 @@ Event notifications are the server-initiated event stream for thread lifecycles,
 The app-server streams JSON-RPC notifications while a turn is running. Each turn starts with `turn/started` (initial `turn`) and ends with `turn/completed` (final `turn` status). Token usage events stream separately via `thread/tokenUsage/updated`. Clients subscribe to the events they care about, rendering each item incrementally as updates arrive. The per-item lifecycle is always: `item/started` → zero or more item-specific deltas → `item/completed`.
 
 - `turn/started` — `{ turn }` with the turn id, empty `items`, and `status: "inProgress"`.
-- `turn/completed` — `{ turn }` where `turn.status` is `completed`, `interrupted`, or `failed`; failures carry `{ error: { message, codexErrorInfo?, additionalDetails? } }`.
+- `turn/completed` — `{ turn }` where `turn.status` is `completed`, `interrupted`, or `failed`; failures carry `{ error: { message, runeErrorInfo?, additionalDetails? } }`.
 - `turn/diff/updated` — `{ threadId, turnId, diff }` represents the up-to-date snapshot of the turn-level unified diff, emitted after every FileChange item. `diff` is the latest aggregated unified diff across every file change in the turn. UIs can render this to show the full "what changed" view without stitching individual `fileChange` items.
 - `turn/plan/updated` — `{ turnId, explanation?, plan }` whenever the agent shares or changes its plan; each `plan` entry is `{ step, status }` with `status` in `pending`, `inProgress`, or `completed`.
 
@@ -502,8 +502,8 @@ Today both notifications carry an empty `items` array even when item events were
 - `imageView` — `{id, path}` emitted when the agent invokes the image viewer tool.
 - `enteredReviewMode` — `{id, review}` sent when the reviewer starts; `review` is a short user-facing label such as `"current changes"` or the requested target description.
 - `exitedReviewMode` — `{id, review}` emitted when the reviewer finishes; `review` is the full plain-text review (usually, overall notes plus bullet point findings).
-- `contextCompaction` — `{id}` emitted when codex compacts the conversation history. This can happen automatically.
-- `compacted` - `{threadId, turnId}` when codex compacts the conversation history. This can happen automatically. **Deprecated:** Use `contextCompaction` instead.
+- `contextCompaction` — `{id}` emitted when rune compacts the conversation history. This can happen automatically.
+- `compacted` - `{threadId, turnId}` when rune compacts the conversation history. This can happen automatically. **Deprecated:** Use `contextCompaction` instead.
 
 All items emit two shared lifecycle events:
 
@@ -537,9 +537,9 @@ There are additional item-specific events:
 
 ### Errors
 
-`error` event is emitted whenever the server hits an error mid-turn (for example, upstream model errors or quota limits). Carries the same `{ error: { message, codexErrorInfo?, additionalDetails? } }` payload as `turn.status: "failed"` and may precede that terminal notification.
+`error` event is emitted whenever the server hits an error mid-turn (for example, upstream model errors or quota limits). Carries the same `{ error: { message, runeErrorInfo?, additionalDetails? } }` payload as `turn.status: "failed"` and may precede that terminal notification.
 
-`codexErrorInfo` maps to the `CodexErrorInfo` enum. Common values:
+`runeErrorInfo` maps to the `RuneErrorInfo` enum. Common values:
 
 - `ContextWindowExceeded`
 - `UsageLimitExceeded`
@@ -553,11 +553,11 @@ There are additional item-specific events:
 - `InternalServerError`
 - `Other`: all unclassified errors
 
-When an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `codexErrorInfo` variant.
+When an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `runeErrorInfo` variant.
 
 ## Approvals
 
-Certain actions (shell commands or modifying files) may require explicit user approval depending on the user's config. When `turn/start` is used, the app-server drives an approval flow by sending a server-initiated JSON-RPC request to the client. The client must respond to tell Codex whether to proceed. UIs should present these requests inline with the active turn so users can review the proposed command or diff before choosing.
+Certain actions (shell commands or modifying files) may require explicit user approval depending on the user's config. When `turn/start` is used, the app-server drives an approval flow by sending a server-initiated JSON-RPC request to the client. The client must respond to tell Rune whether to proceed. UIs should present these requests inline with the active turn so users can review the proposed command or diff before choosing.
 
 - Requests include `threadId` and `turnId`—use them to scope UI state to the active conversation.
 - Respond with a single `{ "decision": "accept" | "decline" }` payload (plus optional `acceptSettings` on command executions). The server resumes or declines the work and ends the item with `item/completed`.
@@ -635,7 +635,7 @@ Invoke a skill by including `$<skill-name>` in the text input. Add a `skill` inp
       {
         "type": "skill",
         "name": "skill-creator",
-        "path": "/Users/me/.codex/skills/skill-creator/SKILL.md"
+        "path": "/Users/me/.rune/skills/skill-creator/SKILL.md"
       }
     ]
   }
@@ -663,11 +663,11 @@ Use `skills/list` to fetch the available skills (optionally scoped by `cwds`, wi
         "skills": [
             {
               "name": "skill-creator",
-              "description": "Create or update a Codex skill",
+              "description": "Create or update a Rune skill",
               "enabled": true,
               "interface": {
                 "displayName": "Skill Creator",
-                "shortDescription": "Create or update a Codex skill",
+                "shortDescription": "Create or update a Rune skill",
                 "iconSmall": "icon.svg",
                 "iconLarge": "icon-large.svg",
                 "brandColor": "#111111",
@@ -687,7 +687,7 @@ To enable or disable a skill by path:
   "method": "skills/config/write",
   "id": 26,
   "params": {
-    "path": "/Users/me/.codex/skills/skill-creator/SKILL.md",
+    "path": "/Users/me/.rune/skills/skill-creator/SKILL.md",
     "enabled": false
   }
 }
@@ -750,10 +750,10 @@ The JSON-RPC auth/account surface exposes request/response methods plus server-i
 
 ### Authentication modes
 
-Codex supports these authentication modes. The current mode is surfaced in `account/updated` (`authMode`) and can be inferred from `account/read`.
+Rune supports these authentication modes. The current mode is surfaced in `account/updated` (`authMode`) and can be inferred from `account/read`.
 
 - **API key (`apiKey`)**: Caller supplies an OpenAI API key via `account/login/start` with `type: "apiKey"`. The API key is saved and used for API requests.
-- **ChatGPT managed (`chatgpt`)** (recommended): Codex owns the ChatGPT OAuth flow and refresh tokens. Start via `account/login/start` with `type: "chatgpt"`; Codex persists tokens to disk and refreshes them automatically.
+- **ChatGPT managed (`chatgpt`)** (recommended): Rune owns the ChatGPT OAuth flow and refresh tokens. Start via `account/login/start` with `type: "chatgpt"`; Rune persists tokens to disk and refreshes them automatically.
 
 ### API Overview
 
@@ -787,7 +787,7 @@ Response examples:
 Field notes:
 
 - `refreshToken` (bool): set `true` to force a token refresh.
-- `requiresOpenaiAuth` reflects the active provider; when `false`, Codex can run without OpenAI credentials.
+- `requiresOpenaiAuth` reflects the active provider; when `false`, Rune can run without OpenAI credentials.
 
 ### 2) Log in with an API key
 
@@ -861,16 +861,16 @@ Some app-server methods and fields are intentionally gated behind an experimenta
 
 ### Generating stable vs experimental client schemas
 
-`codex app-server` schema generation defaults to the stable API surface (experimental fields and methods filtered out). Pass `--experimental` to include experimental methods/fields in generated TypeScript or JSON schema:
+`rune app-server` schema generation defaults to the stable API surface (experimental fields and methods filtered out). Pass `--experimental` to include experimental methods/fields in generated TypeScript or JSON schema:
 
 ```bash
 # Stable-only output (default)
-codex app-server generate-ts --out DIR
-codex app-server generate-json-schema --out DIR
+rune app-server generate-ts --out DIR
+rune app-server generate-json-schema --out DIR
 
 # Include experimental API surface
-codex app-server generate-ts --out DIR --experimental
-codex app-server generate-json-schema --out DIR --experimental
+rune app-server generate-ts --out DIR --experimental
+rune app-server generate-json-schema --out DIR --experimental
 ```
 
 ### How clients opt in at runtime

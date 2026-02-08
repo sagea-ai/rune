@@ -1,21 +1,21 @@
-//! Cloud-hosted config requirements for Codex.
+//! Cloud-hosted config requirements for Rune.
 //!
 //! This crate fetches `requirements.toml` data from the backend as an alternative to loading it
 //! from the local filesystem. It only applies to Business (aka Enterprise CBP) or Enterprise ChatGPT
 //! customers.
 //!
-//! Today, fetching is best-effort: on error or timeout, Codex continues without cloud requirements.
+//! Today, fetching is best-effort: on error or timeout, Rune continues without cloud requirements.
 //! We expect to tighten this so that Enterprise ChatGPT customers must successfully fetch these
-//! requirements before Codex will run.
+//! requirements before Rune will run.
 
 use async_trait::async_trait;
-use codex_backend_client::Client as BackendClient;
-use codex_core::AuthManager;
-use codex_core::auth::CodexAuth;
-use codex_core::config_loader::CloudRequirementsLoader;
-use codex_core::config_loader::ConfigRequirementsToml;
-use codex_core::util::backoff;
-use codex_protocol::account::PlanType;
+use rune_backend_client::Client as BackendClient;
+use rune_core::AuthManager;
+use rune_core::auth::RuneAuth;
+use rune_core::config_loader::CloudRequirementsLoader;
+use rune_core::config_loader::ConfigRequirementsToml;
+use rune_core::util::backoff;
+use rune_protocol::account::PlanType;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
@@ -39,7 +39,7 @@ trait RequirementsFetcher: Send + Sync {
     /// Returning `Err` indicates cloud requirements could not be fetched.
     async fn fetch_requirements(
         &self,
-        auth: &CodexAuth,
+        auth: &RuneAuth,
     ) -> Result<Option<String>, FetchCloudRequirementsStatus>;
 }
 
@@ -57,7 +57,7 @@ impl BackendRequirementsFetcher {
 impl RequirementsFetcher for BackendRequirementsFetcher {
     async fn fetch_requirements(
         &self,
-        auth: &CodexAuth,
+        auth: &RuneAuth,
     ) -> Result<Option<String>, FetchCloudRequirementsStatus> {
         let client = BackendClient::from_auth(self.base_url.clone(), auth)
             .inspect_err(|err| {
@@ -106,7 +106,7 @@ impl CloudRequirementsService {
 
     async fn fetch_with_timeout(&self) -> Option<ConfigRequirementsToml> {
         let _timer =
-            codex_otel::start_global_timer("codex.cloud_requirements.fetch.duration_ms", &[]);
+            rune_otel::start_global_timer("rune.cloud_requirements.fetch.duration_ms", &[]);
         let started_at = Instant::now();
         let result = timeout(self.timeout, self.fetch())
             .await
@@ -148,7 +148,7 @@ impl CloudRequirementsService {
         self.fetch_with_retries(&auth).await
     }
 
-    async fn fetch_with_retries(&self, auth: &CodexAuth) -> Option<ConfigRequirementsToml> {
+    async fn fetch_with_retries(&self, auth: &RuneAuth) -> Option<ConfigRequirementsToml> {
         for attempt in 1..=CLOUD_REQUIREMENTS_MAX_ATTEMPTS {
             let fetch_result = self
                 .fetcher
@@ -221,8 +221,8 @@ mod tests {
     use super::*;
     use base64::Engine;
     use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-    use codex_core::auth::AuthCredentialsStoreMode;
-    use codex_protocol::protocol::AskForApproval;
+    use rune_core::auth::AuthCredentialsStoreMode;
+    use rune_protocol::protocol::AskForApproval;
     use pretty_assertions::assert_eq;
     use serde_json::json;
     use std::collections::VecDeque;
@@ -232,8 +232,8 @@ mod tests {
     use std::sync::atomic::Ordering;
     use tempfile::tempdir;
 
-    fn write_auth_json(codex_home: &Path, value: serde_json::Value) -> std::io::Result<()> {
-        std::fs::write(codex_home.join("auth.json"), serde_json::to_string(&value)?)?;
+    fn write_auth_json(rune_home: &Path, value: serde_json::Value) -> std::io::Result<()> {
+        std::fs::write(rune_home.join("auth.json"), serde_json::to_string(&value)?)?;
         Ok(())
     }
 
@@ -298,7 +298,7 @@ mod tests {
     impl RequirementsFetcher for StaticFetcher {
         async fn fetch_requirements(
             &self,
-            _auth: &CodexAuth,
+            _auth: &RuneAuth,
         ) -> Result<Option<String>, FetchCloudRequirementsStatus> {
             Ok(self.contents.clone())
         }
@@ -310,7 +310,7 @@ mod tests {
     impl RequirementsFetcher for PendingFetcher {
         async fn fetch_requirements(
             &self,
-            _auth: &CodexAuth,
+            _auth: &RuneAuth,
         ) -> Result<Option<String>, FetchCloudRequirementsStatus> {
             pending::<()>().await;
             Ok(None)
@@ -336,7 +336,7 @@ mod tests {
     impl RequirementsFetcher for SequenceFetcher {
         async fn fetch_requirements(
             &self,
-            _auth: &CodexAuth,
+            _auth: &RuneAuth,
         ) -> Result<Option<String>, FetchCloudRequirementsStatus> {
             self.request_count.fetch_add(1, Ordering::SeqCst);
             let mut responses = self.responses.lock().await;

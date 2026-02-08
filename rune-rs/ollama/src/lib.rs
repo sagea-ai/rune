@@ -4,8 +4,8 @@ mod pull;
 mod url;
 
 pub use client::OllamaClient;
-use codex_core::ModelProviderInfo;
-use codex_core::config::Config;
+use rune_core::ModelProviderInfo;
+use rune_core::config::Config;
 pub use pull::CliProgressReporter;
 pub use pull::PullEvent;
 pub use pull::PullProgressReporter;
@@ -71,7 +71,7 @@ pub async fn ensure_responses_supported(provider: &ModelProviderInfo) -> std::io
 
     let min = min_responses_version();
     Err(std::io::Error::other(format!(
-        "Ollama {version} is too old. Codex requires Ollama {min} or newer."
+        "Ollama {version} is too old. Rune requires Ollama {min} or newer."
     )))
 }
 

@@ -2,10 +2,10 @@ use std::sync::Arc;
 
 use super::SessionTask;
 use super::SessionTaskContext;
-use crate::codex::TurnContext;
+use crate::rune::TurnContext;
 use crate::state::TaskKind;
 use async_trait::async_trait;
-use codex_protocol::user_input::UserInput;
+use rune_protocol::user_input::UserInput;
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Copy, Default)]
@@ -27,14 +27,14 @@ impl SessionTask for CompactTask {
         let session = session.clone_session();
         if crate::compact::should_use_remote_compact_task(&ctx.provider) {
             let _ = session.services.otel_manager.counter(
-                "codex.task.compact",
+                "rune.task.compact",
                 1,
                 &[("type", "remote")],
             );
             let _ = crate::compact_remote::run_remote_compact_task(session, ctx).await;
         } else {
             let _ = session.services.otel_manager.counter(
-                "codex.task.compact",
+                "rune.task.compact",
                 1,
                 &[("type", "local")],
             );

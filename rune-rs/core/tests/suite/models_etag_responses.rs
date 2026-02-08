@@ -3,15 +3,15 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use codex_core::CodexAuth;
-use codex_core::features::Feature;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::user_input::UserInput;
+use rune_core::RuneAuth;
+use rune_core::features::Feature;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::openai_models::ModelsResponse;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -20,7 +20,7 @@ use core_test_support::responses::ev_response_created;
 use core_test_support::responses::sse;
 use core_test_support::responses::sse_response;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use wiremock::MockServer;
@@ -35,7 +35,7 @@ async fn refresh_models_on_models_etag_mismatch_and_avoid_duplicate_models_fetch
 
     let server = MockServer::start().await;
 
-    // 1) On spawn, Codex fetches /models and stores the ETag.
+    // 1) On spawn, Rune fetches /models and stores the ETag.
     let spawn_models_mock = responses::mount_models_once_with_etag(
         &server,
         ModelsResponse { models: Vec::new() },
@@ -43,8 +43,8 @@ async fn refresh_models_on_models_etag_mismatch_and_avoid_duplicate_models_fetch
     )
     .await;
 
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
-    let mut builder = test_codex()
+    let auth = RuneAuth::create_dummy_chatgpt_auth_for_testing();
+    let mut builder = test_rune()
         .with_auth(auth)
         .with_model("gpt-5")
         .with_config(|config| {
@@ -55,14 +55,14 @@ async fn refresh_models_on_models_etag_mismatch_and_avoid_duplicate_models_fetch
         });
 
     let test = builder.build(&server).await?;
-    let codex = Arc::clone(&test.codex);
+    let rune = Arc::clone(&test.rune);
     let cwd = Arc::clone(&test.cwd);
     let session_model = test.session_configured.model.clone();
 
     assert_eq!(spawn_models_mock.requests().len(), 1);
     assert_eq!(spawn_models_mock.single_request_path(), "/v1/models");
 
-    // 2) If the server sends a different X-Models-Etag on /responses, Codex refreshes /models.
+    // 2) If the server sends a different X-Models-Etag on /responses, Rune refreshes /models.
     let refresh_models_mock = responses::mount_models_once_with_etag(
         &server,
         ModelsResponse { models: Vec::new() },
@@ -83,7 +83,7 @@ async fn refresh_models_on_models_etag_mismatch_and_avoid_duplicate_models_fetch
     )
     .await;
 
-    // Second /responses request (tool output) includes the same X-Models-Etag; Codex should not
+    // Second /responses request (tool output) includes the same X-Models-Etag; Rune should not
     // refetch /models again after it has already refreshed the catalog.
     let completion_response_body = sse(vec![
         ev_response_created("resp-2"),
@@ -96,7 +96,7 @@ async fn refresh_models_on_models_etag_mismatch_and_avoid_duplicate_models_fetch
     )
     .await;
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "please run a tool".into(),
@@ -114,7 +114,7 @@ async fn refresh_models_on_models_etag_mismatch_and_avoid_duplicate_models_fetch
         })
         .await?;
 
-    let _ = wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    let _ = wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Assert /models was refreshed exactly once after the X-Models-Etag mismatch.
     assert_eq!(refresh_models_mock.requests().len(), 1);
@@ -124,7 +124,7 @@ async fn refresh_models_on_models_etag_mismatch_and_avoid_duplicate_models_fetch
         .into_iter()
         .next()
         .expect("one request");
-    // Ensure Codex includes client_version on refresh. (This is a stable signal that we're using the /models client.)
+    // Ensure Rune includes client_version on refresh. (This is a stable signal that we're using the /models client.)
     assert!(
         refresh_req
             .url

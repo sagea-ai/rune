@@ -1,7 +1,7 @@
 use anyhow::Result;
 use chrono::DateTime;
 use chrono::Utc;
-use codex_protocol::ThreadId;
+use rune_protocol::ThreadId;
 use sqlx::Row;
 use sqlx::sqlite::SqliteRow;
 

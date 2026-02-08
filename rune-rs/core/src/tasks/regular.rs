@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use crate::codex::TurnContext;
-use crate::codex::run_turn;
+use crate::rune::TurnContext;
+use crate::rune::run_turn;
 use crate::state::TaskKind;
 use async_trait::async_trait;
-use codex_protocol::user_input::UserInput;
+use rune_protocol::user_input::UserInput;
 use tokio_util::sync::CancellationToken;
 use tracing::Instrument;
 use tracing::trace_span;

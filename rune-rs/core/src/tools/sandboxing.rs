@@ -4,17 +4,17 @@
 //! `ApprovalCtx`, `Approvable`) together with the sandbox orchestration traits
 //! and helpers (`Sandboxable`, `ToolRuntime`, `SandboxAttempt`, etc.).
 
-use crate::codex::Session;
-use crate::codex::TurnContext;
-use crate::error::CodexErr;
+use crate::rune::Session;
+use crate::rune::TurnContext;
+use crate::error::RuneErr;
 use crate::protocol::SandboxPolicy;
 use crate::sandboxing::CommandSpec;
 use crate::sandboxing::SandboxManager;
 use crate::sandboxing::SandboxTransformError;
 use crate::state::SessionServices;
-use codex_protocol::approvals::ExecPolicyAmendment;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::ReviewDecision;
+use rune_protocol::approvals::ExecPolicyAmendment;
+use rune_protocol::protocol::AskForApproval;
+use rune_protocol::protocol::ReviewDecision;
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
@@ -85,7 +85,7 @@ where
     let decision = fetch().await;
 
     services.otel_manager.counter(
-        "codex.approval.requested",
+        "rune.approval.requested",
         1,
         &[
             ("tool", tool_name),
@@ -120,7 +120,7 @@ pub(crate) enum ExecApprovalRequirement {
         /// greenlit by policy).
         bypass_sandbox: bool,
         /// Proposed execpolicy amendment to skip future approvals for similar commands
-        /// Only applies if the command fails to run in sandbox and codex prompts the user to run outside the sandbox.
+        /// Only applies if the command fails to run in sandbox and rune prompts the user to run outside the sandbox.
         proposed_execpolicy_amendment: Option<ExecPolicyAmendment>,
     },
     /// Approval required for this tool call.
@@ -256,7 +256,7 @@ pub(crate) struct ToolCtx<'a> {
 #[derive(Debug)]
 pub(crate) enum ToolError {
     Rejected(String),
-    Codex(CodexErr),
+    Rune(RuneErr),
 }
 
 pub(crate) trait ToolRuntime<Req, Out>: Approvable<Req> + Sandboxable {
@@ -273,9 +273,9 @@ pub(crate) struct SandboxAttempt<'a> {
     pub policy: &'a crate::protocol::SandboxPolicy,
     pub(crate) manager: &'a SandboxManager,
     pub(crate) sandbox_cwd: &'a Path,
-    pub codex_linux_sandbox_exe: Option<&'a std::path::PathBuf>,
+    pub rune_linux_sandbox_exe: Option<&'a std::path::PathBuf>,
     pub use_linux_sandbox_bwrap: bool,
-    pub windows_sandbox_level: codex_protocol::config_types::WindowsSandboxLevel,
+    pub windows_sandbox_level: rune_protocol::config_types::WindowsSandboxLevel,
 }
 
 impl<'a> SandboxAttempt<'a> {
@@ -289,7 +289,7 @@ impl<'a> SandboxAttempt<'a> {
                 policy: self.policy,
                 sandbox: self.sandbox,
                 sandbox_policy_cwd: self.sandbox_cwd,
-                codex_linux_sandbox_exe: self.codex_linux_sandbox_exe,
+                rune_linux_sandbox_exe: self.rune_linux_sandbox_exe,
                 use_linux_sandbox_bwrap: self.use_linux_sandbox_bwrap,
                 windows_sandbox_level: self.windows_sandbox_level,
             })
@@ -299,7 +299,7 @@ impl<'a> SandboxAttempt<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::protocol::NetworkAccess;
+    use rune_protocol::protocol::NetworkAccess;
     use pretty_assertions::assert_eq;
 
     #[test]

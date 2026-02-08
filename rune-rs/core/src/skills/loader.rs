@@ -11,8 +11,8 @@ use crate::skills::model::SkillLoadOutcome;
 use crate::skills::model::SkillMetadata;
 use crate::skills::model::SkillToolDependency;
 use crate::skills::system::system_cache_root_dir;
-use codex_app_server_protocol::ConfigLayerSource;
-use codex_protocol::protocol::SkillScope;
+use rune_app_server_protocol::ConfigLayerSource;
+use rune_protocol::protocol::SkillScope;
 use dirs::home_dir;
 use dunce::canonicalize as canonicalize_path;
 use serde::Deserialize;
@@ -186,7 +186,7 @@ fn skill_roots_from_layer_stack_inner(
                 });
             }
             ConfigLayerSource::User { .. } => {
-                // Deprecated user skills location (`$CODEX_HOME/skills`), kept for backward
+                // Deprecated user skills location (`$RUNE_HOME/skills`), kept for backward
                 // compatibility.
                 roots.push(SkillRoot {
                     path: config_folder.as_path().join(SKILLS_DIR_NAME),
@@ -201,7 +201,7 @@ fn skill_roots_from_layer_stack_inner(
                     });
                 }
 
-                // Embedded system skills are cached under `$CODEX_HOME/skills/.system` and are a
+                // Embedded system skills are cached under `$RUNE_HOME/skills/.system` and are a
                 // special case (not a config layer).
                 roots.push(SkillRoot {
                     path: system_cache_root_dir(config_folder.as_path()),
@@ -209,8 +209,8 @@ fn skill_roots_from_layer_stack_inner(
                 });
             }
             ConfigLayerSource::System { .. } => {
-                // The system config layer lives under `/etc/codex/` on Unix, so treat
-                // `/etc/codex/skills` as admin-scoped skills.
+                // The system config layer lives under `/etc/rune/` on Unix, so treat
+                // `/etc/rune/skills` as admin-scoped skills.
                 roots.push(SkillRoot {
                     path: config_folder.as_path().join(SKILLS_DIR_NAME),
                     scope: SkillScope::Admin,
@@ -354,7 +354,7 @@ fn discover_skills_under_root(root: &Path, scope: SkillScope, outcome: &mut Skil
         }
     }
 
-    // Follow symlinked directories for user, admin, and repo skills. System skills are written by Codex itself.
+    // Follow symlinked directories for user, admin, and repo skills. System skills are written by Rune itself.
     let follow_symlinks = matches!(
         scope,
         SkillScope::Repo | SkillScope::User | SkillScope::Admin
@@ -777,22 +777,22 @@ mod tests {
     use crate::config_loader::ConfigLayerStack;
     use crate::config_loader::ConfigRequirements;
     use crate::config_loader::ConfigRequirementsToml;
-    use codex_protocol::config_types::TrustLevel;
-    use codex_protocol::protocol::SkillScope;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use rune_protocol::config_types::TrustLevel;
+    use rune_protocol::protocol::SkillScope;
+    use rune_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
     use std::collections::HashMap;
     use std::path::Path;
     use tempfile::TempDir;
     use toml::Value as TomlValue;
 
-    const REPO_ROOT_CONFIG_DIR_NAME: &str = ".codex";
+    const REPO_ROOT_CONFIG_DIR_NAME: &str = ".rune";
 
-    async fn make_config(codex_home: &TempDir) -> Config {
-        make_config_for_cwd(codex_home, codex_home.path().to_path_buf()).await
+    async fn make_config(rune_home: &TempDir) -> Config {
+        make_config_for_cwd(rune_home, rune_home.path().to_path_buf()).await
     }
 
-    async fn make_config_for_cwd(codex_home: &TempDir, cwd: PathBuf) -> Config {
+    async fn make_config_for_cwd(rune_home: &TempDir, cwd: PathBuf) -> Config {
         let trust_root = cwd
             .ancestors()
             .find(|ancestor| ancestor.join(".git").exists())
@@ -800,7 +800,7 @@ mod tests {
             .unwrap_or_else(|| cwd.clone());
 
         fs::write(
-            codex_home.path().join(CONFIG_TOML_FILE),
+            rune_home.path().join(CONFIG_TOML_FILE),
             toml::to_string(&ConfigToml {
                 projects: Some(HashMap::from([(
                     trust_root.to_string_lossy().to_string(),
@@ -820,7 +820,7 @@ mod tests {
         };
 
         ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
+            .rune_home(rune_home.path().to_path_buf())
             .harness_overrides(harness_overrides)
             .build()
             .await
@@ -842,9 +842,9 @@ mod tests {
     -> anyhow::Result<()> {
         let tmp = tempfile::tempdir()?;
 
-        let system_folder = tmp.path().join("etc/codex");
+        let system_folder = tmp.path().join("etc/rune");
         let home_folder = tmp.path().join("home");
-        let user_folder = home_folder.join("codex");
+        let user_folder = home_folder.join("rune");
         fs::create_dir_all(&system_folder)?;
         fs::create_dir_all(&user_folder)?;
 
@@ -897,15 +897,15 @@ mod tests {
         let tmp = tempfile::tempdir()?;
 
         let home_folder = tmp.path().join("home");
-        let user_folder = home_folder.join("codex");
+        let user_folder = home_folder.join("rune");
         fs::create_dir_all(&user_folder)?;
 
         let project_root = tmp.path().join("repo");
-        let dot_codex = project_root.join(".codex");
-        fs::create_dir_all(&dot_codex)?;
+        let dot_rune = project_root.join(".rune");
+        fs::create_dir_all(&dot_rune)?;
 
         let user_file = AbsolutePathBuf::from_absolute_path(user_folder.join("config.toml"))?;
-        let project_dot_codex = AbsolutePathBuf::from_absolute_path(&dot_codex)?;
+        let project_dot_rune = AbsolutePathBuf::from_absolute_path(&dot_rune)?;
 
         let layers = vec![
             ConfigLayerEntry::new(
@@ -914,7 +914,7 @@ mod tests {
             ),
             ConfigLayerEntry::new_disabled(
                 ConfigLayerSource::Project {
-                    dot_codex_folder: project_dot_codex,
+                    dot_rune_folder: project_dot_rune,
                 },
                 TomlValue::Table(toml::map::Map::new()),
                 "marked untrusted",
@@ -934,7 +934,7 @@ mod tests {
         assert_eq!(
             got,
             vec![
-                (SkillScope::Repo, dot_codex.join("skills")),
+                (SkillScope::Repo, dot_rune.join("skills")),
                 (SkillScope::User, user_folder.join("skills")),
                 (
                     SkillScope::User,
@@ -955,7 +955,7 @@ mod tests {
         let tmp = tempfile::tempdir()?;
 
         let home_folder = tmp.path().join("home");
-        let user_folder = home_folder.join("codex");
+        let user_folder = home_folder.join("rune");
         fs::create_dir_all(&user_folder)?;
 
         let user_file = AbsolutePathBuf::from_absolute_path(user_folder.join("config.toml"))?;
@@ -999,18 +999,18 @@ mod tests {
         Ok(())
     }
 
-    fn write_skill(codex_home: &TempDir, dir: &str, name: &str, description: &str) -> PathBuf {
-        write_skill_at(&codex_home.path().join("skills"), dir, name, description)
+    fn write_skill(rune_home: &TempDir, dir: &str, name: &str, description: &str) -> PathBuf {
+        write_skill_at(&rune_home.path().join("skills"), dir, name, description)
     }
 
     fn write_system_skill(
-        codex_home: &TempDir,
+        rune_home: &TempDir,
         dir: &str,
         name: &str,
         description: &str,
     ) -> PathBuf {
         write_skill_at(
-            &codex_home.path().join("skills/.system"),
+            &rune_home.path().join("skills/.system"),
             dir,
             name,
             description,
@@ -1046,8 +1046,8 @@ mod tests {
 
     #[tokio::test]
     async fn loads_skill_dependencies_metadata_from_yaml() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
-        let skill_path = write_skill(&codex_home, "demo", "dep-skill", "from json");
+        let rune_home = tempfile::tempdir().expect("tempdir");
+        let skill_path = write_skill(&rune_home, "demo", "dep-skill", "from json");
         let skill_dir = skill_path.parent().expect("skill dir");
 
         write_skill_metadata_at(
@@ -1086,7 +1086,7 @@ mod tests {
 "#,
         );
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1145,8 +1145,8 @@ mod tests {
 
     #[tokio::test]
     async fn loads_skill_interface_metadata_from_yaml() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
-        let skill_path = write_skill(&codex_home, "demo", "ui-skill", "from json");
+        let rune_home = tempfile::tempdir().expect("tempdir");
+        let skill_path = write_skill(&rune_home, "demo", "ui-skill", "from json");
         let skill_dir = skill_path.parent().expect("skill dir");
         let normalized_skill_dir = normalized(skill_dir);
 
@@ -1163,7 +1163,7 @@ interface:
 "##,
         );
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1199,8 +1199,8 @@ interface:
 
     #[tokio::test]
     async fn accepts_icon_paths_under_assets_dir() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
-        let skill_path = write_skill(&codex_home, "demo", "ui-skill", "from json");
+        let rune_home = tempfile::tempdir().expect("tempdir");
+        let skill_path = write_skill(&rune_home, "demo", "ui-skill", "from json");
         let skill_dir = skill_path.parent().expect("skill dir");
         let normalized_skill_dir = normalized(skill_dir);
 
@@ -1217,7 +1217,7 @@ interface:
 "#,
         );
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1248,8 +1248,8 @@ interface:
 
     #[tokio::test]
     async fn ignores_invalid_brand_color() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
-        let skill_path = write_skill(&codex_home, "demo", "ui-skill", "from json");
+        let rune_home = tempfile::tempdir().expect("tempdir");
+        let skill_path = write_skill(&rune_home, "demo", "ui-skill", "from json");
         let skill_dir = skill_path.parent().expect("skill dir");
 
         write_skill_interface_at(
@@ -1263,7 +1263,7 @@ interface:
 "#,
         );
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1287,8 +1287,8 @@ interface:
 
     #[tokio::test]
     async fn ignores_default_prompt_over_max_length() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
-        let skill_path = write_skill(&codex_home, "demo", "ui-skill", "from json");
+        let rune_home = tempfile::tempdir().expect("tempdir");
+        let skill_path = write_skill(&rune_home, "demo", "ui-skill", "from json");
         let skill_dir = skill_path.parent().expect("skill dir");
         let normalized_skill_dir = normalized(skill_dir);
         let too_long = "x".repeat(MAX_DEFAULT_PROMPT_LEN + 1);
@@ -1308,7 +1308,7 @@ interface:
             ),
         );
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1339,8 +1339,8 @@ interface:
 
     #[tokio::test]
     async fn drops_interface_when_icons_are_invalid() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
-        let skill_path = write_skill(&codex_home, "demo", "ui-skill", "from json");
+        let rune_home = tempfile::tempdir().expect("tempdir");
+        let skill_path = write_skill(&rune_home, "demo", "ui-skill", "from json");
         let skill_dir = skill_path.parent().expect("skill dir");
 
         write_skill_interface_at(
@@ -1355,7 +1355,7 @@ interface:
 "#,
         );
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1390,15 +1390,15 @@ interface:
     #[tokio::test]
     #[cfg(unix)]
     async fn loads_skills_via_symlinked_subdir_for_user_scope() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let shared = tempfile::tempdir().expect("tempdir");
 
         let shared_skill_path = write_skill_at(shared.path(), "demo", "linked-skill", "from link");
 
-        fs::create_dir_all(codex_home.path().join("skills")).unwrap();
-        symlink_dir(shared.path(), &codex_home.path().join("skills/shared"));
+        fs::create_dir_all(rune_home.path().join("skills")).unwrap();
+        symlink_dir(shared.path(), &rune_home.path().join("skills/shared"));
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1423,17 +1423,17 @@ interface:
     #[tokio::test]
     #[cfg(unix)]
     async fn ignores_symlinked_skill_file_for_user_scope() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let shared = tempfile::tempdir().expect("tempdir");
 
         let shared_skill_path =
             write_skill_at(shared.path(), "demo", "linked-file-skill", "from link");
 
-        let skill_dir = codex_home.path().join("skills/demo");
+        let skill_dir = rune_home.path().join("skills/demo");
         fs::create_dir_all(&skill_dir).unwrap();
         symlink_file(&shared_skill_path, &skill_dir.join(SKILLS_FILENAME));
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1447,17 +1447,17 @@ interface:
     #[tokio::test]
     #[cfg(unix)]
     async fn does_not_loop_on_symlink_cycle_for_user_scope() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
 
         // Create a cycle:
-        //   $CODEX_HOME/skills/cycle/loop -> $CODEX_HOME/skills/cycle
-        let cycle_dir = codex_home.path().join("skills/cycle");
+        //   $RUNE_HOME/skills/cycle/loop -> $RUNE_HOME/skills/cycle
+        let cycle_dir = rune_home.path().join("skills/cycle");
         fs::create_dir_all(&cycle_dir).unwrap();
         symlink_dir(&cycle_dir, &cycle_dir.join("loop"));
 
         let skill_path = write_skill_at(&cycle_dir, "demo", "cycle-skill", "still loads");
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1517,7 +1517,7 @@ interface:
     #[tokio::test]
     #[cfg(unix)]
     async fn loads_skills_via_symlinked_subdir_for_repo_scope() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let repo_dir = tempfile::tempdir().expect("tempdir");
         mark_as_git_repo(repo_dir.path());
         let shared = tempfile::tempdir().expect("tempdir");
@@ -1531,7 +1531,7 @@ interface:
         fs::create_dir_all(&repo_skills_root).unwrap();
         symlink_dir(shared.path(), &repo_skills_root.join("shared"));
 
-        let cfg = make_config_for_cwd(&codex_home, repo_dir.path().to_path_buf()).await;
+        let cfg = make_config_for_cwd(&rune_home, repo_dir.path().to_path_buf()).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1556,16 +1556,16 @@ interface:
     #[tokio::test]
     #[cfg(unix)]
     async fn system_scope_ignores_symlinked_subdir() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let shared = tempfile::tempdir().expect("tempdir");
 
         write_skill_at(shared.path(), "demo", "system-linked-skill", "from link");
 
-        let system_root = codex_home.path().join("skills/.system");
+        let system_root = rune_home.path().join("skills/.system");
         fs::create_dir_all(&system_root).unwrap();
         symlink_dir(shared.path(), &system_root.join("shared"));
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1578,22 +1578,22 @@ interface:
 
     #[tokio::test]
     async fn respects_max_scan_depth_for_user_scope() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
 
         let within_depth_path = write_skill(
-            &codex_home,
+            &rune_home,
             "d0/d1/d2/d3/d4/d5",
             "within-depth-skill",
             "loads",
         );
         let _too_deep_path = write_skill(
-            &codex_home,
+            &rune_home,
             "d0/d1/d2/d3/d4/d5/d6",
             "too-deep-skill",
             "should not load",
         );
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -1617,9 +1617,9 @@ interface:
 
     #[tokio::test]
     async fn loads_valid_skill() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
-        let skill_path = write_skill(&codex_home, "demo", "demo-skill", "does things\ncarefully");
-        let cfg = make_config(&codex_home).await;
+        let rune_home = tempfile::tempdir().expect("tempdir");
+        let skill_path = write_skill(&rune_home, "demo", "demo-skill", "does things\ncarefully");
+        let cfg = make_config(&rune_home).await;
 
         let outcome = load_skills(&cfg);
         assert!(
@@ -1643,14 +1643,14 @@ interface:
 
     #[tokio::test]
     async fn loads_short_description_from_metadata() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
-        let skill_dir = codex_home.path().join("skills/demo");
+        let rune_home = tempfile::tempdir().expect("tempdir");
+        let skill_dir = rune_home.path().join("skills/demo");
         fs::create_dir_all(&skill_dir).unwrap();
         let contents = "---\nname: demo-skill\ndescription: long description\nmetadata:\n  short-description: short summary\n---\n\n# Body\n";
         let skill_path = skill_dir.join(SKILLS_FILENAME);
         fs::write(&skill_path, contents).unwrap();
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
         assert!(
             outcome.errors.is_empty(),
@@ -1673,8 +1673,8 @@ interface:
 
     #[tokio::test]
     async fn enforces_short_description_length_limits() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
-        let skill_dir = codex_home.path().join("skills/demo");
+        let rune_home = tempfile::tempdir().expect("tempdir");
+        let skill_dir = rune_home.path().join("skills/demo");
         fs::create_dir_all(&skill_dir).unwrap();
         let too_long = "x".repeat(MAX_SHORT_DESCRIPTION_LEN + 1);
         let contents = format!(
@@ -1682,7 +1682,7 @@ interface:
         );
         fs::write(skill_dir.join(SKILLS_FILENAME), contents).unwrap();
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
         assert_eq!(outcome.skills.len(), 0);
         assert_eq!(outcome.errors.len(), 1);
@@ -1697,8 +1697,8 @@ interface:
 
     #[tokio::test]
     async fn skips_hidden_and_invalid() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
-        let hidden_dir = codex_home.path().join("skills/.hidden");
+        let rune_home = tempfile::tempdir().expect("tempdir");
+        let hidden_dir = rune_home.path().join("skills/.hidden");
         fs::create_dir_all(&hidden_dir).unwrap();
         fs::write(
             hidden_dir.join(SKILLS_FILENAME),
@@ -1707,11 +1707,11 @@ interface:
         .unwrap();
 
         // Invalid because missing closing frontmatter.
-        let invalid_dir = codex_home.path().join("skills/invalid");
+        let invalid_dir = rune_home.path().join("skills/invalid");
         fs::create_dir_all(&invalid_dir).unwrap();
         fs::write(invalid_dir.join(SKILLS_FILENAME), "---\nname: bad").unwrap();
 
-        let cfg = make_config(&codex_home).await;
+        let cfg = make_config(&rune_home).await;
         let outcome = load_skills(&cfg);
         assert_eq!(outcome.skills.len(), 0);
         assert_eq!(outcome.errors.len(), 1);
@@ -1725,10 +1725,10 @@ interface:
 
     #[tokio::test]
     async fn enforces_length_limits() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let max_desc = "\u{1F4A1}".repeat(MAX_DESCRIPTION_LEN);
-        write_skill(&codex_home, "max-len", "max-len", &max_desc);
-        let cfg = make_config(&codex_home).await;
+        write_skill(&rune_home, "max-len", "max-len", &max_desc);
+        let cfg = make_config(&rune_home).await;
 
         let outcome = load_skills(&cfg);
         assert!(
@@ -1739,7 +1739,7 @@ interface:
         assert_eq!(outcome.skills.len(), 1);
 
         let too_long_desc = "\u{1F4A1}".repeat(MAX_DESCRIPTION_LEN + 1);
-        write_skill(&codex_home, "too-long", "too-long", &too_long_desc);
+        write_skill(&rune_home, "too-long", "too-long", &too_long_desc);
         let outcome = load_skills(&cfg);
         assert_eq!(outcome.skills.len(), 1);
         assert_eq!(outcome.errors.len(), 1);
@@ -1751,7 +1751,7 @@ interface:
 
     #[tokio::test]
     async fn loads_skills_from_repo_root() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let repo_dir = tempfile::tempdir().expect("tempdir");
         mark_as_git_repo(repo_dir.path());
 
@@ -1760,7 +1760,7 @@ interface:
             .join(REPO_ROOT_CONFIG_DIR_NAME)
             .join(SKILLS_DIR_NAME);
         let skill_path = write_skill_at(&skills_root, "repo", "repo-skill", "from repo");
-        let cfg = make_config_for_cwd(&codex_home, repo_dir.path().to_path_buf()).await;
+        let cfg = make_config_for_cwd(&rune_home, repo_dir.path().to_path_buf()).await;
 
         let outcome = load_skills(&cfg);
         assert!(
@@ -1783,8 +1783,8 @@ interface:
     }
 
     #[tokio::test]
-    async fn loads_skills_from_agents_dir_without_codex_dir() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+    async fn loads_skills_from_agents_dir_without_rune_dir() {
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let repo_dir = tempfile::tempdir().expect("tempdir");
         mark_as_git_repo(repo_dir.path());
 
@@ -1794,7 +1794,7 @@ interface:
             "agents-skill",
             "from agents",
         );
-        let cfg = make_config_for_cwd(&codex_home, repo_dir.path().to_path_buf()).await;
+        let cfg = make_config_for_cwd(&rune_home, repo_dir.path().to_path_buf()).await;
 
         let outcome = load_skills(&cfg);
         assert!(
@@ -1817,8 +1817,8 @@ interface:
     }
 
     #[tokio::test]
-    async fn loads_skills_from_all_codex_dirs_under_project_root() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+    async fn loads_skills_from_all_rune_dirs_under_project_root() {
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let repo_dir = tempfile::tempdir().expect("tempdir");
         mark_as_git_repo(repo_dir.path());
 
@@ -1845,7 +1845,7 @@ interface:
             "from nested",
         );
 
-        let cfg = make_config_for_cwd(&codex_home, nested_dir).await;
+        let cfg = make_config_for_cwd(&rune_home, nested_dir).await;
 
         let outcome = load_skills(&cfg);
         assert!(
@@ -1879,8 +1879,8 @@ interface:
     }
 
     #[tokio::test]
-    async fn loads_skills_from_codex_dir_when_not_git_repo() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+    async fn loads_skills_from_rune_dir_when_not_git_repo() {
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let work_dir = tempfile::tempdir().expect("tempdir");
 
         let skill_path = write_skill_at(
@@ -1893,7 +1893,7 @@ interface:
             "from cwd",
         );
 
-        let cfg = make_config_for_cwd(&codex_home, work_dir.path().to_path_buf()).await;
+        let cfg = make_config_for_cwd(&rune_home, work_dir.path().to_path_buf()).await;
 
         let outcome = load_skills(&cfg);
         assert!(
@@ -1953,11 +1953,11 @@ interface:
 
     #[tokio::test]
     async fn keeps_duplicate_names_from_repo_and_user() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let repo_dir = tempfile::tempdir().expect("tempdir");
         mark_as_git_repo(repo_dir.path());
 
-        let user_skill_path = write_skill(&codex_home, "user", "dupe-skill", "from user");
+        let user_skill_path = write_skill(&rune_home, "user", "dupe-skill", "from user");
         let repo_skill_path = write_skill_at(
             &repo_dir
                 .path()
@@ -1968,7 +1968,7 @@ interface:
             "from repo",
         );
 
-        let cfg = make_config_for_cwd(&codex_home, repo_dir.path().to_path_buf()).await;
+        let cfg = make_config_for_cwd(&rune_home, repo_dir.path().to_path_buf()).await;
 
         let outcome = load_skills(&cfg);
         assert!(
@@ -2002,8 +2002,8 @@ interface:
     }
 
     #[tokio::test]
-    async fn keeps_duplicate_names_from_nested_codex_dirs() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+    async fn keeps_duplicate_names_from_nested_rune_dirs() {
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let repo_dir = tempfile::tempdir().expect("tempdir");
         mark_as_git_repo(repo_dir.path());
 
@@ -2030,7 +2030,7 @@ interface:
             "from nested",
         );
 
-        let cfg = make_config_for_cwd(&codex_home, nested_dir).await;
+        let cfg = make_config_for_cwd(&rune_home, nested_dir).await;
         let outcome = load_skills(&cfg);
 
         assert!(
@@ -2075,7 +2075,7 @@ interface:
 
     #[tokio::test]
     async fn repo_skills_search_does_not_escape_repo_root() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let outer_dir = tempfile::tempdir().expect("tempdir");
         let repo_dir = outer_dir.path().join("repo");
         fs::create_dir_all(&repo_dir).unwrap();
@@ -2091,7 +2091,7 @@ interface:
         );
         mark_as_git_repo(&repo_dir);
 
-        let cfg = make_config_for_cwd(&codex_home, repo_dir).await;
+        let cfg = make_config_for_cwd(&rune_home, repo_dir).await;
 
         let outcome = load_skills(&cfg);
         assert!(
@@ -2104,7 +2104,7 @@ interface:
 
     #[tokio::test]
     async fn loads_skills_when_cwd_is_file_in_repo() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let repo_dir = tempfile::tempdir().expect("tempdir");
         mark_as_git_repo(repo_dir.path());
 
@@ -2120,7 +2120,7 @@ interface:
         let file_path = repo_dir.path().join("some-file.txt");
         fs::write(&file_path, "contents").unwrap();
 
-        let cfg = make_config_for_cwd(&codex_home, file_path).await;
+        let cfg = make_config_for_cwd(&rune_home, file_path).await;
 
         let outcome = load_skills(&cfg);
         assert!(
@@ -2144,7 +2144,7 @@ interface:
 
     #[tokio::test]
     async fn non_git_repo_skills_search_does_not_walk_parents() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let outer_dir = tempfile::tempdir().expect("tempdir");
         let nested_dir = outer_dir.path().join("nested/inner");
         fs::create_dir_all(&nested_dir).unwrap();
@@ -2159,7 +2159,7 @@ interface:
             "from outer",
         );
 
-        let cfg = make_config_for_cwd(&codex_home, nested_dir).await;
+        let cfg = make_config_for_cwd(&rune_home, nested_dir).await;
 
         let outcome = load_skills(&cfg);
         assert!(
@@ -2172,12 +2172,12 @@ interface:
 
     #[tokio::test]
     async fn loads_skills_from_system_cache_when_present() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
+        let rune_home = tempfile::tempdir().expect("tempdir");
         let work_dir = tempfile::tempdir().expect("tempdir");
 
-        let skill_path = write_system_skill(&codex_home, "system", "system-skill", "from system");
+        let skill_path = write_system_skill(&rune_home, "system", "system-skill", "from system");
 
-        let cfg = make_config_for_cwd(&codex_home, work_dir.path().to_path_buf()).await;
+        let cfg = make_config_for_cwd(&rune_home, work_dir.path().to_path_buf()).await;
 
         let outcome = load_skills(&cfg);
         assert!(
@@ -2201,8 +2201,8 @@ interface:
 
     #[tokio::test]
     async fn skill_roots_include_admin_with_lowest_priority_on_unix() {
-        let codex_home = tempfile::tempdir().expect("tempdir");
-        let cfg = make_config(&codex_home).await;
+        let rune_home = tempfile::tempdir().expect("tempdir");
+        let cfg = make_config(&rune_home).await;
 
         let scopes: Vec<SkillScope> = skill_roots(&cfg)
             .into_iter()

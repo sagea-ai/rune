@@ -146,12 +146,12 @@ use crate::render::RectExt;
 use crate::render::renderable::Renderable;
 use crate::slash_command::SlashCommand;
 use crate::style::user_message_style;
-use codex_common::fuzzy_match::fuzzy_match;
-use codex_protocol::custom_prompts::CustomPrompt;
-use codex_protocol::custom_prompts::PROMPTS_CMD_PREFIX;
-use codex_protocol::models::local_image_label_text;
-use codex_protocol::user_input::ByteRange;
-use codex_protocol::user_input::TextElement;
+use rune_common::fuzzy_match::fuzzy_match;
+use rune_protocol::custom_prompts::CustomPrompt;
+use rune_protocol::custom_prompts::PROMPTS_CMD_PREFIX;
+use rune_protocol::models::local_image_label_text;
+use rune_protocol::user_input::ByteRange;
+use rune_protocol::user_input::TextElement;
 
 use crate::app_event::AppEvent;
 use crate::app_event::ConnectorsSnapshot;
@@ -164,10 +164,10 @@ use crate::clipboard_paste::normalize_pasted_path;
 use crate::clipboard_paste::pasted_image_format;
 use crate::history_cell;
 use crate::ui_consts::LIVE_PREFIX_COLS;
-use codex_chatgpt::connectors;
-use codex_chatgpt::connectors::AppInfo;
-use codex_core::skills::model::SkillMetadata;
-use codex_file_search::FileMatch;
+use rune_chatgpt::connectors;
+use rune_chatgpt::connectors::AppInfo;
+use rune_core::skills::model::SkillMetadata;
+use rune_file_search::FileMatch;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -3048,7 +3048,7 @@ impl ChatComposer {
                     insert_text: format!("${skill_name}"),
                     search_terms,
                     path: Some(skill.path.to_string_lossy().into_owned()),
-                    category_tag: (skill.scope == codex_core::protocol::SkillScope::Repo)
+                    category_tag: (skill.scope == rune_core::protocol::SkillScope::Repo)
                         .then(|| "[Repo]".to_string()),
                 });
             }
@@ -3063,7 +3063,7 @@ impl ChatComposer {
                 }
                 let display_name = connectors::connector_display_label(connector);
                 let description = Some(Self::connector_brief_description(connector));
-                let slug = codex_core::connectors::connector_mention_slug(connector);
+                let slug = rune_core::connectors::connector_mention_slug(connector);
                 let search_terms = vec![display_name.clone(), connector.id.clone(), slug.clone()];
                 let connector_id = connector.id.as_str();
                 mentions.push(MentionItem {
@@ -3590,7 +3590,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -3644,7 +3644,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_footer_hint_override(Some(vec![("K".to_string(), "label".to_string())]));
@@ -3682,7 +3682,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_footer_hint_override(Some(vec![("K".to_string(), "label".to_string())]));
@@ -3731,7 +3731,7 @@ mod tests {
             true,
             sender,
             enhanced_keys_supported,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         setup(&mut composer);
@@ -4002,7 +4002,7 @@ mod tests {
             true,
             sender,
             true,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -4029,7 +4029,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -4052,7 +4052,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -4083,7 +4083,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -4146,7 +4146,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -4195,7 +4195,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -4244,7 +4244,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -4281,7 +4281,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -4462,7 +4462,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -4497,7 +4497,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -4525,7 +4525,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -4558,7 +4558,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -4606,7 +4606,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -4643,7 +4643,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -4700,7 +4700,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -4729,7 +4729,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -4764,7 +4764,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -4797,7 +4797,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -4829,7 +4829,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -4861,7 +4861,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -4899,7 +4899,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -4941,7 +4941,7 @@ mod tests {
                 true,
                 sender.clone(),
                 false,
-                "Ask Codex to do anything".to_string(),
+                "Ask Rune to do anything".to_string(),
                 false,
             );
 
@@ -4996,7 +4996,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -5025,7 +5025,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -5057,7 +5057,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -5083,7 +5083,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         type_chars_humanlike(&mut composer, &['/', 'r', 'e', 's']);
@@ -5131,7 +5131,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -5174,7 +5174,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_task_running(true);
@@ -5255,7 +5255,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -5276,7 +5276,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -5314,7 +5314,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_collaboration_modes_enabled(true);
@@ -5336,7 +5336,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_collaboration_modes_enabled(true);
@@ -5357,7 +5357,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -5389,7 +5389,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -5430,7 +5430,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_collaboration_modes_enabled(true);
@@ -5470,7 +5470,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -5550,7 +5550,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -5624,7 +5624,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -5663,7 +5663,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -5703,7 +5703,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -5751,7 +5751,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -5790,7 +5790,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -5824,7 +5824,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -5855,7 +5855,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -5877,7 +5877,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -5921,7 +5921,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -5965,7 +5965,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6009,7 +6009,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6056,7 +6056,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6096,7 +6096,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         let path = PathBuf::from("/tmp/image_dup.png");
@@ -6119,7 +6119,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         let path = PathBuf::from("/tmp/image3.png");
@@ -6159,7 +6159,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -6185,7 +6185,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -6245,7 +6245,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -6308,7 +6308,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -6335,7 +6335,7 @@ mod tests {
     #[test]
     fn pasting_filepath_attaches_image() {
         let tmp = tempdir().expect("create TempDir");
-        let tmp_path: PathBuf = tmp.path().join("codex_tui_test_paste_image.png");
+        let tmp_path: PathBuf = tmp.path().join("rune_tui_test_paste_image.png");
         let img: ImageBuffer<Rgba<u8>, Vec<u8>> =
             ImageBuffer::from_fn(3, 2, |_x, _y| Rgba([1, 2, 3, 255]));
         img.save(&tmp_path).expect("failed to write temp png");
@@ -6346,7 +6346,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -6368,7 +6368,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6408,7 +6408,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6444,7 +6444,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6484,7 +6484,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6540,7 +6540,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6597,7 +6597,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6646,7 +6646,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6711,7 +6711,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6770,7 +6770,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6807,7 +6807,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6840,7 +6840,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -6890,7 +6890,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -6945,7 +6945,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -6984,7 +6984,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -7023,7 +7023,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -7067,7 +7067,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -7108,7 +7108,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(false);
@@ -7181,7 +7181,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -7218,7 +7218,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7254,7 +7254,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -7293,7 +7293,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
         composer.set_steer_enabled(true);
@@ -7337,7 +7337,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7366,7 +7366,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7413,7 +7413,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7452,7 +7452,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7477,7 +7477,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7507,7 +7507,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7550,7 +7550,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7584,7 +7584,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7609,7 +7609,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7637,7 +7637,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7662,7 +7662,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 
@@ -7694,7 +7694,7 @@ mod tests {
             true,
             sender,
             false,
-            "Ask Codex to do anything".to_string(),
+            "Ask Rune to do anything".to_string(),
             false,
         );
 

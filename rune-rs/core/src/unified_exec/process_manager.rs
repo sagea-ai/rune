@@ -57,7 +57,7 @@ const UNIFIED_EXEC_ENV: [(&str, &str); 10] = [
     ("PAGER", "cat"),
     ("GIT_PAGER", "cat"),
     ("GH_PAGER", "cat"),
-    ("CODEX_CI", "1"),
+    ("RUNE_CI", "1"),
 ];
 
 fn apply_unified_exec_env(mut env: HashMap<String, String>) -> HashMap<String, String> {
@@ -454,7 +454,7 @@ impl UnifiedExecProcessManager {
             .ok_or(UnifiedExecError::MissingCommandLine)?;
 
         let spawn_result = if tty {
-            codex_utils_pty::pty::spawn_process(
+            rune_utils_pty::pty::spawn_process(
                 program,
                 args,
                 env.cwd.as_path(),
@@ -463,7 +463,7 @@ impl UnifiedExecProcessManager {
             )
             .await
         } else {
-            codex_utils_pty::pipe::spawn_process_no_stdin(
+            rune_utils_pty::pipe::spawn_process_no_stdin(
                 program,
                 args,
                 env.cwd.as_path(),
@@ -690,7 +690,7 @@ mod tests {
             ("PAGER".to_string(), "cat".to_string()),
             ("GIT_PAGER".to_string(), "cat".to_string()),
             ("GH_PAGER".to_string(), "cat".to_string()),
-            ("CODEX_CI".to_string(), "1".to_string()),
+            ("RUNE_CI".to_string(), "1".to_string()),
         ]);
 
         assert_eq!(env, expected);

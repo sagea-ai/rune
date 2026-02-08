@@ -1,6 +1,6 @@
 //! Exercises `ChatWidget` event handling and rendering invariants.
 //!
-//! These tests treat the widget as the adapter between `codex_core::protocol::EventMsg` inputs and
+//! These tests treat the widget as the adapter between `rune_core::protocol::EventMsg` inputs and
 //! the TUI output. Many assertions are snapshot-based so that layout regressions and status/header
 //! changes show up as stable, reviewable diffs.
 
@@ -15,79 +15,79 @@ use crate::history_cell::UserHistoryCell;
 use crate::test_backend::VT100Backend;
 use crate::tui::FrameRequester;
 use assert_matches::assert_matches;
-use codex_common::approval_presets::builtin_approval_presets;
-use codex_core::AuthManager;
-use codex_core::CodexAuth;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_core::config::Constrained;
-use codex_core::config::ConstraintError;
-use codex_core::config_loader::RequirementSource;
-use codex_core::features::Feature;
-use codex_core::models_manager::manager::ModelsManager;
-use codex_core::protocol::AgentMessageDeltaEvent;
-use codex_core::protocol::AgentMessageEvent;
-use codex_core::protocol::AgentReasoningDeltaEvent;
-use codex_core::protocol::AgentReasoningEvent;
-use codex_core::protocol::ApplyPatchApprovalRequestEvent;
-use codex_core::protocol::BackgroundEventEvent;
-use codex_core::protocol::CreditsSnapshot;
-use codex_core::protocol::Event;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ExecApprovalRequestEvent;
-use codex_core::protocol::ExecCommandBeginEvent;
-use codex_core::protocol::ExecCommandEndEvent;
-use codex_core::protocol::ExecCommandSource;
-use codex_core::protocol::ExecPolicyAmendment;
-use codex_core::protocol::ExitedReviewModeEvent;
-use codex_core::protocol::FileChange;
-use codex_core::protocol::ItemCompletedEvent;
-use codex_core::protocol::McpStartupCompleteEvent;
-use codex_core::protocol::McpStartupStatus;
-use codex_core::protocol::McpStartupUpdateEvent;
-use codex_core::protocol::Op;
-use codex_core::protocol::PatchApplyBeginEvent;
-use codex_core::protocol::PatchApplyEndEvent;
-use codex_core::protocol::RateLimitWindow;
-use codex_core::protocol::ReviewRequest;
-use codex_core::protocol::ReviewTarget;
-use codex_core::protocol::SessionSource;
-use codex_core::protocol::StreamErrorEvent;
-use codex_core::protocol::TerminalInteractionEvent;
-use codex_core::protocol::TokenCountEvent;
-use codex_core::protocol::TokenUsage;
-use codex_core::protocol::TokenUsageInfo;
-use codex_core::protocol::TurnCompleteEvent;
-use codex_core::protocol::TurnStartedEvent;
-use codex_core::protocol::UndoCompletedEvent;
-use codex_core::protocol::UndoStartedEvent;
-use codex_core::protocol::ViewImageToolCallEvent;
-use codex_core::protocol::WarningEvent;
-use codex_core::skills::model::SkillMetadata;
-use codex_otel::OtelManager;
-use codex_otel::RuntimeMetricsSummary;
-use codex_protocol::ThreadId;
-use codex_protocol::account::PlanType;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Personality;
-use codex_protocol::config_types::Settings;
-use codex_protocol::items::AgentMessageContent;
-use codex_protocol::items::AgentMessageItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_protocol::openai_models::default_input_modalities;
-use codex_protocol::parse_command::ParsedCommand;
-use codex_protocol::plan_tool::PlanItemArg;
-use codex_protocol::plan_tool::StepStatus;
-use codex_protocol::plan_tool::UpdatePlanArgs;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::SkillScope;
-use codex_protocol::user_input::TextElement;
-use codex_protocol::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_common::approval_presets::builtin_approval_presets;
+use rune_core::AuthManager;
+use rune_core::RuneAuth;
+use rune_core::config::Config;
+use rune_core::config::ConfigBuilder;
+use rune_core::config::Constrained;
+use rune_core::config::ConstraintError;
+use rune_core::config_loader::RequirementSource;
+use rune_core::features::Feature;
+use rune_core::models_manager::manager::ModelsManager;
+use rune_core::protocol::AgentMessageDeltaEvent;
+use rune_core::protocol::AgentMessageEvent;
+use rune_core::protocol::AgentReasoningDeltaEvent;
+use rune_core::protocol::AgentReasoningEvent;
+use rune_core::protocol::ApplyPatchApprovalRequestEvent;
+use rune_core::protocol::BackgroundEventEvent;
+use rune_core::protocol::CreditsSnapshot;
+use rune_core::protocol::Event;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ExecApprovalRequestEvent;
+use rune_core::protocol::ExecCommandBeginEvent;
+use rune_core::protocol::ExecCommandEndEvent;
+use rune_core::protocol::ExecCommandSource;
+use rune_core::protocol::ExecPolicyAmendment;
+use rune_core::protocol::ExitedReviewModeEvent;
+use rune_core::protocol::FileChange;
+use rune_core::protocol::ItemCompletedEvent;
+use rune_core::protocol::McpStartupCompleteEvent;
+use rune_core::protocol::McpStartupStatus;
+use rune_core::protocol::McpStartupUpdateEvent;
+use rune_core::protocol::Op;
+use rune_core::protocol::PatchApplyBeginEvent;
+use rune_core::protocol::PatchApplyEndEvent;
+use rune_core::protocol::RateLimitWindow;
+use rune_core::protocol::ReviewRequest;
+use rune_core::protocol::ReviewTarget;
+use rune_core::protocol::SessionSource;
+use rune_core::protocol::StreamErrorEvent;
+use rune_core::protocol::TerminalInteractionEvent;
+use rune_core::protocol::TokenCountEvent;
+use rune_core::protocol::TokenUsage;
+use rune_core::protocol::TokenUsageInfo;
+use rune_core::protocol::TurnCompleteEvent;
+use rune_core::protocol::TurnStartedEvent;
+use rune_core::protocol::UndoCompletedEvent;
+use rune_core::protocol::UndoStartedEvent;
+use rune_core::protocol::ViewImageToolCallEvent;
+use rune_core::protocol::WarningEvent;
+use rune_core::skills::model::SkillMetadata;
+use rune_otel::OtelManager;
+use rune_otel::RuntimeMetricsSummary;
+use rune_protocol::ThreadId;
+use rune_protocol::account::PlanType;
+use rune_protocol::config_types::CollaborationMode;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::config_types::Personality;
+use rune_protocol::config_types::Settings;
+use rune_protocol::items::AgentMessageContent;
+use rune_protocol::items::AgentMessageItem;
+use rune_protocol::items::TurnItem;
+use rune_protocol::models::MessagePhase;
+use rune_protocol::openai_models::ModelPreset;
+use rune_protocol::openai_models::ReasoningEffortPreset;
+use rune_protocol::openai_models::default_input_modalities;
+use rune_protocol::parse_command::ParsedCommand;
+use rune_protocol::plan_tool::PlanItemArg;
+use rune_protocol::plan_tool::StepStatus;
+use rune_protocol::plan_tool::UpdatePlanArgs;
+use rune_protocol::protocol::RuneErrorInfo;
+use rune_protocol::protocol::SkillScope;
+use rune_protocol::user_input::TextElement;
+use rune_protocol::user_input::UserInput;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyModifiers;
@@ -105,9 +105,9 @@ use toml::Value as TomlValue;
 
 async fn test_config() -> Config {
     // Use base defaults to avoid depending on host state.
-    let codex_home = std::env::temp_dir();
+    let rune_home = std::env::temp_dir();
     ConfigBuilder::default()
-        .codex_home(codex_home.clone())
+        .rune_home(rune_home.clone())
         .build()
         .await
         .expect("config")
@@ -141,7 +141,7 @@ async fn resumed_initial_messages_render_history() {
 
     let conversation_id = ThreadId::new();
     let rollout_file = NamedTempFile::new().unwrap();
-    let configured = codex_core::protocol::SessionConfiguredEvent {
+    let configured = rune_core::protocol::SessionConfiguredEvent {
         session_id: conversation_id,
         forked_from_id: None,
         thread_name: None,
@@ -167,7 +167,7 @@ async fn resumed_initial_messages_render_history() {
         rollout_path: Some(rollout_file.path().to_path_buf()),
     };
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "initial".into(),
         msg: EventMsg::SessionConfigured(configured),
     });
@@ -208,7 +208,7 @@ async fn replayed_user_message_preserves_text_elements_and_local_images() {
 
     let conversation_id = ThreadId::new();
     let rollout_file = NamedTempFile::new().unwrap();
-    let configured = codex_core::protocol::SessionConfiguredEvent {
+    let configured = rune_core::protocol::SessionConfiguredEvent {
         session_id: conversation_id,
         forked_from_id: None,
         thread_name: None,
@@ -229,7 +229,7 @@ async fn replayed_user_message_preserves_text_elements_and_local_images() {
         rollout_path: Some(rollout_file.path().to_path_buf()),
     };
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "initial".into(),
         msg: EventMsg::SessionConfigured(configured),
     });
@@ -260,7 +260,7 @@ async fn forked_thread_history_line_includes_name_and_id_snapshot() {
     let (chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
     let mut chat = chat;
     let temp = tempdir().expect("tempdir");
-    chat.config.codex_home = temp.path().to_path_buf();
+    chat.config.rune_home = temp.path().to_path_buf();
 
     let forked_from_id =
         ThreadId::from_string("e9f18a88-8081-4e51-9d4e-8af5cde2d8dd").expect("forked id");
@@ -297,7 +297,7 @@ async fn forked_thread_history_line_without_name_shows_id_once_snapshot() {
     let (chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
     let mut chat = chat;
     let temp = tempdir().expect("tempdir");
-    chat.config.codex_home = temp.path().to_path_buf();
+    chat.config.rune_home = temp.path().to_path_buf();
 
     let forked_from_id =
         ThreadId::from_string("019c2d47-4935-7423-a190-05691f566092").expect("forked id");
@@ -325,7 +325,7 @@ async fn submission_preserves_text_elements_and_local_images() {
 
     let conversation_id = ThreadId::new();
     let rollout_file = NamedTempFile::new().unwrap();
-    let configured = codex_core::protocol::SessionConfiguredEvent {
+    let configured = rune_core::protocol::SessionConfiguredEvent {
         session_id: conversation_id,
         forked_from_id: None,
         thread_name: None,
@@ -340,7 +340,7 @@ async fn submission_preserves_text_elements_and_local_images() {
         initial_messages: None,
         rollout_path: Some(rollout_file.path().to_path_buf()),
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "initial".into(),
         msg: EventMsg::SessionConfigured(configured),
     });
@@ -404,7 +404,7 @@ async fn submission_prefers_selected_duplicate_skill_path() {
 
     let conversation_id = ThreadId::new();
     let rollout_file = NamedTempFile::new().unwrap();
-    let configured = codex_core::protocol::SessionConfiguredEvent {
+    let configured = rune_core::protocol::SessionConfiguredEvent {
         session_id: conversation_id,
         forked_from_id: None,
         thread_name: None,
@@ -419,7 +419,7 @@ async fn submission_prefers_selected_duplicate_skill_path() {
         initial_messages: None,
         rollout_path: Some(rollout_file.path().to_path_buf()),
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "initial".into(),
         msg: EventMsg::SessionConfigured(configured),
     });
@@ -579,9 +579,9 @@ async fn interrupted_turn_restores_queued_messages_with_images_and_elements() {
 
     // When interrupted, queued messages are merged into the composer; image placeholders
     // must be renumbered to match the combined local image list.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "interrupt".into(),
-        msg: EventMsg::TurnAborted(codex_core::protocol::TurnAbortedEvent {
+        msg: EventMsg::TurnAborted(rune_core::protocol::TurnAbortedEvent {
             reason: TurnAbortReason::Interrupted,
         }),
     });
@@ -642,9 +642,9 @@ async fn interrupted_turn_restore_keeps_active_mode_for_resubmission() {
     });
     chat.refresh_queued_user_messages();
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "interrupt".into(),
-        msg: EventMsg::TurnAborted(codex_core::protocol::TurnAbortedEvent {
+        msg: EventMsg::TurnAborted(rune_core::protocol::TurnAbortedEvent {
             reason: TurnAbortReason::Interrupted,
         }),
     });
@@ -798,7 +798,7 @@ async fn remap_placeholders_uses_byte_ranges_when_placeholder_missing() {
 async fn entered_review_mode_uses_request_hint() {
     let (mut chat, mut rx, _ops) = make_chatwidget_manual(None).await;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "review-start".into(),
         msg: EventMsg::EnteredReviewMode(ReviewRequest {
             target: ReviewTarget::BaseBranch {
@@ -819,7 +819,7 @@ async fn entered_review_mode_uses_request_hint() {
 async fn entered_review_mode_defaults_to_current_changes_banner() {
     let (mut chat, mut rx, _ops) = make_chatwidget_manual(None).await;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "review-start".into(),
         msg: EventMsg::EnteredReviewMode(ReviewRequest {
             target: ReviewTarget::UncommittedChanges,
@@ -842,7 +842,7 @@ async fn review_restores_context_window_indicator() {
     let pre_review_tokens = 12_700; // ~30% remaining after subtracting baseline.
     let review_tokens = 12_030; // ~97% remaining after subtracting baseline.
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "token-before".into(),
         msg: EventMsg::TokenCount(TokenCountEvent {
             info: Some(make_token_info(pre_review_tokens, context_window)),
@@ -851,7 +851,7 @@ async fn review_restores_context_window_indicator() {
     });
     assert_eq!(chat.bottom_pane.context_window_percent(), Some(30));
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "review-start".into(),
         msg: EventMsg::EnteredReviewMode(ReviewRequest {
             target: ReviewTarget::BaseBranch {
@@ -861,7 +861,7 @@ async fn review_restores_context_window_indicator() {
         }),
     });
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "token-review".into(),
         msg: EventMsg::TokenCount(TokenCountEvent {
             info: Some(make_token_info(review_tokens, context_window)),
@@ -870,7 +870,7 @@ async fn review_restores_context_window_indicator() {
     });
     assert_eq!(chat.bottom_pane.context_window_percent(), Some(97));
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "review-end".into(),
         msg: EventMsg::ExitedReviewMode(ExitedReviewModeEvent {
             review_output: None,
@@ -890,7 +890,7 @@ async fn token_count_none_resets_context_indicator() {
     let context_window = 13_000;
     let pre_compact_tokens = 12_700;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "token-before".into(),
         msg: EventMsg::TokenCount(TokenCountEvent {
             info: Some(make_token_info(pre_compact_tokens, context_window)),
@@ -899,7 +899,7 @@ async fn token_count_none_resets_context_indicator() {
     });
     assert_eq!(chat.bottom_pane.context_window_percent(), Some(30));
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "token-cleared".into(),
         msg: EventMsg::TokenCount(TokenCountEvent {
             info: None,
@@ -929,7 +929,7 @@ async fn context_indicator_shows_used_tokens_when_window_unknown() {
         model_context_window: None,
     };
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "token-usage".into(),
         msg: EventMsg::TokenCount(TokenCountEvent {
             info: Some(token_info),
@@ -956,10 +956,10 @@ async fn helpers_are_available_and_do_not_panic() {
     let resolved_model = ModelsManager::get_model_offline(cfg.model.as_deref());
     let otel_manager = test_otel_manager(&cfg, resolved_model.as_str());
     let thread_manager = Arc::new(ThreadManager::with_models_provider(
-        CodexAuth::from_api_key("test"),
+        RuneAuth::from_api_key("test"),
         cfg.model_provider.clone(),
     ));
-    let auth_manager = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("test"));
+    let auth_manager = AuthManager::from_auth_for_testing(RuneAuth::from_api_key("test"));
     let init = ChatWidgetInit {
         config: cfg,
         frame_requester: FrameRequester::test_dummy(),
@@ -968,7 +968,7 @@ async fn helpers_are_available_and_do_not_panic() {
         enhanced_keys_supported: false,
         auth_manager,
         models_manager: thread_manager.get_models_manager(),
-        feedback: codex_feedback::CodexFeedback::new(),
+        feedback: rune_feedback::RuneFeedback::new(),
         is_first_run: true,
         feedback_audience: FeedbackAudience::External,
         model: Some(resolved_model),
@@ -1020,16 +1020,16 @@ async fn make_chatwidget_manual(
         frame_requester: FrameRequester::test_dummy(),
         has_input_focus: true,
         enhanced_keys_supported: false,
-        placeholder_text: "Ask Codex to do anything".to_string(),
+        placeholder_text: "Ask Rune to do anything".to_string(),
         disable_paste_burst: false,
         animations_enabled: cfg.animations,
         skills: None,
     });
     bottom.set_steer_enabled(true);
     bottom.set_collaboration_modes_enabled(cfg.features.enabled(Feature::CollaborationModes));
-    let auth_manager = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("test"));
-    let codex_home = cfg.codex_home.clone();
-    let models_manager = Arc::new(ModelsManager::new(codex_home, auth_manager.clone()));
+    let auth_manager = AuthManager::from_auth_for_testing(RuneAuth::from_api_key("test"));
+    let rune_home = cfg.rune_home.clone();
+    let models_manager = Arc::new(ModelsManager::new(rune_home, auth_manager.clone()));
     let reasoning_effort = None;
     let base_mode = CollaborationMode {
         mode: ModeKind::Default,
@@ -1042,7 +1042,7 @@ async fn make_chatwidget_manual(
     let current_collaboration_mode = base_mode;
     let mut widget = ChatWidget {
         app_event_tx,
-        codex_op_tx: op_tx,
+        rune_op_tx: op_tx,
         bottom_pane: bottom,
         active_cell: None,
         active_cell_revision: 0,
@@ -1101,7 +1101,7 @@ async fn make_chatwidget_manual(
         last_separator_elapsed_secs: None,
         turn_runtime_metrics: RuntimeMetricsSummary::default(),
         last_rendered_width: std::cell::Cell::new(None),
-        feedback: codex_feedback::CodexFeedback::new(),
+        feedback: rune_feedback::RuneFeedback::new(),
         feedback_audience: FeedbackAudience::External,
         current_rollout_path: None,
         current_cwd: None,
@@ -1131,9 +1131,9 @@ fn next_submit_op(op_rx: &mut tokio::sync::mpsc::UnboundedReceiver<Op>) -> Op {
 
 fn set_chatgpt_auth(chat: &mut ChatWidget) {
     chat.auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(RuneAuth::create_dummy_chatgpt_auth_for_testing());
     chat.models_manager = Arc::new(ModelsManager::new(
-        chat.config.codex_home.clone(),
+        chat.config.rune_home.clone(),
         chat.auth_manager.clone(),
     ));
 }
@@ -1370,7 +1370,7 @@ async fn rate_limit_snapshot_updates_and_retains_plan_type() {
 async fn rate_limit_switch_prompt_skips_when_on_lower_cost_model() {
     let (mut chat, _, _) = make_chatwidget_manual(Some(NUDGE_MODEL_SLUG)).await;
     chat.auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(RuneAuth::create_dummy_chatgpt_auth_for_testing());
 
     chat.on_rate_limit_snapshot(Some(snapshot(95.0)));
 
@@ -1382,7 +1382,7 @@ async fn rate_limit_switch_prompt_skips_when_on_lower_cost_model() {
 
 #[tokio::test]
 async fn rate_limit_switch_prompt_shows_once_per_session() {
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = RuneAuth::create_dummy_chatgpt_auth_for_testing();
     let (mut chat, _, _) = make_chatwidget_manual(Some("gpt-5")).await;
     chat.auth_manager = AuthManager::from_auth_for_testing(auth);
 
@@ -1406,7 +1406,7 @@ async fn rate_limit_switch_prompt_shows_once_per_session() {
 
 #[tokio::test]
 async fn rate_limit_switch_prompt_respects_hidden_notice() {
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = RuneAuth::create_dummy_chatgpt_auth_for_testing();
     let (mut chat, _, _) = make_chatwidget_manual(Some("gpt-5")).await;
     chat.auth_manager = AuthManager::from_auth_for_testing(auth);
     chat.config.notices.hide_rate_limit_model_nudge = Some(true);
@@ -1421,7 +1421,7 @@ async fn rate_limit_switch_prompt_respects_hidden_notice() {
 
 #[tokio::test]
 async fn rate_limit_switch_prompt_defers_until_task_complete() {
-    let auth = CodexAuth::create_dummy_chatgpt_auth_for_testing();
+    let auth = RuneAuth::create_dummy_chatgpt_auth_for_testing();
     let (mut chat, _, _) = make_chatwidget_manual(Some("gpt-5")).await;
     chat.auth_manager = AuthManager::from_auth_for_testing(auth);
 
@@ -1444,7 +1444,7 @@ async fn rate_limit_switch_prompt_defers_until_task_complete() {
 async fn rate_limit_switch_prompt_popup_snapshot() {
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5")).await;
     chat.auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(RuneAuth::create_dummy_chatgpt_auth_for_testing());
 
     chat.on_rate_limit_snapshot(Some(snapshot(92.0)));
     chat.maybe_show_pending_rate_limit_prompt();
@@ -1650,7 +1650,7 @@ async fn plan_implementation_popup_shows_once_when_replay_precedes_live_turn_com
         "expected no prompt for replayed turn completion, got {replay_popup:?}"
     );
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "live-turn-complete-1".to_string(),
         msg: EventMsg::TurnComplete(TurnCompleteEvent {
             last_agent_message: Some("Plan details".to_string()),
@@ -1670,7 +1670,7 @@ async fn plan_implementation_popup_shows_once_when_replay_precedes_live_turn_com
         "expected prompt to dismiss on Esc, got {dismissed_popup:?}"
     );
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "live-turn-complete-2".to_string(),
         msg: EventMsg::TurnComplete(TurnCompleteEvent {
             last_agent_message: Some("Plan details".to_string()),
@@ -1754,7 +1754,7 @@ async fn plan_implementation_popup_shows_after_proposed_plan_output() {
 async fn plan_implementation_popup_skips_when_rate_limit_prompt_pending() {
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5")).await;
     chat.auth_manager =
-        AuthManager::from_auth_for_testing(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        AuthManager::from_auth_for_testing(RuneAuth::create_dummy_chatgpt_auth_for_testing());
     chat.set_feature_enabled(Feature::CollaborationModes, true);
     let plan_mask =
         collaboration_modes::mask_for_kind(chat.models_manager.as_ref(), ModeKind::Plan)
@@ -1801,7 +1801,7 @@ async fn exec_approval_emits_proposed_command_and_decision_history() {
         proposed_execpolicy_amendment: None,
         parsed_cmd: vec![],
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-short".into(),
         msg: EventMsg::ExecApprovalRequest(ev),
     });
@@ -1845,7 +1845,7 @@ async fn exec_approval_decision_truncates_multiline_and_long_commands() {
         proposed_execpolicy_amendment: None,
         parsed_cmd: vec![],
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-multi".into(),
         msg: EventMsg::ExecApprovalRequest(ev_multi),
     });
@@ -1895,7 +1895,7 @@ async fn exec_approval_decision_truncates_multiline_and_long_commands() {
         proposed_execpolicy_amendment: None,
         parsed_cmd: vec![],
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-long".into(),
         msg: EventMsg::ExecApprovalRequest(ev_long),
     });
@@ -1924,7 +1924,7 @@ fn begin_exec_with_source(
     // Build the full command vec and parse it using core's parser,
     // then convert to protocol variants for the event payload.
     let command = vec!["bash".to_string(), "-lc".to_string(), raw_cmd.to_string()];
-    let parsed_cmd: Vec<ParsedCommand> = codex_core::parse_command::parse_command(&command);
+    let parsed_cmd: Vec<ParsedCommand> = rune_core::parse_command::parse_command(&command);
     let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
     let interaction_input = None;
     let event = ExecCommandBeginEvent {
@@ -1937,7 +1937,7 @@ fn begin_exec_with_source(
         source,
         interaction_input,
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: call_id.to_string(),
         msg: EventMsg::ExecCommandBegin(event.clone()),
     });
@@ -1962,7 +1962,7 @@ fn begin_unified_exec_startup(
         source: ExecCommandSource::UnifiedExecStartup,
         interaction_input: None,
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: call_id.to_string(),
         msg: EventMsg::ExecCommandBegin(event.clone()),
     });
@@ -1970,7 +1970,7 @@ fn begin_unified_exec_startup(
 }
 
 fn terminal_interaction(chat: &mut ChatWidget, call_id: &str, process_id: &str, stdin: &str) {
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: call_id.to_string(),
         msg: EventMsg::TerminalInteraction(TerminalInteractionEvent {
             call_id: call_id.to_string(),
@@ -1986,7 +1986,7 @@ fn complete_assistant_message(
     text: &str,
     phase: Option<MessagePhase>,
 ) {
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: format!("raw-{item_id}"),
         msg: EventMsg::ItemCompleted(ItemCompletedEvent {
             thread_id: ThreadId::new(),
@@ -2028,7 +2028,7 @@ fn end_exec(
         interaction_input,
         process_id,
     } = begin_event;
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: call_id.clone(),
         msg: EventMsg::ExecCommandEnd(ExecCommandEndEvent {
             call_id,
@@ -2486,9 +2486,9 @@ async fn exec_end_without_begin_uses_event_command() {
         "-lc".to_string(),
         "echo orphaned".to_string(),
     ];
-    let parsed_cmd = codex_core::parse_command::parse_command(&command);
+    let parsed_cmd = rune_core::parse_command::parse_command(&command);
     let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "call-orphan".to_string(),
         msg: EventMsg::ExecCommandEnd(ExecCommandEndEvent {
             call_id: "call-orphan".to_string(),
@@ -2594,7 +2594,7 @@ async fn unified_exec_interaction_after_task_complete_is_suppressed() {
     chat.on_task_started();
     chat.on_task_complete(None, false);
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "call-1".to_string(),
         msg: EventMsg::TerminalInteraction(TerminalInteractionEvent {
             call_id: "call-1".to_string(),
@@ -2613,7 +2613,7 @@ async fn unified_exec_interaction_after_task_complete_is_suppressed() {
 #[tokio::test]
 async fn unified_exec_wait_after_final_agent_message_snapshot() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
@@ -2624,13 +2624,13 @@ async fn unified_exec_wait_after_final_agent_message_snapshot() {
     begin_unified_exec_startup(&mut chat, "call-wait", "proc-1", "cargo test -p rune-core");
     terminal_interaction(&mut chat, "call-wait-stdin", "proc-1", "");
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
         msg: EventMsg::AgentMessage(AgentMessageEvent {
             message: "Final response.".into(),
         }),
     });
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
         msg: EventMsg::TurnComplete(TurnCompleteEvent {
             last_agent_message: Some("Final response.".into()),
@@ -2648,7 +2648,7 @@ async fn unified_exec_wait_after_final_agent_message_snapshot() {
 #[tokio::test]
 async fn unified_exec_wait_before_streamed_agent_message_snapshot() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
@@ -2664,13 +2664,13 @@ async fn unified_exec_wait_before_streamed_agent_message_snapshot() {
     );
     terminal_interaction(&mut chat, "call-wait-stream-stdin", "proc-1", "");
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
         msg: EventMsg::AgentMessageDelta(AgentMessageDeltaEvent {
             delta: "Streaming response.".into(),
         }),
     });
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
         msg: EventMsg::TurnComplete(TurnCompleteEvent {
             last_agent_message: None,
@@ -2722,7 +2722,7 @@ async fn unified_exec_waiting_multiple_empty_snapshots() {
         "Waiting for background terminal · just fix"
     );
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-wait-1".into(),
         msg: EventMsg::TurnComplete(TurnCompleteEvent {
             last_agent_message: None,
@@ -2773,7 +2773,7 @@ async fn unified_exec_non_empty_then_empty_snapshots() {
         .collect::<String>();
     assert_snapshot!("unified_exec_non_empty_then_empty_active", active_combined);
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-wait-3".into(),
         msg: EventMsg::TurnComplete(TurnCompleteEvent {
             last_agent_message: None,
@@ -2835,7 +2835,7 @@ async fn slash_init_skips_when_project_doc_exists() {
 
     match op_rx.try_recv() {
         Err(TryRecvError::Empty) => {}
-        other => panic!("expected no Codex op to be sent, got {other:?}"),
+        other => panic!("expected no Rune op to be sent, got {other:?}"),
     }
 
     let cells = drain_insert_history(&mut rx);
@@ -2956,7 +2956,7 @@ async fn plan_slash_command_with_args_submits_prompt_in_plan_mode() {
     let (mut chat, _rx, mut op_rx) = make_chatwidget_manual(None).await;
     chat.set_feature_enabled(Feature::CollaborationModes, true);
 
-    let configured = codex_core::protocol::SessionConfiguredEvent {
+    let configured = rune_core::protocol::SessionConfiguredEvent {
         session_id: ThreadId::new(),
         forked_from_id: None,
         thread_name: None,
@@ -2971,7 +2971,7 @@ async fn plan_slash_command_with_args_submits_prompt_in_plan_mode() {
         initial_messages: None,
         rollout_path: None,
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "configured".into(),
         msg: EventMsg::SessionConfigured(configured),
     });
@@ -2997,9 +2997,9 @@ async fn plan_slash_command_with_args_submits_prompt_in_plan_mode() {
 
 #[tokio::test]
 async fn collaboration_modes_defaults_to_code_on_startup() {
-    let codex_home = tempdir().expect("tempdir");
+    let rune_home = tempdir().expect("tempdir");
     let cfg = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .rune_home(rune_home.path().to_path_buf())
         .cli_overrides(vec![(
             "features.collaboration_modes".to_string(),
             TomlValue::Boolean(true),
@@ -3010,10 +3010,10 @@ async fn collaboration_modes_defaults_to_code_on_startup() {
     let resolved_model = ModelsManager::get_model_offline(cfg.model.as_deref());
     let otel_manager = test_otel_manager(&cfg, resolved_model.as_str());
     let thread_manager = Arc::new(ThreadManager::with_models_provider(
-        CodexAuth::from_api_key("test"),
+        RuneAuth::from_api_key("test"),
         cfg.model_provider.clone(),
     ));
-    let auth_manager = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("test"));
+    let auth_manager = AuthManager::from_auth_for_testing(RuneAuth::from_api_key("test"));
     let init = ChatWidgetInit {
         config: cfg,
         frame_requester: FrameRequester::test_dummy(),
@@ -3022,7 +3022,7 @@ async fn collaboration_modes_defaults_to_code_on_startup() {
         enhanced_keys_supported: false,
         auth_manager,
         models_manager: thread_manager.get_models_manager(),
-        feedback: codex_feedback::CodexFeedback::new(),
+        feedback: rune_feedback::RuneFeedback::new(),
         is_first_run: true,
         feedback_audience: FeedbackAudience::External,
         model: Some(resolved_model.clone()),
@@ -3037,9 +3037,9 @@ async fn collaboration_modes_defaults_to_code_on_startup() {
 
 #[tokio::test]
 async fn experimental_mode_plan_applies_on_startup() {
-    let codex_home = tempdir().expect("tempdir");
+    let rune_home = tempdir().expect("tempdir");
     let cfg = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .rune_home(rune_home.path().to_path_buf())
         .cli_overrides(vec![
             (
                 "features.collaboration_modes".to_string(),
@@ -3056,10 +3056,10 @@ async fn experimental_mode_plan_applies_on_startup() {
     let resolved_model = ModelsManager::get_model_offline(cfg.model.as_deref());
     let otel_manager = test_otel_manager(&cfg, resolved_model.as_str());
     let thread_manager = Arc::new(ThreadManager::with_models_provider(
-        CodexAuth::from_api_key("test"),
+        RuneAuth::from_api_key("test"),
         cfg.model_provider.clone(),
     ));
-    let auth_manager = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("test"));
+    let auth_manager = AuthManager::from_auth_for_testing(RuneAuth::from_api_key("test"));
     let init = ChatWidgetInit {
         config: cfg,
         frame_requester: FrameRequester::test_dummy(),
@@ -3068,7 +3068,7 @@ async fn experimental_mode_plan_applies_on_startup() {
         enhanced_keys_supported: false,
         auth_manager,
         models_manager: thread_manager.get_models_manager(),
-        feedback: codex_feedback::CodexFeedback::new(),
+        feedback: rune_feedback::RuneFeedback::new(),
         is_first_run: true,
         feedback_audience: FeedbackAudience::External,
         model: Some(resolved_model.clone()),
@@ -3273,7 +3273,7 @@ async fn slash_rollout_handles_missing_path() {
 async fn undo_success_events_render_info_messages() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".to_string(),
         msg: EventMsg::UndoStarted(UndoStartedEvent {
             message: Some("Undo requested for the last turn...".to_string()),
@@ -3284,7 +3284,7 @@ async fn undo_success_events_render_info_messages() {
         "status indicator should be visible during undo"
     );
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".to_string(),
         msg: EventMsg::UndoCompleted(UndoCompletedEvent {
             success: true,
@@ -3310,7 +3310,7 @@ async fn undo_success_events_render_info_messages() {
 async fn undo_failure_events_render_error_message() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-2".to_string(),
         msg: EventMsg::UndoStarted(UndoStartedEvent { message: None }),
     });
@@ -3319,7 +3319,7 @@ async fn undo_failure_events_render_error_message() {
         "status indicator should be visible during undo"
     );
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-2".to_string(),
         msg: EventMsg::UndoCompleted(UndoCompletedEvent {
             success: false,
@@ -3345,7 +3345,7 @@ async fn undo_failure_events_render_error_message() {
 async fn undo_started_hides_interrupt_hint() {
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(None).await;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-hint".to_string(),
         msg: EventMsg::UndoStarted(UndoStartedEvent { message: None }),
     });
@@ -3370,12 +3370,12 @@ async fn review_commit_picker_shows_subjects_without_timestamps() {
 
     // Show commit picker with synthetic entries.
     let entries = vec![
-        codex_core::git_info::CommitLogEntry {
+        rune_core::git_info::CommitLogEntry {
             sha: "1111111deadbeef".to_string(),
             timestamp: 0,
             subject: "Add new feature X".to_string(),
         },
-        codex_core::git_info::CommitLogEntry {
+        rune_core::git_info::CommitLogEntry {
             sha: "2222222cafebabe".to_string(),
             timestamp: 0,
             subject: "Fix bug Y".to_string(),
@@ -3432,10 +3432,10 @@ async fn custom_prompt_submit_sends_review_op() {
     chat.handle_paste("  please audit dependencies  ".to_string());
     chat.handle_key_event(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
 
-    // Expect AppEvent::CodexOp(Op::Review { .. }) with trimmed prompt
+    // Expect AppEvent::RuneOp(Op::Review { .. }) with trimmed prompt
     let evt = rx.try_recv().expect("expected one app event");
     match evt {
-        AppEvent::CodexOp(Op::Review { review_request }) => {
+        AppEvent::RuneOp(Op::Review { review_request }) => {
             assert_eq!(
                 review_request,
                 ReviewRequest {
@@ -3459,7 +3459,7 @@ async fn custom_prompt_enter_empty_does_not_send() {
     // Enter without any text
     chat.handle_key_event(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
 
-    // No AppEvent::CodexOp should be sent
+    // No AppEvent::RuneOp should be sent
     assert!(rx.try_recv().is_err(), "no app event should be sent");
 }
 
@@ -3468,7 +3468,7 @@ async fn view_image_tool_call_adds_history_cell() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
     let image_path = chat.config.cwd.join("example.png");
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-image".into(),
         msg: EventMsg::ViewImageToolCall(ViewImageToolCallEvent {
             call_id: "call-image".into(),
@@ -3493,9 +3493,9 @@ async fn interrupt_exec_marks_failed_snapshot() {
 
     // Simulate the task being aborted (as if ESC was pressed), which should
     // cause the active exec cell to be finalized as failed and flushed.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "call-int".into(),
-        msg: EventMsg::TurnAborted(codex_core::protocol::TurnAbortedEvent {
+        msg: EventMsg::TurnAborted(rune_core::protocol::TurnAbortedEvent {
             reason: TurnAbortReason::Interrupted,
         }),
     });
@@ -3518,7 +3518,7 @@ async fn interrupted_turn_error_message_snapshot() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
 
     // Simulate an in-progress task so the widget is in a running state.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "task-1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
@@ -3527,9 +3527,9 @@ async fn interrupted_turn_error_message_snapshot() {
     });
 
     // Abort the turn (like pressing Esc) and drain inserted history.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "task-1".into(),
-        msg: EventMsg::TurnAborted(codex_core::protocol::TurnAbortedEvent {
+        msg: EventMsg::TurnAborted(rune_core::protocol::TurnAbortedEvent {
             reason: TurnAbortReason::Interrupted,
         }),
     });
@@ -3734,7 +3734,7 @@ async fn experimental_features_toggle_saves_on_exit() {
 
 #[tokio::test]
 async fn model_selection_popup_snapshot() {
-    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5-codex")).await;
+    let (mut chat, _rx, _op_rx) = make_chatwidget_manual(Some("gpt-5-rune")).await;
     chat.thread_id = Some(ThreadId::new());
     chat.open_model_popup();
 
@@ -3797,11 +3797,11 @@ async fn model_cap_error_does_not_switch_models() {
     while rx.try_recv().is_ok() {}
     while op_rx.try_recv().is_ok() {}
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "err-1".to_string(),
         msg: EventMsg::Error(ErrorEvent {
             message: "model cap".to_string(),
-            codex_error_info: Some(CodexErrorInfo::ModelCap {
+            rune_error_info: Some(RuneErrorInfo::ModelCap {
                 model: "boomslang".to_string(),
                 reset_after_seconds: Some(120),
             }),
@@ -4232,7 +4232,7 @@ async fn approvals_popup_navigation_skips_disabled() {
     assert!(
         app_events.iter().any(|ev| matches!(
             ev,
-            AppEvent::CodexOp(Op::OverrideTurnContext {
+            AppEvent::RuneOp(Op::OverrideTurnContext {
                 approval_policy: Some(AskForApproval::OnRequest),
                 personality: None,
                 ..
@@ -4243,7 +4243,7 @@ async fn approvals_popup_navigation_skips_disabled() {
     assert!(
         !app_events.iter().any(|ev| matches!(
             ev,
-            AppEvent::CodexOp(Op::OverrideTurnContext {
+            AppEvent::RuneOp(Op::OverrideTurnContext {
                 approval_policy: Some(AskForApproval::Never),
                 personality: None,
                 ..
@@ -4256,7 +4256,7 @@ async fn approvals_popup_navigation_skips_disabled() {
 //
 // Snapshot test: command approval modal
 //
-// Synthesizes a Codex ExecApprovalRequest event to trigger the approval modal
+// Synthesizes a Rune ExecApprovalRequest event to trigger the approval modal
 // and snapshots the visual output using the ratatui TestBackend.
 #[tokio::test]
 async fn approval_modal_exec_snapshot() -> anyhow::Result<()> {
@@ -4280,7 +4280,7 @@ async fn approval_modal_exec_snapshot() -> anyhow::Result<()> {
         ])),
         parsed_cmd: vec![],
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-approve".into(),
         msg: EventMsg::ExecApprovalRequest(ev),
     });
@@ -4333,7 +4333,7 @@ async fn approval_modal_exec_without_reason_snapshot() -> anyhow::Result<()> {
         ])),
         parsed_cmd: vec![],
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-approve-noreason".into(),
         msg: EventMsg::ExecApprovalRequest(ev),
     });
@@ -4373,7 +4373,7 @@ async fn approval_modal_exec_multiline_prefix_hides_execpolicy_option_snapshot()
         proposed_execpolicy_amendment: Some(ExecPolicyAmendment::new(command)),
         parsed_cmd: vec![],
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-approve-multiline-trunc".into(),
         msg: EventMsg::ExecApprovalRequest(ev),
     });
@@ -4417,7 +4417,7 @@ async fn approval_modal_patch_snapshot() -> anyhow::Result<()> {
         reason: Some("The model wants to apply changes".into()),
         grant_root: Some(PathBuf::from("/tmp")),
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-approve-patch".into(),
         msg: EventMsg::ApplyPatchApprovalRequest(ev),
     });
@@ -4453,9 +4453,9 @@ async fn interrupt_restores_queued_messages_into_composer() {
     chat.refresh_queued_user_messages();
 
     // Deliver a TurnAborted event with Interrupted reason (as if Esc was pressed).
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
-        msg: EventMsg::TurnAborted(codex_core::protocol::TurnAbortedEvent {
+        msg: EventMsg::TurnAborted(rune_core::protocol::TurnAbortedEvent {
             reason: TurnAbortReason::Interrupted,
         }),
     });
@@ -4491,9 +4491,9 @@ async fn interrupt_prepends_queued_messages_before_existing_composer_text() {
         .push_back(UserMessage::from("second queued".to_string()));
     chat.refresh_queued_user_messages();
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
-        msg: EventMsg::TurnAborted(codex_core::protocol::TurnAbortedEvent {
+        msg: EventMsg::TurnAborted(rune_core::protocol::TurnAbortedEvent {
             reason: TurnAbortReason::Interrupted,
         }),
     });
@@ -4519,9 +4519,9 @@ async fn interrupt_clears_unified_exec_processes() {
     begin_unified_exec_startup(&mut chat, "call-2", "process-2", "sleep 6");
     assert_eq!(chat.unified_exec_processes.len(), 2);
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
-        msg: EventMsg::TurnAborted(codex_core::protocol::TurnAbortedEvent {
+        msg: EventMsg::TurnAborted(rune_core::protocol::TurnAbortedEvent {
             reason: TurnAbortReason::Interrupted,
         }),
     });
@@ -4535,7 +4535,7 @@ async fn interrupt_clears_unified_exec_processes() {
 async fn interrupt_clears_unified_exec_wait_streak_snapshot() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
@@ -4546,9 +4546,9 @@ async fn interrupt_clears_unified_exec_wait_streak_snapshot() {
     let begin = begin_unified_exec_startup(&mut chat, "call-1", "process-1", "just fix");
     terminal_interaction(&mut chat, "call-1a", "process-1", "");
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
-        msg: EventMsg::TurnAborted(codex_core::protocol::TurnAbortedEvent {
+        msg: EventMsg::TurnAborted(rune_core::protocol::TurnAbortedEvent {
             reason: TurnAbortReason::Interrupted,
         }),
     });
@@ -4572,7 +4572,7 @@ async fn turn_complete_clears_unified_exec_processes() {
     begin_unified_exec_startup(&mut chat, "call-2", "process-2", "sleep 6");
     assert_eq!(chat.unified_exec_processes.len(), 2);
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
         msg: EventMsg::TurnComplete(TurnCompleteEvent {
             last_agent_message: None,
@@ -4609,14 +4609,14 @@ async fn ui_snapshots_small_heights_task_running() {
     use ratatui::backend::TestBackend;
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(None).await;
     // Activate status line
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "task-1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
             collaboration_mode_kind: ModeKind::Default,
         }),
     });
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "task-1".into(),
         msg: EventMsg::AgentReasoningDelta(AgentReasoningDeltaEvent {
             delta: "**Thinking**".into(),
@@ -4637,11 +4637,11 @@ async fn ui_snapshots_small_heights_task_running() {
 // task (status indicator active) while an approval request is shown.
 #[tokio::test]
 async fn status_widget_and_approval_modal_snapshot() {
-    use codex_core::protocol::ExecApprovalRequestEvent;
+    use rune_core::protocol::ExecApprovalRequestEvent;
 
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(None).await;
     // Begin a running task so the status indicator would be active.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "task-1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
@@ -4649,7 +4649,7 @@ async fn status_widget_and_approval_modal_snapshot() {
         }),
     });
     // Provide a deterministic header for the status line.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "task-1".into(),
         msg: EventMsg::AgentReasoningDelta(AgentReasoningDeltaEvent {
             delta: "**Analyzing**".into(),
@@ -4671,7 +4671,7 @@ async fn status_widget_and_approval_modal_snapshot() {
         ])),
         parsed_cmd: vec![],
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-approve-exec".into(),
         msg: EventMsg::ExecApprovalRequest(ev),
     });
@@ -4694,7 +4694,7 @@ async fn status_widget_and_approval_modal_snapshot() {
 async fn status_widget_active_snapshot() {
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(None).await;
     // Activate the status indicator by simulating a task start.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "task-1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
@@ -4702,7 +4702,7 @@ async fn status_widget_active_snapshot() {
         }),
     });
     // Provide a deterministic header via a bold reasoning chunk.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "task-1".into(),
         msg: EventMsg::AgentReasoningDelta(AgentReasoningDeltaEvent {
             delta: "**Analyzing**".into(),
@@ -4723,7 +4723,7 @@ async fn mcp_startup_header_booting_snapshot() {
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(None).await;
     chat.show_welcome_banner = false;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "mcp-1".into(),
         msg: EventMsg::McpStartupUpdate(McpStartupUpdateEvent {
             server: "alpha".into(),
@@ -4744,7 +4744,7 @@ async fn mcp_startup_header_booting_snapshot() {
 async fn mcp_startup_complete_does_not_clear_running_task() {
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(None).await;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "task-1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
@@ -4755,7 +4755,7 @@ async fn mcp_startup_complete_does_not_clear_running_task() {
     assert!(chat.bottom_pane.is_task_running());
     assert!(chat.bottom_pane.status_indicator_visible());
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "mcp-1".into(),
         msg: EventMsg::McpStartupComplete(McpStartupCompleteEvent {
             ready: vec!["schaltwerk".into()],
@@ -4771,7 +4771,7 @@ async fn mcp_startup_complete_does_not_clear_running_task() {
 async fn background_event_updates_status_header() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "bg-1".into(),
         msg: EventMsg::BackgroundEvent(BackgroundEventEvent {
             message: "Waiting for `vim`".to_string(),
@@ -4802,7 +4802,7 @@ async fn apply_patch_events_emit_history_cells() {
         reason: None,
         grant_root: None,
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::ApplyPatchApprovalRequest(ev),
     });
@@ -4842,7 +4842,7 @@ async fn apply_patch_events_emit_history_cells() {
         auto_approved: true,
         changes: changes2,
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::PatchApplyBegin(begin),
     });
@@ -4870,7 +4870,7 @@ async fn apply_patch_events_emit_history_cells() {
         success: true,
         changes: end_changes,
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::PatchApplyEnd(end),
     });
@@ -4892,7 +4892,7 @@ async fn apply_patch_manual_approval_adjusts_header() {
             content: "hello\n".to_string(),
         },
     );
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::ApplyPatchApprovalRequest(ApplyPatchApprovalRequestEvent {
             call_id: "c1".into(),
@@ -4911,7 +4911,7 @@ async fn apply_patch_manual_approval_adjusts_header() {
             content: "hello\n".to_string(),
         },
     );
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::PatchApplyBegin(PatchApplyBeginEvent {
             call_id: "c1".into(),
@@ -4941,7 +4941,7 @@ async fn apply_patch_manual_flow_snapshot() {
             content: "hello\n".to_string(),
         },
     );
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::ApplyPatchApprovalRequest(ApplyPatchApprovalRequestEvent {
             call_id: "c1".into(),
@@ -4964,7 +4964,7 @@ async fn apply_patch_manual_flow_snapshot() {
             content: "hello\n".to_string(),
         },
     );
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::PatchApplyBegin(PatchApplyBeginEvent {
             call_id: "c1".into(),
@@ -5001,7 +5001,7 @@ async fn apply_patch_approval_sends_op_with_submission_id() {
         reason: None,
         grant_root: None,
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-123".into(),
         msg: EventMsg::ApplyPatchApprovalRequest(ev),
     });
@@ -5009,12 +5009,12 @@ async fn apply_patch_approval_sends_op_with_submission_id() {
     // Approve via key press 'y'
     chat.handle_key_event(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
 
-    // Expect a CodexOp with PatchApproval carrying the submission id, not call id
+    // Expect a RuneOp with PatchApproval carrying the submission id, not call id
     let mut found = false;
     while let Ok(app_ev) = rx.try_recv() {
-        if let AppEvent::CodexOp(Op::PatchApproval { id, decision }) = app_ev {
+        if let AppEvent::RuneOp(Op::PatchApproval { id, decision }) = app_ev {
             assert_eq!(id, "sub-123");
-            assert_matches!(decision, codex_core::protocol::ReviewDecision::Approved);
+            assert_matches!(decision, rune_core::protocol::ReviewDecision::Approved);
             found = true;
             break;
         }
@@ -5032,7 +5032,7 @@ async fn apply_patch_full_flow_integration_like() {
         PathBuf::from("pkg.rs"),
         FileChange::Add { content: "".into() },
     );
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-xyz".into(),
         msg: EventMsg::ApplyPatchApprovalRequest(ApplyPatchApprovalRequestEvent {
             call_id: "call-1".into(),
@@ -5043,26 +5043,26 @@ async fn apply_patch_full_flow_integration_like() {
         }),
     });
 
-    // 2) User approves via 'y' and App receives a CodexOp
+    // 2) User approves via 'y' and App receives a RuneOp
     chat.handle_key_event(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
     let mut maybe_op: Option<Op> = None;
     while let Ok(app_ev) = rx.try_recv() {
-        if let AppEvent::CodexOp(op) = app_ev {
+        if let AppEvent::RuneOp(op) = app_ev {
             maybe_op = Some(op);
             break;
         }
     }
-    let op = maybe_op.expect("expected CodexOp after key press");
+    let op = maybe_op.expect("expected RuneOp after key press");
 
-    // 3) App forwards to widget.submit_op, which pushes onto codex_op_tx
+    // 3) App forwards to widget.submit_op, which pushes onto rune_op_tx
     chat.submit_op(op);
     let forwarded = op_rx
         .try_recv()
-        .expect("expected op forwarded to codex channel");
+        .expect("expected op forwarded to rune channel");
     match forwarded {
         Op::PatchApproval { id, decision } => {
             assert_eq!(id, "sub-xyz");
-            assert_matches!(decision, codex_core::protocol::ReviewDecision::Approved);
+            assert_matches!(decision, rune_core::protocol::ReviewDecision::Approved);
         }
         other => panic!("unexpected op forwarded: {other:?}"),
     }
@@ -5073,7 +5073,7 @@ async fn apply_patch_full_flow_integration_like() {
         PathBuf::from("pkg.rs"),
         FileChange::Add { content: "".into() },
     );
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-xyz".into(),
         msg: EventMsg::PatchApplyBegin(PatchApplyBeginEvent {
             call_id: "call-1".into(),
@@ -5087,7 +5087,7 @@ async fn apply_patch_full_flow_integration_like() {
         PathBuf::from("pkg.rs"),
         FileChange::Add { content: "".into() },
     );
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-xyz".into(),
         msg: EventMsg::PatchApplyEnd(PatchApplyEndEvent {
             call_id: "call-1".into(),
@@ -5112,7 +5112,7 @@ async fn apply_patch_untrusted_shows_approval_modal() -> anyhow::Result<()> {
         PathBuf::from("a.rs"),
         FileChange::Add { content: "".into() },
     );
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-1".into(),
         msg: EventMsg::ApplyPatchApprovalRequest(ApplyPatchApprovalRequestEvent {
             call_id: "call-1".into(),
@@ -5163,7 +5163,7 @@ async fn apply_patch_request_shows_diff_summary() -> anyhow::Result<()> {
             content: "line one\nline two\n".into(),
         },
     );
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-apply".into(),
         msg: EventMsg::ApplyPatchApprovalRequest(ApplyPatchApprovalRequestEvent {
             call_id: "call-apply".into(),
@@ -5235,7 +5235,7 @@ async fn plan_update_renders_history_cell() {
             },
         ],
     };
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-1".into(),
         msg: EventMsg::PlanUpdate(update),
     });
@@ -5257,11 +5257,11 @@ async fn stream_error_updates_status_indicator() {
     chat.bottom_pane.set_task_running(true);
     let msg = "Reconnecting... 2/5";
     let details = "Idle timeout waiting for SSE";
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-1".into(),
         msg: EventMsg::StreamError(StreamErrorEvent {
             message: msg.to_string(),
-            codex_error_info: Some(CodexErrorInfo::Other),
+            rune_error_info: Some(RuneErrorInfo::Other),
             additional_details: Some(details.to_string()),
         }),
     });
@@ -5290,11 +5290,11 @@ async fn stream_error_restores_hidden_status_indicator() {
 
     let msg = "Reconnecting... 2/5";
     let details = "Idle timeout waiting for SSE";
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-1".into(),
         msg: EventMsg::StreamError(StreamErrorEvent {
             message: msg.to_string(),
-            codex_error_info: Some(CodexErrorInfo::Other),
+            rune_error_info: Some(RuneErrorInfo::Other),
             additional_details: Some(details.to_string()),
         }),
     });
@@ -5310,7 +5310,7 @@ async fn stream_error_restores_hidden_status_indicator() {
 #[tokio::test]
 async fn warning_event_adds_warning_history_cell() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "sub-1".into(),
         msg: EventMsg::Warning(WarningEvent {
             message: "test warning message".to_string(),
@@ -5376,7 +5376,7 @@ async fn status_line_branch_refreshes_after_turn_complete() {
     chat.status_line_branch_lookup_complete = true;
     chat.status_line_branch_pending = false;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
         msg: EventMsg::TurnComplete(TurnCompleteEvent {
             last_agent_message: None,
@@ -5393,9 +5393,9 @@ async fn status_line_branch_refreshes_after_interrupt() {
     chat.status_line_branch_lookup_complete = true;
     chat.status_line_branch_pending = false;
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "turn-1".into(),
-        msg: EventMsg::TurnAborted(codex_core::protocol::TurnAbortedEvent {
+        msg: EventMsg::TurnAborted(rune_core::protocol::TurnAbortedEvent {
             reason: TurnAbortReason::Interrupted,
         }),
     });
@@ -5406,7 +5406,7 @@ async fn status_line_branch_refreshes_after_interrupt() {
 #[tokio::test]
 async fn stream_recovery_restores_previous_status_header() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "task".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
@@ -5414,16 +5414,16 @@ async fn stream_recovery_restores_previous_status_header() {
         }),
     });
     drain_insert_history(&mut rx);
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "retry".into(),
         msg: EventMsg::StreamError(StreamErrorEvent {
             message: "Reconnecting... 1/5".to_string(),
-            codex_error_info: Some(CodexErrorInfo::Other),
+            rune_error_info: Some(RuneErrorInfo::Other),
             additional_details: None,
         }),
     });
     drain_insert_history(&mut rx);
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "delta".into(),
         msg: EventMsg::AgentMessageDelta(AgentMessageDeltaEvent {
             delta: "hello".to_string(),
@@ -5488,7 +5488,7 @@ async fn multiple_agent_messages_in_single_turn_emit_multiple_headers() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
 
     // Begin turn
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
@@ -5497,7 +5497,7 @@ async fn multiple_agent_messages_in_single_turn_emit_multiple_headers() {
     });
 
     // First finalized assistant message
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::AgentMessage(AgentMessageEvent {
             message: "First message".into(),
@@ -5505,7 +5505,7 @@ async fn multiple_agent_messages_in_single_turn_emit_multiple_headers() {
     });
 
     // Second finalized assistant message in the same turn
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::AgentMessage(AgentMessageEvent {
             message: "Second message".into(),
@@ -5513,7 +5513,7 @@ async fn multiple_agent_messages_in_single_turn_emit_multiple_headers() {
     });
 
     // End turn
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::TurnComplete(TurnCompleteEvent {
             last_agent_message: None,
@@ -5543,13 +5543,13 @@ async fn final_reasoning_then_message_without_deltas_are_rendered() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
 
     // No deltas; only final reasoning followed by final message.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::AgentReasoning(AgentReasoningEvent {
             text: "I will first analyze the request.".into(),
         }),
     });
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::AgentMessage(AgentMessageEvent {
             message: "Here is the result.".into(),
@@ -5570,25 +5570,25 @@ async fn deltas_then_same_final_message_are_rendered_snapshot() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
 
     // Stream some reasoning deltas first.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::AgentReasoningDelta(AgentReasoningDeltaEvent {
             delta: "I will ".into(),
         }),
     });
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::AgentReasoningDelta(AgentReasoningDeltaEvent {
             delta: "first analyze the ".into(),
         }),
     });
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::AgentReasoningDelta(AgentReasoningDeltaEvent {
             delta: "request.".into(),
         }),
     });
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::AgentReasoning(AgentReasoningEvent {
             text: "request.".into(),
@@ -5596,20 +5596,20 @@ async fn deltas_then_same_final_message_are_rendered_snapshot() {
     });
 
     // Then stream answer deltas, followed by the exact same final message.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::AgentMessageDelta(AgentMessageDeltaEvent {
             delta: "Here is the ".into(),
         }),
     });
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::AgentMessageDelta(AgentMessageDeltaEvent {
             delta: "result.".into(),
         }),
     });
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "s1".into(),
         msg: EventMsg::AgentMessage(AgentMessageEvent {
             message: "Here is the result.".into(),
@@ -5632,7 +5632,7 @@ async fn deltas_then_same_final_message_are_rendered_snapshot() {
 #[tokio::test]
 async fn chatwidget_exec_and_status_layout_vt100_snapshot() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "t1".into(),
         msg: EventMsg::AgentMessage(AgentMessageEvent { message: "I’m going to search the repo for where “Change Approved” is rendered to update that view.".into() }),
     });
@@ -5651,7 +5651,7 @@ async fn chatwidget_exec_and_status_layout_vt100_snapshot() {
         },
     ];
     let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "c1".into(),
         msg: EventMsg::ExecCommandBegin(ExecCommandBeginEvent {
             call_id: "c1".into(),
@@ -5664,7 +5664,7 @@ async fn chatwidget_exec_and_status_layout_vt100_snapshot() {
             interaction_input: None,
         }),
     });
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "c1".into(),
         msg: EventMsg::ExecCommandEnd(ExecCommandEndEvent {
             call_id: "c1".into(),
@@ -5683,14 +5683,14 @@ async fn chatwidget_exec_and_status_layout_vt100_snapshot() {
             formatted_output: String::new(),
         }),
     });
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "t1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
             collaboration_mode_kind: ModeKind::Default,
         }),
     });
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "t1".into(),
         msg: EventMsg::AgentReasoningDelta(AgentReasoningDeltaEvent {
             delta: "**Investigating rendering code**".into(),
@@ -5731,7 +5731,7 @@ async fn chatwidget_markdown_code_blocks_vt100_snapshot() {
 
     // Simulate a final agent message via streaming deltas instead of a single message
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "t1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
@@ -5780,7 +5780,7 @@ printf 'fenced within fenced\n'
             delta.push(c2);
         }
 
-        chat.handle_codex_event(Event {
+        chat.handle_rune_event(Event {
             id: "t1".into(),
             msg: EventMsg::AgentMessageDelta(AgentMessageDeltaEvent { delta }),
         });
@@ -5803,7 +5803,7 @@ printf 'fenced within fenced\n'
     }
 
     // Finalize the stream without sending a final AgentMessage, to flush any tail.
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "t1".into(),
         msg: EventMsg::TurnComplete(TurnCompleteEvent {
             last_agent_message: None,
@@ -5821,7 +5821,7 @@ printf 'fenced within fenced\n'
 async fn chatwidget_tall() {
     let (mut chat, _rx, _op_rx) = make_chatwidget_manual(None).await;
     chat.thread_id = Some(ThreadId::new());
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "t1".into(),
         msg: EventMsg::TurnStarted(TurnStartedEvent {
             model_context_window: None,
@@ -5849,7 +5849,7 @@ async fn review_queues_user_messages_snapshot() {
     let (mut chat, mut rx, _op_rx) = make_chatwidget_manual(None).await;
     chat.thread_id = Some(ThreadId::new());
 
-    chat.handle_codex_event(Event {
+    chat.handle_rune_event(Event {
         id: "review-1".into(),
         msg: EventMsg::EnteredReviewMode(ReviewRequest {
             target: ReviewTarget::UncommittedChanges,

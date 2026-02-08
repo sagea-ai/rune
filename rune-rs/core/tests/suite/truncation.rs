@@ -3,14 +3,14 @@
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_core::config::types::McpServerConfig;
-use codex_core::config::types::McpServerTransportConfig;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::user_input::UserInput;
+use rune_core::config::types::McpServerConfig;
+use rune_core::config::types::McpServerTransportConfig;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::user_input::UserInput;
 use core_test_support::assert_regex_match;
 use core_test_support::responses;
 use core_test_support::responses::ev_assistant_message;
@@ -23,7 +23,7 @@ use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::stdio_server_bin;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use serde_json::Value;
 use serde_json::json;
@@ -36,7 +36,7 @@ async fn truncate_function_error_trims_respond_to_model() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("test-gpt-5.1-codex");
+    let mut builder = test_rune().with_model("test-gpt-5.1-rune");
     let test = builder.build(&server).await?;
 
     // Construct a very long, non-existent path to force a RespondToModel error with a large message
@@ -100,7 +100,7 @@ async fn tool_call_output_configured_limit_chars_type() -> Result<()> {
     let server = start_mock_server().await;
 
     // Use a model that exposes the shell_command tool.
-    let mut builder = test_codex().with_model("gpt-5.1").with_config(|config| {
+    let mut builder = test_rune().with_model("gpt-5.1").with_config(|config| {
         config.tool_output_token_limit = Some(100_000);
     });
 
@@ -176,7 +176,7 @@ async fn tool_call_output_exceeds_limit_truncated_chars_limit() -> Result<()> {
     let server = start_mock_server().await;
 
     // Use a model that exposes the shell_command tool.
-    let mut builder = test_codex().with_model("gpt-5.1");
+    let mut builder = test_rune().with_model("gpt-5.1");
 
     let fixture = builder.build(&server).await?;
 
@@ -250,7 +250,7 @@ async fn tool_call_output_exceeds_limit_truncated_for_model() -> Result<()> {
     let server = start_mock_server().await;
 
     // Use a model that exposes the shell_command tool.
-    let mut builder = test_codex().with_model("gpt-5.1-codex");
+    let mut builder = test_rune().with_model("gpt-5.1-rune");
     let fixture = builder.build(&server).await?;
 
     let call_id = "shell-too-large";
@@ -326,7 +326,7 @@ async fn tool_call_output_truncated_only_once() -> Result<()> {
 
     let server = start_mock_server().await;
 
-    let mut builder = test_codex().with_model("gpt-5.1-codex");
+    let mut builder = test_rune().with_model("gpt-5.1-rune");
     let fixture = builder.build(&server).await?;
     let call_id = "shell-single-truncation";
     let command = if cfg!(windows) {
@@ -413,12 +413,12 @@ async fn mcp_tool_call_output_exceeds_limit_truncated_for_model() -> Result<()> 
     // Compile the rmcp stdio test server and configure it.
     let rmcp_test_server_bin = stdio_server_bin()?;
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         let mut servers = config.mcp_servers.get().clone();
         servers.insert(
             server_name.to_string(),
-            codex_core::config::types::McpServerConfig {
-                transport: codex_core::config::types::McpServerTransportConfig::Stdio {
+            rune_core::config::types::McpServerConfig {
+                transport: rune_core::config::types::McpServerTransportConfig::Stdio {
                     command: rmcp_test_server_bin,
                     args: Vec::new(),
                     env: None,
@@ -504,7 +504,7 @@ async fn mcp_image_output_preserves_image_and_no_text_summary() -> Result<()> {
     // 1x1 PNG data URL
     let openai_png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/ee9bQAAAABJRU5ErkJggg==";
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         let mut servers = config.mcp_servers.get().clone();
         servers.insert(
             server_name.to_string(),
@@ -538,7 +538,7 @@ async fn mcp_image_output_preserves_image_and_no_text_summary() -> Result<()> {
     let session_model = fixture.session_configured.model.clone();
 
     fixture
-        .codex
+        .rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "call the rmcp image tool".into(),
@@ -557,7 +557,7 @@ async fn mcp_image_output_preserves_image_and_no_text_summary() -> Result<()> {
         .await?;
 
     // Wait for completion to ensure the outbound request is captured.
-    wait_for_event(&fixture.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&fixture.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     let output_item = final_mock.single_request().function_call_output(call_id);
     // Expect exactly one array element: the image item; and no trailing summary text.
     let output = output_item.get("output").expect("output");
@@ -578,8 +578,8 @@ async fn token_policy_marker_reports_tokens() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex()
-        .with_model("gpt-5.1-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5.1-rune")
         .with_config(|config| {
             config.tool_output_token_limit = Some(50); // small budget to force truncation
         });
@@ -631,7 +631,7 @@ async fn byte_policy_marker_reports_bytes() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.1").with_config(|config| {
+    let mut builder = test_rune().with_model("gpt-5.1").with_config(|config| {
         config.tool_output_token_limit = Some(50); // ~200 byte cap
     });
     let fixture = builder.build(&server).await?;
@@ -682,8 +682,8 @@ async fn shell_command_output_not_truncated_with_custom_limit() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex()
-        .with_model("gpt-5.1-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5.1-rune")
         .with_config(|config| {
             config.tool_output_token_limit = Some(50_000); // ample budget
         });
@@ -771,13 +771,13 @@ async fn mcp_tool_call_output_not_truncated_with_custom_limit() -> Result<()> {
 
     let rmcp_test_server_bin = stdio_server_bin()?;
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.tool_output_token_limit = Some(50_000);
         let mut servers = config.mcp_servers.get().clone();
         servers.insert(
             server_name.to_string(),
-            codex_core::config::types::McpServerConfig {
-                transport: codex_core::config::types::McpServerTransportConfig::Stdio {
+            rune_core::config::types::McpServerConfig {
+                transport: rune_core::config::types::McpServerTransportConfig::Stdio {
                     command: rmcp_test_server_bin,
                     args: Vec::new(),
                     env: None,

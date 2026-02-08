@@ -1,4 +1,4 @@
-use codex_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputBody;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 use std::sync::Arc;

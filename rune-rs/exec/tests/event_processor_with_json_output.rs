@@ -1,69 +1,69 @@
-use codex_core::protocol::AgentMessageEvent;
-use codex_core::protocol::AgentReasoningEvent;
-use codex_core::protocol::AgentStatus;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::CollabAgentSpawnBeginEvent;
-use codex_core::protocol::CollabAgentSpawnEndEvent;
-use codex_core::protocol::CollabWaitingEndEvent;
-use codex_core::protocol::ErrorEvent;
-use codex_core::protocol::Event;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ExecCommandBeginEvent;
-use codex_core::protocol::ExecCommandEndEvent;
-use codex_core::protocol::ExecCommandSource;
-use codex_core::protocol::FileChange;
-use codex_core::protocol::McpInvocation;
-use codex_core::protocol::McpToolCallBeginEvent;
-use codex_core::protocol::McpToolCallEndEvent;
-use codex_core::protocol::PatchApplyBeginEvent;
-use codex_core::protocol::PatchApplyEndEvent;
-use codex_core::protocol::SandboxPolicy;
-use codex_core::protocol::SessionConfiguredEvent;
-use codex_core::protocol::WarningEvent;
-use codex_core::protocol::WebSearchBeginEvent;
-use codex_core::protocol::WebSearchEndEvent;
-use codex_exec::event_processor_with_jsonl_output::EventProcessorWithJsonOutput;
-use codex_exec::exec_events::AgentMessageItem;
-use codex_exec::exec_events::CollabAgentState;
-use codex_exec::exec_events::CollabAgentStatus;
-use codex_exec::exec_events::CollabTool;
-use codex_exec::exec_events::CollabToolCallItem;
-use codex_exec::exec_events::CollabToolCallStatus;
-use codex_exec::exec_events::CommandExecutionItem;
-use codex_exec::exec_events::CommandExecutionStatus;
-use codex_exec::exec_events::ErrorItem;
-use codex_exec::exec_events::ItemCompletedEvent;
-use codex_exec::exec_events::ItemStartedEvent;
-use codex_exec::exec_events::ItemUpdatedEvent;
-use codex_exec::exec_events::McpToolCallItem;
-use codex_exec::exec_events::McpToolCallItemError;
-use codex_exec::exec_events::McpToolCallItemResult;
-use codex_exec::exec_events::McpToolCallStatus;
-use codex_exec::exec_events::PatchApplyStatus;
-use codex_exec::exec_events::PatchChangeKind;
-use codex_exec::exec_events::ReasoningItem;
-use codex_exec::exec_events::ThreadErrorEvent;
-use codex_exec::exec_events::ThreadEvent;
-use codex_exec::exec_events::ThreadItem;
-use codex_exec::exec_events::ThreadItemDetails;
-use codex_exec::exec_events::ThreadStartedEvent;
-use codex_exec::exec_events::TodoItem as ExecTodoItem;
-use codex_exec::exec_events::TodoListItem as ExecTodoListItem;
-use codex_exec::exec_events::TurnCompletedEvent;
-use codex_exec::exec_events::TurnFailedEvent;
-use codex_exec::exec_events::TurnStartedEvent;
-use codex_exec::exec_events::Usage;
-use codex_exec::exec_events::WebSearchItem;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::mcp::CallToolResult;
-use codex_protocol::models::WebSearchAction;
-use codex_protocol::plan_tool::PlanItemArg;
-use codex_protocol::plan_tool::StepStatus;
-use codex_protocol::plan_tool::UpdatePlanArgs;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::ExecCommandOutputDeltaEvent;
-use codex_protocol::protocol::ExecOutputStream;
+use rune_core::protocol::AgentMessageEvent;
+use rune_core::protocol::AgentReasoningEvent;
+use rune_core::protocol::AgentStatus;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::CollabAgentSpawnBeginEvent;
+use rune_core::protocol::CollabAgentSpawnEndEvent;
+use rune_core::protocol::CollabWaitingEndEvent;
+use rune_core::protocol::ErrorEvent;
+use rune_core::protocol::Event;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ExecCommandBeginEvent;
+use rune_core::protocol::ExecCommandEndEvent;
+use rune_core::protocol::ExecCommandSource;
+use rune_core::protocol::FileChange;
+use rune_core::protocol::McpInvocation;
+use rune_core::protocol::McpToolCallBeginEvent;
+use rune_core::protocol::McpToolCallEndEvent;
+use rune_core::protocol::PatchApplyBeginEvent;
+use rune_core::protocol::PatchApplyEndEvent;
+use rune_core::protocol::SandboxPolicy;
+use rune_core::protocol::SessionConfiguredEvent;
+use rune_core::protocol::WarningEvent;
+use rune_core::protocol::WebSearchBeginEvent;
+use rune_core::protocol::WebSearchEndEvent;
+use rune_exec::event_processor_with_jsonl_output::EventProcessorWithJsonOutput;
+use rune_exec::exec_events::AgentMessageItem;
+use rune_exec::exec_events::CollabAgentState;
+use rune_exec::exec_events::CollabAgentStatus;
+use rune_exec::exec_events::CollabTool;
+use rune_exec::exec_events::CollabToolCallItem;
+use rune_exec::exec_events::CollabToolCallStatus;
+use rune_exec::exec_events::CommandExecutionItem;
+use rune_exec::exec_events::CommandExecutionStatus;
+use rune_exec::exec_events::ErrorItem;
+use rune_exec::exec_events::ItemCompletedEvent;
+use rune_exec::exec_events::ItemStartedEvent;
+use rune_exec::exec_events::ItemUpdatedEvent;
+use rune_exec::exec_events::McpToolCallItem;
+use rune_exec::exec_events::McpToolCallItemError;
+use rune_exec::exec_events::McpToolCallItemResult;
+use rune_exec::exec_events::McpToolCallStatus;
+use rune_exec::exec_events::PatchApplyStatus;
+use rune_exec::exec_events::PatchChangeKind;
+use rune_exec::exec_events::ReasoningItem;
+use rune_exec::exec_events::ThreadErrorEvent;
+use rune_exec::exec_events::ThreadEvent;
+use rune_exec::exec_events::ThreadItem;
+use rune_exec::exec_events::ThreadItemDetails;
+use rune_exec::exec_events::ThreadStartedEvent;
+use rune_exec::exec_events::TodoItem as ExecTodoItem;
+use rune_exec::exec_events::TodoListItem as ExecTodoListItem;
+use rune_exec::exec_events::TurnCompletedEvent;
+use rune_exec::exec_events::TurnFailedEvent;
+use rune_exec::exec_events::TurnStartedEvent;
+use rune_exec::exec_events::Usage;
+use rune_exec::exec_events::WebSearchItem;
+use rune_protocol::ThreadId;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::mcp::CallToolResult;
+use rune_protocol::models::WebSearchAction;
+use rune_protocol::plan_tool::PlanItemArg;
+use rune_protocol::plan_tool::StepStatus;
+use rune_protocol::plan_tool::UpdatePlanArgs;
+use rune_protocol::protocol::RuneErrorInfo;
+use rune_protocol::protocol::ExecCommandOutputDeltaEvent;
+use rune_protocol::protocol::ExecOutputStream;
 use pretty_assertions::assert_eq;
 use rmcp::model::Content;
 use serde_json::json;
@@ -81,7 +81,7 @@ fn event(id: &str, msg: EventMsg) -> Event {
 fn session_configured_produces_thread_started_event() {
     let mut ep = EventProcessorWithJsonOutput::new(None);
     let session_id =
-        codex_protocol::ThreadId::from_string("67e55044-10b1-426f-9247-bb680e5fe0c8").unwrap();
+        rune_protocol::ThreadId::from_string("67e55044-10b1-426f-9247-bb680e5fe0c8").unwrap();
     let rollout_path = PathBuf::from("/tmp/rollout.json");
     let ev = event(
         "e1",
@@ -115,7 +115,7 @@ fn task_started_produces_turn_started_event() {
     let mut ep = EventProcessorWithJsonOutput::new(None);
     let out = ep.collect_thread_events(&event(
         "t1",
-        EventMsg::TurnStarted(codex_core::protocol::TurnStartedEvent {
+        EventMsg::TurnStarted(rune_core::protocol::TurnStartedEvent {
             model_context_window: Some(32_000),
             collaboration_mode_kind: ModeKind::Default,
         }),
@@ -308,7 +308,7 @@ fn plan_update_emits_todo_list_started_updated_and_completed() {
     // Task completes => item.completed (same id, latest state)
     let complete = event(
         "p3",
-        EventMsg::TurnComplete(codex_core::protocol::TurnCompleteEvent {
+        EventMsg::TurnComplete(rune_core::protocol::TurnCompleteEvent {
             last_agent_message: None,
         }),
     );
@@ -675,7 +675,7 @@ fn plan_update_after_complete_starts_new_todo_list_with_new_id() {
     let _ = ep.collect_thread_events(&start);
     let complete = event(
         "t2",
-        EventMsg::TurnComplete(codex_core::protocol::TurnCompleteEvent {
+        EventMsg::TurnComplete(rune_core::protocol::TurnCompleteEvent {
             last_agent_message: None,
         }),
     );
@@ -753,9 +753,9 @@ fn error_event_produces_error() {
     let mut ep = EventProcessorWithJsonOutput::new(None);
     let out = ep.collect_thread_events(&event(
         "e1",
-        EventMsg::Error(codex_core::protocol::ErrorEvent {
+        EventMsg::Error(rune_core::protocol::ErrorEvent {
             message: "boom".to_string(),
-            codex_error_info: Some(CodexErrorInfo::Other),
+            rune_error_info: Some(RuneErrorInfo::Other),
         }),
     ));
     assert_eq!(
@@ -793,9 +793,9 @@ fn stream_error_event_produces_error() {
     let mut ep = EventProcessorWithJsonOutput::new(None);
     let out = ep.collect_thread_events(&event(
         "e1",
-        EventMsg::StreamError(codex_core::protocol::StreamErrorEvent {
+        EventMsg::StreamError(rune_core::protocol::StreamErrorEvent {
             message: "retrying".to_string(),
-            codex_error_info: Some(CodexErrorInfo::Other),
+            rune_error_info: Some(RuneErrorInfo::Other),
             additional_details: None,
         }),
     ));
@@ -815,7 +815,7 @@ fn error_followed_by_task_complete_produces_turn_failed() {
         "e1",
         EventMsg::Error(ErrorEvent {
             message: "boom".to_string(),
-            codex_error_info: Some(CodexErrorInfo::Other),
+            rune_error_info: Some(RuneErrorInfo::Other),
         }),
     );
     assert_eq!(
@@ -827,7 +827,7 @@ fn error_followed_by_task_complete_produces_turn_failed() {
 
     let complete_event = event(
         "e2",
-        EventMsg::TurnComplete(codex_core::protocol::TurnCompleteEvent {
+        EventMsg::TurnComplete(rune_core::protocol::TurnCompleteEvent {
             last_agent_message: None,
         }),
     );
@@ -1250,21 +1250,21 @@ fn task_complete_produces_turn_completed_with_usage() {
     let mut ep = EventProcessorWithJsonOutput::new(None);
 
     // First, feed a TokenCount event with known totals.
-    let usage = codex_core::protocol::TokenUsage {
+    let usage = rune_core::protocol::TokenUsage {
         input_tokens: 1200,
         cached_input_tokens: 200,
         output_tokens: 345,
         reasoning_output_tokens: 0,
         total_tokens: 0,
     };
-    let info = codex_core::protocol::TokenUsageInfo {
+    let info = rune_core::protocol::TokenUsageInfo {
         total_token_usage: usage.clone(),
         last_token_usage: usage,
         model_context_window: None,
     };
     let token_count_event = event(
         "e1",
-        EventMsg::TokenCount(codex_core::protocol::TokenCountEvent {
+        EventMsg::TokenCount(rune_core::protocol::TokenCountEvent {
             info: Some(info),
             rate_limits: None,
         }),
@@ -1274,7 +1274,7 @@ fn task_complete_produces_turn_completed_with_usage() {
     // Then TurnComplete should produce turn.completed with the captured usage.
     let complete_event = event(
         "e2",
-        EventMsg::TurnComplete(codex_core::protocol::TurnCompleteEvent {
+        EventMsg::TurnComplete(rune_core::protocol::TurnCompleteEvent {
             last_agent_message: Some("done".to_string()),
         }),
     );

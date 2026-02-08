@@ -15,8 +15,8 @@ use tempfile::TempDir;
 /// Verify the list_tools call to the MCP server returns the expected response.
 #[tokio::test(flavor = "current_thread")]
 async fn list_tools() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let policy_dir = codex_home.path().join("rules");
+    let rune_home = TempDir::new()?;
+    let policy_dir = rune_home.path().join("rules");
     fs::create_dir_all(&policy_dir)?;
     fs::write(
         policy_dir.join("default.rules"),
@@ -24,7 +24,7 @@ async fn list_tools() -> Result<()> {
     )?;
     let dotslash_cache_temp_dir = TempDir::new()?;
     let dotslash_cache = dotslash_cache_temp_dir.path();
-    let transport = create_transport(codex_home.path(), dotslash_cache).await?;
+    let transport = create_transport(rune_home.path(), dotslash_cache).await?;
 
     let service = ().serve(transport).await?;
     let tools = service.list_tools(Default::default()).await?.tools;

@@ -19,7 +19,7 @@ use crate::app_event::FeedbackCategory;
 use crate::app_event_sender::AppEventSender;
 use crate::history_cell;
 use crate::render::renderable::Renderable;
-use codex_core::protocol::SessionSource;
+use rune_core::protocol::SessionSource;
 
 use super::CancellationEvent;
 use super::bottom_pane_view::BottomPaneView;
@@ -28,9 +28,9 @@ use super::textarea::TextArea;
 use super::textarea::TextAreaState;
 
 const BASE_BUG_ISSUE_URL: &str =
-    "https://github.com/openai/codex/issues/new?template=2-bug-report.yml";
+    "https://github.com/openai/rune/issues/new?template=2-bug-report.yml";
 /// Internal routing link for employee feedback follow-ups. This must not be shown to external users.
-const CODEX_FEEDBACK_INTERNAL_URL: &str = "http://go/rune-feedback-internal";
+const RUNE_FEEDBACK_INTERNAL_URL: &str = "http://go/rune-feedback-internal";
 
 /// The target audience for feedback follow-up instructions.
 ///
@@ -46,7 +46,7 @@ pub(crate) enum FeedbackAudience {
 /// both logs and rollout with classification + metadata.
 pub(crate) struct FeedbackNoteView {
     category: FeedbackCategory,
-    snapshot: codex_feedback::CodexLogSnapshot,
+    snapshot: rune_feedback::RuneLogSnapshot,
     rollout_path: Option<PathBuf>,
     app_event_tx: AppEventSender,
     include_logs: bool,
@@ -61,7 +61,7 @@ pub(crate) struct FeedbackNoteView {
 impl FeedbackNoteView {
     pub(crate) fn new(
         category: FeedbackCategory,
-        snapshot: codex_feedback::CodexLogSnapshot,
+        snapshot: rune_feedback::RuneLogSnapshot,
         rollout_path: Option<PathBuf>,
         app_event_tx: AppEventSender,
         include_logs: bool,
@@ -395,7 +395,7 @@ fn issue_url_for_category(
 /// We accept a `thread_id` so the call site stays symmetric with the external
 /// path, but we currently point to a fixed channel without prefilling text.
 fn slack_feedback_url(_thread_id: &str) -> String {
-    CODEX_FEEDBACK_INTERNAL_URL.to_string()
+    RUNE_FEEDBACK_INTERNAL_URL.to_string()
 }
 
 // Build the selection popup params for feedback categories.
@@ -515,7 +515,7 @@ pub(crate) fn feedback_upload_consent_params(
             super::SelectionItem {
                 name: "Yes".to_string(),
                 description: Some(
-                    "Share the current Codex session logs with the team for troubleshooting."
+                    "Share the current Rune session logs with the team for troubleshooting."
                         .to_string(),
                 ),
                 actions: vec![yes_action],
@@ -576,7 +576,7 @@ mod tests {
     fn make_view(category: FeedbackCategory) -> FeedbackNoteView {
         let (tx_raw, _rx) = tokio::sync::mpsc::unbounded_channel::<AppEvent>();
         let tx = AppEventSender::new(tx_raw);
-        let snapshot = codex_feedback::CodexFeedback::new().snapshot(None);
+        let snapshot = rune_feedback::RuneFeedback::new().snapshot(None);
         FeedbackNoteView::new(
             category,
             snapshot,

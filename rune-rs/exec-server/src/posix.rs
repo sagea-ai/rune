@@ -4,7 +4,7 @@
 //! We spawn Bash process inside a sandbox. The Bash we spawn is patched to allow us to intercept
 //! every exec() call it makes by invoking a wrapper program and passing in the arguments it would
 //! have passed to exec(). The Bash process (and its descendants) inherit a communication socket
-//! from us, and we give its fd number in the CODEX_ESCALATE_SOCKET environment variable.
+//! from us, and we give its fd number in the RUNE_ESCALATE_SOCKET environment variable.
 //!
 //! When we intercept an exec() call, we send a message over the socket back to the main
 //! MCP process. The MCP process can then decide whether to allow the exec() call to proceed
@@ -61,12 +61,12 @@ use std::sync::Arc;
 
 use anyhow::Context as _;
 use clap::Parser;
-use codex_core::config::find_codex_home;
-use codex_core::is_dangerous_command::command_might_be_dangerous;
-use codex_core::sandboxing::SandboxPermissions;
-use codex_execpolicy::Decision;
-use codex_execpolicy::Policy;
-use codex_execpolicy::RuleMatch;
+use rune_core::config::find_rune_home;
+use rune_core::is_dangerous_command::command_might_be_dangerous;
+use rune_core::sandboxing::SandboxPermissions;
+use rune_execpolicy::Decision;
+use rune_execpolicy::Policy;
+use rune_execpolicy::RuleMatch;
 use rmcp::ErrorData as McpError;
 use tokio::sync::RwLock;
 use tracing_subscriber::EnvFilter;
@@ -87,7 +87,7 @@ pub use mcp::ExecResult;
 
 /// Default value of --execve option relative to the current executable.
 /// Note this must match the name of the binary as specified in Cargo.toml.
-const CODEX_EXECVE_WRAPPER_EXE_NAME: &str = "rune-execve-wrapper";
+const RUNE_EXECVE_WRAPPER_EXE_NAME: &str = "rune-execve-wrapper";
 
 #[derive(Parser)]
 #[clap(version)]
@@ -120,7 +120,7 @@ pub async fn main_mcp_server() -> anyhow::Result<()> {
         None => {
             let cwd = std::env::current_exe()?;
             cwd.parent()
-                .map(|p| p.join(CODEX_EXECVE_WRAPPER_EXE_NAME))
+                .map(|p| p.join(RUNE_EXECVE_WRAPPER_EXE_NAME))
                 .ok_or_else(|| {
                     anyhow::anyhow!("failed to determine execve wrapper path from current exe")
                 })?
@@ -229,23 +229,23 @@ fn format_program_name(path: &Path, preserve_program_paths: bool) -> Option<Stri
 }
 
 async fn load_exec_policy() -> anyhow::Result<Policy> {
-    let codex_home = find_codex_home().context("failed to resolve codex_home for execpolicy")?;
+    let rune_home = find_rune_home().context("failed to resolve rune_home for execpolicy")?;
 
     // TODO(mbolin): At a minimum, `cwd` should be configurable via
-    // `codex/sandbox-state/update` or some other custom MCP call.
+    // `rune/sandbox-state/update` or some other custom MCP call.
     let cwd = None;
     let cli_overrides = Vec::new();
-    let overrides = codex_core::config_loader::LoaderOverrides::default();
-    let config_layer_stack = codex_core::config_loader::load_config_layers_state(
-        &codex_home,
+    let overrides = rune_core::config_loader::LoaderOverrides::default();
+    let config_layer_stack = rune_core::config_loader::load_config_layers_state(
+        &rune_home,
         cwd,
         &cli_overrides,
         overrides,
-        codex_core::config_loader::CloudRequirementsLoader::default(),
+        rune_core::config_loader::CloudRequirementsLoader::default(),
     )
     .await?;
 
-    codex_core::load_exec_policy(&config_layer_stack)
+    rune_core::load_exec_policy(&config_layer_stack)
         .await
         .map_err(anyhow::Error::from)
 }
@@ -253,9 +253,9 @@ async fn load_exec_policy() -> anyhow::Result<Policy> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_core::sandboxing::SandboxPermissions;
-    use codex_execpolicy::Decision;
-    use codex_execpolicy::Policy;
+    use rune_core::sandboxing::SandboxPermissions;
+    use rune_execpolicy::Decision;
+    use rune_execpolicy::Policy;
     use pretty_assertions::assert_eq;
     use std::path::Path;
 

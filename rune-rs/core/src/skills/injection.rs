@@ -7,9 +7,9 @@ use crate::analytics_client::SkillInvocation;
 use crate::analytics_client::TrackEventsContext;
 use crate::instructions::SkillInstructions;
 use crate::skills::SkillMetadata;
-use codex_otel::OtelManager;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::user_input::UserInput;
+use rune_otel::OtelManager;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::user_input::UserInput;
 use tokio::fs;
 
 #[derive(Debug, Default)]
@@ -72,7 +72,7 @@ fn emit_skill_injected_metric(otel: Option<&OtelManager>, skill: &SkillMetadata,
     };
 
     otel.counter(
-        "codex.skill.injected",
+        "rune.skill.injected",
         1,
         &[("status", status), ("skill", skill.name.as_str())],
     );
@@ -474,7 +474,7 @@ mod tests {
             interface: None,
             dependencies: None,
             path: PathBuf::from(path),
-            scope: codex_protocol::protocol::SkillScope::User,
+            scope: rune_protocol::protocol::SkillScope::User,
         }
     }
 

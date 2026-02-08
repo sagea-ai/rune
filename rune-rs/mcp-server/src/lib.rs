@@ -5,8 +5,8 @@ use std::io::ErrorKind;
 use std::io::Result as IoResult;
 use std::path::PathBuf;
 
-use codex_common::CliConfigOverrides;
-use codex_core::config::Config;
+use rune_common::CliConfigOverrides;
+use rune_core::config::Config;
 
 use rmcp::model::ClientNotification;
 use rmcp::model::ClientRequest;
@@ -22,8 +22,8 @@ use tracing::error;
 use tracing::info;
 use tracing_subscriber::EnvFilter;
 
-mod codex_tool_config;
-mod codex_tool_runner;
+mod rune_tool_config;
+mod rune_tool_runner;
 mod exec_approval;
 pub(crate) mod message_processor;
 mod outgoing_message;
@@ -34,8 +34,8 @@ use crate::outgoing_message::OutgoingJsonRpcMessage;
 use crate::outgoing_message::OutgoingMessage;
 use crate::outgoing_message::OutgoingMessageSender;
 
-pub use crate::codex_tool_config::CodexToolCallParam;
-pub use crate::codex_tool_config::CodexToolCallReplyParam;
+pub use crate::rune_tool_config::RuneToolCallParam;
+pub use crate::rune_tool_config::RuneToolCallReplyParam;
 pub use crate::exec_approval::ExecApprovalElicitRequestParams;
 pub use crate::exec_approval::ExecApprovalResponse;
 pub use crate::patch_approval::PatchApprovalElicitRequestParams;
@@ -49,7 +49,7 @@ const CHANNEL_CAPACITY: usize = 128;
 type IncomingMessage = JsonRpcMessage<ClientRequest, Value, ClientNotification>;
 
 pub async fn run_main(
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
     cli_config_overrides: CliConfigOverrides,
 ) -> IoResult<()> {
     // Install a simple subscriber so `tracing` output is visible.  Users can
@@ -105,7 +105,7 @@ pub async fn run_main(
         let outgoing_message_sender = OutgoingMessageSender::new(outgoing_tx);
         let mut processor = MessageProcessor::new(
             outgoing_message_sender,
-            codex_linux_sandbox_exe,
+            rune_linux_sandbox_exe,
             std::sync::Arc::new(config),
         );
         async move {

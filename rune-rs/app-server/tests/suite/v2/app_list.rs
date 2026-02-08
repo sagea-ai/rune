@@ -14,12 +14,12 @@ use axum::http::HeaderMap;
 use axum::http::StatusCode;
 use axum::http::header::AUTHORIZATION;
 use axum::routing::get;
-use codex_app_server_protocol::AppInfo;
-use codex_app_server_protocol::AppsListParams;
-use codex_app_server_protocol::AppsListResponse;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_core::auth::AuthCredentialsStoreMode;
+use rune_app_server_protocol::AppInfo;
+use rune_app_server_protocol::AppsListParams;
+use rune_app_server_protocol::AppsListResponse;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::RequestId;
+use rune_core::auth::AuthCredentialsStoreMode;
 use pretty_assertions::assert_eq;
 use rmcp::handler::server::ServerHandler;
 use rmcp::model::JsonObject;
@@ -42,8 +42,8 @@ const DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[tokio::test]
 async fn list_apps_returns_empty_when_connectors_disabled() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let rune_home = TempDir::new()?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
 
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
@@ -95,10 +95,10 @@ async fn list_apps_returns_connectors_with_accessible_flags() -> Result<()> {
     let tools = vec![connector_tool("beta", "Beta App")?];
     let (server_url, server_handle) = start_apps_server(connectors.clone(), tools).await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let rune_home = TempDir::new()?;
+    write_connectors_config(rune_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        rune_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -106,7 +106,7 @@ async fn list_apps_returns_connectors_with_accessible_flags() -> Result<()> {
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -182,10 +182,10 @@ async fn list_apps_paginates_results() -> Result<()> {
     let tools = vec![connector_tool("beta", "Beta App")?];
     let (server_url, server_handle) = start_apps_server(connectors.clone(), tools).await?;
 
-    let codex_home = TempDir::new()?;
-    write_connectors_config(codex_home.path(), &server_url)?;
+    let rune_home = TempDir::new()?;
+    write_connectors_config(rune_home.path(), &server_url)?;
     write_chatgpt_auth(
-        codex_home.path(),
+        rune_home.path(),
         ChatGptAuthFixture::new("chatgpt-token")
             .account_id("account-123")
             .chatgpt_user_id("user-123")
@@ -193,7 +193,7 @@ async fn list_apps_paginates_results() -> Result<()> {
         AuthCredentialsStoreMode::File,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
     let first_request = mcp
@@ -334,7 +334,7 @@ async fn start_apps_server(
             get(list_directory_connectors),
         )
         .with_state(state)
-        .nest_service("/api/codex/apps", mcp_service);
+        .nest_service("/api/rune/apps", mcp_service);
 
     let handle = tokio::spawn(async move {
         let _ = axum::serve(listener, router).await;
@@ -384,8 +384,8 @@ fn connector_tool(connector_id: &str, connector_name: &str) -> Result<Tool> {
     Ok(tool)
 }
 
-fn write_connectors_config(codex_home: &std::path::Path, base_url: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn write_connectors_config(rune_home: &std::path::Path, base_url: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

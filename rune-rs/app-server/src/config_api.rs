@@ -1,24 +1,24 @@
 use crate::error_code::INTERNAL_ERROR_CODE;
 use crate::error_code::INVALID_REQUEST_ERROR_CODE;
-use codex_app_server_protocol::ConfigBatchWriteParams;
-use codex_app_server_protocol::ConfigReadParams;
-use codex_app_server_protocol::ConfigReadResponse;
-use codex_app_server_protocol::ConfigRequirements;
-use codex_app_server_protocol::ConfigRequirementsReadResponse;
-use codex_app_server_protocol::ConfigValueWriteParams;
-use codex_app_server_protocol::ConfigWriteErrorCode;
-use codex_app_server_protocol::ConfigWriteResponse;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::NetworkRequirements;
-use codex_app_server_protocol::SandboxMode;
-use codex_core::config::ConfigService;
-use codex_core::config::ConfigServiceError;
-use codex_core::config_loader::CloudRequirementsLoader;
-use codex_core::config_loader::ConfigRequirementsToml;
-use codex_core::config_loader::LoaderOverrides;
-use codex_core::config_loader::ResidencyRequirement as CoreResidencyRequirement;
-use codex_core::config_loader::SandboxModeRequirement as CoreSandboxModeRequirement;
-use codex_protocol::config_types::WebSearchMode;
+use rune_app_server_protocol::ConfigBatchWriteParams;
+use rune_app_server_protocol::ConfigReadParams;
+use rune_app_server_protocol::ConfigReadResponse;
+use rune_app_server_protocol::ConfigRequirements;
+use rune_app_server_protocol::ConfigRequirementsReadResponse;
+use rune_app_server_protocol::ConfigValueWriteParams;
+use rune_app_server_protocol::ConfigWriteErrorCode;
+use rune_app_server_protocol::ConfigWriteResponse;
+use rune_app_server_protocol::JSONRPCErrorError;
+use rune_app_server_protocol::NetworkRequirements;
+use rune_app_server_protocol::SandboxMode;
+use rune_core::config::ConfigService;
+use rune_core::config::ConfigServiceError;
+use rune_core::config_loader::CloudRequirementsLoader;
+use rune_core::config_loader::ConfigRequirementsToml;
+use rune_core::config_loader::LoaderOverrides;
+use rune_core::config_loader::ResidencyRequirement as CoreResidencyRequirement;
+use rune_core::config_loader::SandboxModeRequirement as CoreSandboxModeRequirement;
+use rune_protocol::config_types::WebSearchMode;
 use serde_json::json;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -27,7 +27,7 @@ use toml::Value as TomlValue;
 
 #[derive(Clone)]
 pub(crate) struct ConfigApi {
-    codex_home: PathBuf,
+    rune_home: PathBuf,
     cli_overrides: Vec<(String, TomlValue)>,
     loader_overrides: LoaderOverrides,
     cloud_requirements: Arc<RwLock<CloudRequirementsLoader>>,
@@ -35,13 +35,13 @@ pub(crate) struct ConfigApi {
 
 impl ConfigApi {
     pub(crate) fn new(
-        codex_home: PathBuf,
+        rune_home: PathBuf,
         cli_overrides: Vec<(String, TomlValue)>,
         loader_overrides: LoaderOverrides,
         cloud_requirements: Arc<RwLock<CloudRequirementsLoader>>,
     ) -> Self {
         Self {
-            codex_home,
+            rune_home,
             cli_overrides,
             loader_overrides,
             cloud_requirements,
@@ -55,7 +55,7 @@ impl ConfigApi {
             .map(|guard| guard.clone())
             .unwrap_or_default();
         ConfigService::new(
-            self.codex_home.clone(),
+            self.rune_home.clone(),
             self.cli_overrides.clone(),
             self.loader_overrides.clone(),
             cloud_requirements,
@@ -108,7 +108,7 @@ fn map_requirements_toml_to_api(requirements: ConfigRequirementsToml) -> ConfigR
         allowed_approval_policies: requirements.allowed_approval_policies.map(|policies| {
             policies
                 .into_iter()
-                .map(codex_app_server_protocol::AskForApproval::from)
+                .map(rune_app_server_protocol::AskForApproval::from)
                 .collect()
         }),
         allowed_sandbox_modes: requirements.allowed_sandbox_modes.map(|modes| {
@@ -145,14 +145,14 @@ fn map_sandbox_mode_requirement_to_api(mode: CoreSandboxModeRequirement) -> Opti
 
 fn map_residency_requirement_to_api(
     residency: CoreResidencyRequirement,
-) -> codex_app_server_protocol::ResidencyRequirement {
+) -> rune_app_server_protocol::ResidencyRequirement {
     match residency {
-        CoreResidencyRequirement::Us => codex_app_server_protocol::ResidencyRequirement::Us,
+        CoreResidencyRequirement::Us => rune_app_server_protocol::ResidencyRequirement::Us,
     }
 }
 
 fn map_network_requirements_to_api(
-    network: codex_core::config_loader::NetworkRequirementsToml,
+    network: rune_core::config_loader::NetworkRequirementsToml,
 ) -> NetworkRequirements {
     NetworkRequirements {
         enabled: network.enabled,
@@ -193,8 +193,8 @@ fn config_write_error(code: ConfigWriteErrorCode, message: impl Into<String>) ->
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_core::config_loader::NetworkRequirementsToml as CoreNetworkRequirementsToml;
-    use codex_protocol::protocol::AskForApproval as CoreAskForApproval;
+    use rune_core::config_loader::NetworkRequirementsToml as CoreNetworkRequirementsToml;
+    use rune_protocol::protocol::AskForApproval as CoreAskForApproval;
     use pretty_assertions::assert_eq;
 
     #[test]
@@ -209,7 +209,7 @@ mod tests {
                 CoreSandboxModeRequirement::ExternalSandbox,
             ]),
             allowed_web_search_modes: Some(vec![
-                codex_core::config_loader::WebSearchModeRequirement::Cached,
+                rune_core::config_loader::WebSearchModeRequirement::Cached,
             ]),
             mcp_servers: None,
             rules: None,
@@ -233,8 +233,8 @@ mod tests {
         assert_eq!(
             mapped.allowed_approval_policies,
             Some(vec![
-                codex_app_server_protocol::AskForApproval::Never,
-                codex_app_server_protocol::AskForApproval::OnRequest,
+                rune_app_server_protocol::AskForApproval::Never,
+                rune_app_server_protocol::AskForApproval::OnRequest,
             ])
         );
         assert_eq!(
@@ -247,7 +247,7 @@ mod tests {
         );
         assert_eq!(
             mapped.enforce_residency,
-            Some(codex_app_server_protocol::ResidencyRequirement::Us),
+            Some(rune_app_server_protocol::ResidencyRequirement::Us),
         );
         assert_eq!(
             mapped.network,

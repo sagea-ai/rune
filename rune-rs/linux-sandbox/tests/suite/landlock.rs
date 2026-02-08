@@ -1,16 +1,16 @@
 #![cfg(target_os = "linux")]
 #![allow(clippy::unwrap_used)]
-use codex_core::config::types::ShellEnvironmentPolicy;
-use codex_core::error::CodexErr;
-use codex_core::error::Result;
-use codex_core::error::SandboxErr;
-use codex_core::exec::ExecParams;
-use codex_core::exec::process_exec_tool_call;
-use codex_core::exec_env::create_env;
-use codex_core::protocol::SandboxPolicy;
-use codex_core::protocol_config_types::WindowsSandboxLevel;
-use codex_core::sandboxing::SandboxPermissions;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_core::config::types::ShellEnvironmentPolicy;
+use rune_core::error::RuneErr;
+use rune_core::error::Result;
+use rune_core::error::SandboxErr;
+use rune_core::exec::ExecParams;
+use rune_core::exec::process_exec_tool_call;
+use rune_core::exec_env::create_env;
+use rune_core::protocol::SandboxPolicy;
+use rune_core::protocol_config_types::WindowsSandboxLevel;
+use rune_core::sandboxing::SandboxPermissions;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -55,7 +55,7 @@ async fn run_cmd_output(
     cmd: &[&str],
     writable_roots: &[PathBuf],
     timeout_ms: u64,
-) -> codex_core::exec::ExecToolCallOutput {
+) -> rune_core::exec::ExecToolCallOutput {
     run_cmd_result_with_writable_roots(cmd, writable_roots, timeout_ms, false)
         .await
         .expect("sandboxed command should execute")
@@ -67,7 +67,7 @@ async fn run_cmd_result_with_writable_roots(
     writable_roots: &[PathBuf],
     timeout_ms: u64,
     use_bwrap_sandbox: bool,
-) -> Result<codex_core::exec::ExecToolCallOutput> {
+) -> Result<rune_core::exec::ExecToolCallOutput> {
     let cwd = std::env::current_dir().expect("cwd should exist");
     let sandbox_cwd = cwd.clone();
     let params = ExecParams {
@@ -94,20 +94,20 @@ async fn run_cmd_result_with_writable_roots(
         exclude_slash_tmp: true,
     };
     let sandbox_program = env!("CARGO_BIN_EXE_rune-linux-sandbox");
-    let codex_linux_sandbox_exe = Some(PathBuf::from(sandbox_program));
+    let rune_linux_sandbox_exe = Some(PathBuf::from(sandbox_program));
 
     process_exec_tool_call(
         params,
         &sandbox_policy,
         sandbox_cwd.as_path(),
-        &codex_linux_sandbox_exe,
+        &rune_linux_sandbox_exe,
         use_bwrap_sandbox,
         None,
     )
     .await
 }
 
-fn is_bwrap_unavailable_output(output: &codex_core::exec::ExecToolCallOutput) -> bool {
+fn is_bwrap_unavailable_output(output: &rune_core::exec::ExecToolCallOutput) -> bool {
     output.stderr.text.contains(BWRAP_UNAVAILABLE_ERR)
 }
 
@@ -121,26 +121,26 @@ async fn should_skip_bwrap_tests() -> bool {
     .await
     {
         Ok(output) => is_bwrap_unavailable_output(&output),
-        Err(CodexErr::Sandbox(SandboxErr::Denied { output })) => {
+        Err(RuneErr::Sandbox(SandboxErr::Denied { output })) => {
             is_bwrap_unavailable_output(&output)
         }
         // Probe timeouts are not actionable for the bwrap-specific assertions below;
         // skip rather than fail the whole suite.
-        Err(CodexErr::Sandbox(SandboxErr::Timeout { .. })) => true,
+        Err(RuneErr::Sandbox(SandboxErr::Timeout { .. })) => true,
         Err(err) => panic!("bwrap availability probe failed unexpectedly: {err:?}"),
     }
 }
 
 fn expect_denied(
-    result: Result<codex_core::exec::ExecToolCallOutput>,
+    result: Result<rune_core::exec::ExecToolCallOutput>,
     context: &str,
-) -> codex_core::exec::ExecToolCallOutput {
+) -> rune_core::exec::ExecToolCallOutput {
     match result {
         Ok(output) => {
             assert_ne!(output.exit_code, 0, "{context}: expected nonzero exit code");
             output
         }
-        Err(CodexErr::Sandbox(SandboxErr::Denied { output })) => *output,
+        Err(RuneErr::Sandbox(SandboxErr::Denied { output })) => *output,
         Err(err) => panic!("{context}: {err:?}"),
     }
 }
@@ -239,12 +239,12 @@ async fn assert_network_blocked(cmd: &[&str]) {
 
     let sandbox_policy = SandboxPolicy::new_read_only_policy();
     let sandbox_program = env!("CARGO_BIN_EXE_rune-linux-sandbox");
-    let codex_linux_sandbox_exe: Option<PathBuf> = Some(PathBuf::from(sandbox_program));
+    let rune_linux_sandbox_exe: Option<PathBuf> = Some(PathBuf::from(sandbox_program));
     let result = process_exec_tool_call(
         params,
         &sandbox_policy,
         sandbox_cwd.as_path(),
-        &codex_linux_sandbox_exe,
+        &rune_linux_sandbox_exe,
         false,
         None,
     )
@@ -252,7 +252,7 @@ async fn assert_network_blocked(cmd: &[&str]) {
 
     let output = match result {
         Ok(output) => output,
-        Err(CodexErr::Sandbox(SandboxErr::Denied { output })) => *output,
+        Err(RuneErr::Sandbox(SandboxErr::Denied { output })) => *output,
         _ => {
             panic!("expected sandbox denied error, got: {result:?}");
         }
@@ -297,7 +297,7 @@ async fn sandbox_blocks_nc() {
 }
 
 #[tokio::test]
-async fn sandbox_blocks_git_and_codex_writes_inside_writable_root() {
+async fn sandbox_blocks_git_and_rune_writes_inside_writable_root() {
     if should_skip_bwrap_tests().await {
         eprintln!("skipping bwrap test: vendored bwrap was not built in this environment");
         return;
@@ -305,12 +305,12 @@ async fn sandbox_blocks_git_and_codex_writes_inside_writable_root() {
 
     let tmpdir = tempfile::tempdir().expect("tempdir");
     let dot_git = tmpdir.path().join(".git");
-    let dot_codex = tmpdir.path().join(".codex");
+    let dot_rune = tmpdir.path().join(".rune");
     std::fs::create_dir_all(&dot_git).expect("create .git");
-    std::fs::create_dir_all(&dot_codex).expect("create .codex");
+    std::fs::create_dir_all(&dot_rune).expect("create .rune");
 
     let git_target = dot_git.join("config");
-    let codex_target = dot_codex.join("config.toml");
+    let rune_target = dot_rune.join("config.toml");
 
     let git_output = expect_denied(
         run_cmd_result_with_writable_roots(
@@ -327,26 +327,26 @@ async fn sandbox_blocks_git_and_codex_writes_inside_writable_root() {
         ".git write should be denied under bubblewrap",
     );
 
-    let codex_output = expect_denied(
+    let rune_output = expect_denied(
         run_cmd_result_with_writable_roots(
             &[
                 "bash",
                 "-lc",
-                &format!("echo denied > {}", codex_target.to_string_lossy()),
+                &format!("echo denied > {}", rune_target.to_string_lossy()),
             ],
             &[tmpdir.path().to_path_buf()],
             LONG_TIMEOUT_MS,
             true,
         )
         .await,
-        ".codex write should be denied under bubblewrap",
+        ".rune write should be denied under bubblewrap",
     );
     assert_ne!(git_output.exit_code, 0);
-    assert_ne!(codex_output.exit_code, 0);
+    assert_ne!(rune_output.exit_code, 0);
 }
 
 #[tokio::test]
-async fn sandbox_blocks_codex_symlink_replacement_attack() {
+async fn sandbox_blocks_rune_symlink_replacement_attack() {
     if should_skip_bwrap_tests().await {
         eprintln!("skipping bwrap test: vendored bwrap was not built in this environment");
         return;
@@ -355,29 +355,29 @@ async fn sandbox_blocks_codex_symlink_replacement_attack() {
     use std::os::unix::fs::symlink;
 
     let tmpdir = tempfile::tempdir().expect("tempdir");
-    let decoy = tmpdir.path().join("decoy-codex");
+    let decoy = tmpdir.path().join("decoy-rune");
     std::fs::create_dir_all(&decoy).expect("create decoy dir");
 
-    let dot_codex = tmpdir.path().join(".codex");
-    symlink(&decoy, &dot_codex).expect("create .codex symlink");
+    let dot_rune = tmpdir.path().join(".rune");
+    symlink(&decoy, &dot_rune).expect("create .rune symlink");
 
-    let codex_target = dot_codex.join("config.toml");
+    let rune_target = dot_rune.join("config.toml");
 
-    let codex_output = expect_denied(
+    let rune_output = expect_denied(
         run_cmd_result_with_writable_roots(
             &[
                 "bash",
                 "-lc",
-                &format!("echo denied > {}", codex_target.to_string_lossy()),
+                &format!("echo denied > {}", rune_target.to_string_lossy()),
             ],
             &[tmpdir.path().to_path_buf()],
             LONG_TIMEOUT_MS,
             true,
         )
         .await,
-        ".codex symlink replacement should be denied",
+        ".rune symlink replacement should be denied",
     );
-    assert_ne!(codex_output.exit_code, 0);
+    assert_ne!(rune_output.exit_code, 0);
 }
 
 #[tokio::test]

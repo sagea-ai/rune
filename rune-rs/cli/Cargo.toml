@@ -23,13 +23,11 @@ rune-app-server = { workspace = true }
 rune-app-server-protocol = { workspace = true }
 rune-app-server-test-client = { workspace = true }
 rune-arg0 = { workspace = true }
-rune-chatgpt = { workspace = true }
 rune-cloud-tasks = { path = "../cloud-tasks" }
 rune-common = { workspace = true, features = ["cli"] }
 rune-core = { workspace = true }
 rune-exec = { workspace = true }
 rune-execpolicy = { workspace = true }
-rune-login = { workspace = true }
 rune-mcp-server = { workspace = true }
 rune-protocol = { workspace = true }
 rune-responses-api-proxy = { workspace = true }
@@ -53,7 +51,7 @@ toml = { workspace = true }
 tracing = { workspace = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-codex_windows_sandbox = { package = "rune-windows-sandbox", path = "../windows-sandbox-rs" }
+rune_windows_sandbox = { package = "rune-windows-sandbox", path = "../windows-sandbox-rs" }
 
 [dev-dependencies]
 assert_cmd = { workspace = true }

@@ -14,24 +14,24 @@ use std::sync::mpsc::Sender;
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_app_server_protocol::AskForApproval;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::ClientNotification;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::CommandExecutionApprovalDecision;
-use codex_app_server_protocol::FileChangeApprovalDecision;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::JSONRPCRequest;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ThreadListParams;
-use codex_app_server_protocol::ThreadResumeParams;
-use codex_app_server_protocol::ThreadResumeResponse;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::UserInput;
+use rune_app_server_protocol::AskForApproval;
+use rune_app_server_protocol::ClientInfo;
+use rune_app_server_protocol::ClientNotification;
+use rune_app_server_protocol::ClientRequest;
+use rune_app_server_protocol::CommandExecutionApprovalDecision;
+use rune_app_server_protocol::FileChangeApprovalDecision;
+use rune_app_server_protocol::InitializeCapabilities;
+use rune_app_server_protocol::JSONRPCMessage;
+use rune_app_server_protocol::JSONRPCRequest;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::ThreadListParams;
+use rune_app_server_protocol::ThreadResumeParams;
+use rune_app_server_protocol::ThreadResumeResponse;
+use rune_app_server_protocol::ThreadStartParams;
+use rune_app_server_protocol::ThreadStartResponse;
+use rune_app_server_protocol::TurnStartParams;
+use rune_app_server_protocol::UserInput;
 use serde::Serialize;
 
 use crate::output::Output;
@@ -52,12 +52,12 @@ pub struct AppServerClient {
 
 impl AppServerClient {
     pub fn spawn(
-        codex_bin: &str,
+        rune_bin: &str,
         config_overrides: &[String],
         output: Output,
         filtered_output: bool,
     ) -> Result<Self> {
-        let mut cmd = Command::new(codex_bin);
+        let mut cmd = Command::new(rune_bin);
         for override_kv in config_overrides {
             cmd.arg("--config").arg(override_kv);
         }
@@ -68,16 +68,16 @@ impl AppServerClient {
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
             .spawn()
-            .with_context(|| format!("failed to start `{codex_bin}` app-server"))?;
+            .with_context(|| format!("failed to start `{rune_bin}` app-server"))?;
 
         let stdin = child
             .stdin
             .take()
-            .context("codex app-server stdin unavailable")?;
+            .context("rune app-server stdin unavailable")?;
         let stdout = child
             .stdout
             .take()
-            .context("codex app-server stdout unavailable")?;
+            .context("rune app-server stdout unavailable")?;
 
         Ok(Self {
             child,
@@ -94,7 +94,7 @@ impl AppServerClient {
         let request_id = self.next_request_id();
         let request = ClientRequest::Initialize {
             request_id: request_id.clone(),
-            params: codex_app_server_protocol::InitializeParams {
+            params: rune_app_server_protocol::InitializeParams {
                 client_info: ClientInfo {
                     name: "debug-client".to_string(),
                     title: Some("Debug Client".to_string()),
@@ -108,7 +108,7 @@ impl AppServerClient {
 
         self.send(&request)?;
         let response = self.read_until_response(&request_id)?;
-        let _parsed: codex_app_server_protocol::InitializeResponse =
+        let _parsed: rune_app_server_protocol::InitializeResponse =
             serde_json::from_value(response.result).context("decode initialize response")?;
         let initialized = ClientNotification::Initialized;
         self.send(&initialized)?;
@@ -323,24 +323,24 @@ fn handle_server_request(
     request: JSONRPCRequest,
     stdin: &Arc<Mutex<Option<ChildStdin>>>,
 ) -> Result<()> {
-    let Ok(server_request) = codex_app_server_protocol::ServerRequest::try_from(request) else {
+    let Ok(server_request) = rune_app_server_protocol::ServerRequest::try_from(request) else {
         return Ok(());
     };
 
     match server_request {
-        codex_app_server_protocol::ServerRequest::CommandExecutionRequestApproval {
+        rune_app_server_protocol::ServerRequest::CommandExecutionRequestApproval {
             request_id,
             ..
         } => {
-            let response = codex_app_server_protocol::CommandExecutionRequestApprovalResponse {
+            let response = rune_app_server_protocol::CommandExecutionRequestApprovalResponse {
                 decision: CommandExecutionApprovalDecision::Decline,
             };
             send_jsonrpc_response(stdin, request_id, response)
         }
-        codex_app_server_protocol::ServerRequest::FileChangeRequestApproval {
+        rune_app_server_protocol::ServerRequest::FileChangeRequestApproval {
             request_id, ..
         } => {
-            let response = codex_app_server_protocol::FileChangeRequestApprovalResponse {
+            let response = rune_app_server_protocol::FileChangeRequestApprovalResponse {
                 decision: FileChangeApprovalDecision::Decline,
             };
             send_jsonrpc_response(stdin, request_id, response)

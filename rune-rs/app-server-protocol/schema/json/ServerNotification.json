@@ -166,7 +166,7 @@
       ]
     },
     "AskForApproval": {
-      "description": "Determines the conditions under which the user is consulted to approve running the command proposed by Codex.",
+      "description": "Determines the conditions under which the user is consulted to approve running the command proposed by Rune.",
       "oneOf": [
         {
           "description": "Under this policy, only \"known safe\" commands—as determined by `is_safe_command()`—that **only read files** are auto‑approved. Everything else will ask the user to approve.",
@@ -202,14 +202,14 @@
       "description": "Authentication mode for OpenAI-backed providers.",
       "oneOf": [
         {
-          "description": "OpenAI API key provided by the caller and stored by Codex.",
+          "description": "OpenAI API key provided by the caller and stored by Rune.",
           "enum": [
             "apikey"
           ],
           "type": "string"
         },
         {
-          "description": "ChatGPT OAuth managed by Codex (tokens persisted and refreshed by Codex).",
+          "description": "ChatGPT OAuth managed by Rune (tokens persisted and refreshed by Rune).",
           "enum": [
             "chatgpt"
           ],
@@ -301,8 +301,8 @@
       ],
       "type": "object"
     },
-    "CodexErrorInfo": {
-      "description": "This translation layer make sure that we expose codex error code in camel case.\n\nWhen an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `codexErrorInfo` variant.",
+    "RuneErrorInfo": {
+      "description": "This translation layer make sure that we expose rune error code in camel case.\n\nWhen an upstream HTTP status is available (for example, from the Responses API or a provider), it is forwarded in `httpStatusCode` on the relevant `runeErrorInfo` variant.",
       "oneOf": [
         {
           "enum": [
@@ -343,7 +343,7 @@
           "required": [
             "modelCap"
           ],
-          "title": "ModelCapCodexErrorInfo",
+          "title": "ModelCapRuneErrorInfo",
           "type": "object"
         },
         {
@@ -366,7 +366,7 @@
           "required": [
             "httpConnectionFailed"
           ],
-          "title": "HttpConnectionFailedCodexErrorInfo",
+          "title": "HttpConnectionFailedRuneErrorInfo",
           "type": "object"
         },
         {
@@ -390,7 +390,7 @@
           "required": [
             "responseStreamConnectionFailed"
           ],
-          "title": "ResponseStreamConnectionFailedCodexErrorInfo",
+          "title": "ResponseStreamConnectionFailedRuneErrorInfo",
           "type": "object"
         },
         {
@@ -414,7 +414,7 @@
           "required": [
             "responseStreamDisconnected"
           ],
-          "title": "ResponseStreamDisconnectedCodexErrorInfo",
+          "title": "ResponseStreamDisconnectedRuneErrorInfo",
           "type": "object"
         },
         {
@@ -438,13 +438,13 @@
           "required": [
             "responseTooManyFailedAttempts"
           ],
-          "title": "ResponseTooManyFailedAttemptsCodexErrorInfo",
+          "title": "ResponseTooManyFailedAttemptsRuneErrorInfo",
           "type": "object"
         }
       ]
     },
-    "CodexErrorInfo2": {
-      "description": "Codex errors that we expose to clients.",
+    "RuneErrorInfo2": {
+      "description": "Rune errors that we expose to clients.",
       "oneOf": [
         {
           "enum": [
@@ -485,7 +485,7 @@
           "required": [
             "model_cap"
           ],
-          "title": "ModelCapCodexErrorInfo2",
+          "title": "ModelCapRuneErrorInfo2",
           "type": "object"
         },
         {
@@ -508,7 +508,7 @@
           "required": [
             "http_connection_failed"
           ],
-          "title": "HttpConnectionFailedCodexErrorInfo2",
+          "title": "HttpConnectionFailedRuneErrorInfo2",
           "type": "object"
         },
         {
@@ -532,7 +532,7 @@
           "required": [
             "response_stream_connection_failed"
           ],
-          "title": "ResponseStreamConnectionFailedCodexErrorInfo2",
+          "title": "ResponseStreamConnectionFailedRuneErrorInfo2",
           "type": "object"
         },
         {
@@ -556,7 +556,7 @@
           "required": [
             "response_stream_disconnected"
           ],
-          "title": "ResponseStreamDisconnectedCodexErrorInfo2",
+          "title": "ResponseStreamDisconnectedRuneErrorInfo2",
           "type": "object"
         },
         {
@@ -580,7 +580,7 @@
           "required": [
             "response_too_many_failed_attempts"
           ],
-          "title": "ResponseTooManyFailedAttemptsCodexErrorInfo2",
+          "title": "ResponseTooManyFailedAttemptsRuneErrorInfo2",
           "type": "object"
         }
       ]
@@ -1030,10 +1030,10 @@
         {
           "description": "Error while executing a submission",
           "properties": {
-            "codex_error_info": {
+            "rune_error_info": {
               "anyOf": [
                 {
-                  "$ref": "#/definitions/CodexErrorInfo2"
+                  "$ref": "#/definitions/RuneErrorInfo2"
                 },
                 {
                   "type": "null"
@@ -2309,10 +2309,10 @@
                 "null"
               ]
             },
-            "codex_error_info": {
+            "rune_error_info": {
               "anyOf": [
                 {
-                  "$ref": "#/definitions/CodexErrorInfo2"
+                  "$ref": "#/definitions/RuneErrorInfo2"
                 },
                 {
                   "type": "null"
@@ -5959,7 +5959,7 @@
               "$ref": "#/definitions/SessionSource"
             }
           ],
-          "description": "Origin of the thread (CLI, VSCode, codex exec, codex app-server, etc.)."
+          "description": "Origin of the thread (CLI, VSCode, rune exec, rune app-server, etc.)."
         },
         "turns": {
           "description": "Only populated on `thread/resume`, `thread/rollback`, `thread/fork`, and `thread/read` (when `includeTurns` is true) responses. For all other responses and notifications returning a Thread, the turns field will be an empty list.",
@@ -6739,10 +6739,10 @@
             "null"
           ]
         },
-        "codexErrorInfo": {
+        "runeErrorInfo": {
           "anyOf": [
             {
-              "$ref": "#/definitions/CodexErrorInfo"
+              "$ref": "#/definitions/RuneErrorInfo"
             },
             {
               "type": "null"
@@ -7685,7 +7685,7 @@
       "type": "object"
     },
     {
-      "description": "This event is internal-only. Used by Codex Cloud.",
+      "description": "This event is internal-only. Used by Rune Cloud.",
       "properties": {
         "method": {
           "enum": [

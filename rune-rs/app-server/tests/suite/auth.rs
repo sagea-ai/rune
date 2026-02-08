@@ -1,14 +1,14 @@
 use anyhow::Result;
 use app_test_support::McpProcess;
 use app_test_support::to_response;
-use codex_app_server_protocol::AuthMode;
-use codex_app_server_protocol::GetAuthStatusParams;
-use codex_app_server_protocol::GetAuthStatusResponse;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::LoginApiKeyParams;
-use codex_app_server_protocol::LoginApiKeyResponse;
-use codex_app_server_protocol::RequestId;
+use rune_app_server_protocol::AuthMode;
+use rune_app_server_protocol::GetAuthStatusParams;
+use rune_app_server_protocol::GetAuthStatusResponse;
+use rune_app_server_protocol::JSONRPCError;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::LoginApiKeyParams;
+use rune_app_server_protocol::LoginApiKeyResponse;
+use rune_app_server_protocol::RequestId;
 use pretty_assertions::assert_eq;
 use std::path::Path;
 use tempfile::TempDir;
@@ -17,10 +17,10 @@ use tokio::time::timeout;
 const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
 fn create_config_toml_custom_provider(
-    codex_home: &Path,
+    rune_home: &Path,
     requires_openai_auth: bool,
 ) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+    let config_toml = rune_home.join("config.toml");
     let requires_line = if requires_openai_auth {
         "requires_openai_auth = true\n"
     } else {
@@ -46,8 +46,8 @@ stream_max_retries = 0
     std::fs::write(config_toml, contents)
 }
 
-fn create_config_toml(codex_home: &Path) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &Path) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         r#"
@@ -58,8 +58,8 @@ sandbox_mode = "danger-full-access"
     )
 }
 
-fn create_config_toml_forced_login(codex_home: &Path, forced_method: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml_forced_login(rune_home: &Path, forced_method: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     let contents = format!(
         r#"
 model = "mock-model"
@@ -89,10 +89,10 @@ async fn login_with_api_key_via_request(mcp: &mut McpProcess, api_key: &str) -> 
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn get_auth_status_no_auth() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path())?;
 
-    let mut mcp = McpProcess::new_with_env(codex_home.path(), &[("OPENAI_API_KEY", None)]).await?;
+    let mut mcp = McpProcess::new_with_env(rune_home.path(), &[("OPENAI_API_KEY", None)]).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp
@@ -115,10 +115,10 @@ async fn get_auth_status_no_auth() -> Result<()> {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn get_auth_status_with_api_key() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     login_with_api_key_via_request(&mut mcp, "sk-test-key").await?;
@@ -143,10 +143,10 @@ async fn get_auth_status_with_api_key() -> Result<()> {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn get_auth_status_with_api_key_when_auth_not_required() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    create_config_toml_custom_provider(codex_home.path(), false)?;
+    let rune_home = TempDir::new()?;
+    create_config_toml_custom_provider(rune_home.path(), false)?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     login_with_api_key_via_request(&mut mcp, "sk-test-key").await?;
@@ -176,10 +176,10 @@ async fn get_auth_status_with_api_key_when_auth_not_required() -> Result<()> {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn get_auth_status_with_api_key_no_include_token() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     login_with_api_key_via_request(&mut mcp, "sk-test-key").await?;
@@ -204,10 +204,10 @@ async fn get_auth_status_with_api_key_no_include_token() -> Result<()> {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn login_api_key_rejected_when_forced_chatgpt() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    create_config_toml_forced_login(codex_home.path(), "chatgpt")?;
+    let rune_home = TempDir::new()?;
+    create_config_toml_forced_login(rune_home.path(), "chatgpt")?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp

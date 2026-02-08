@@ -5,15 +5,15 @@ use anyhow::anyhow;
 use app_test_support::McpProcess;
 use app_test_support::to_response;
 use app_test_support::write_models_cache;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::Model;
-use codex_app_server_protocol::ModelListParams;
-use codex_app_server_protocol::ModelListResponse;
-use codex_app_server_protocol::ReasoningEffortOption;
-use codex_app_server_protocol::RequestId;
-use codex_protocol::openai_models::InputModality;
-use codex_protocol::openai_models::ReasoningEffort;
+use rune_app_server_protocol::JSONRPCError;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::Model;
+use rune_app_server_protocol::ModelListParams;
+use rune_app_server_protocol::ModelListResponse;
+use rune_app_server_protocol::ReasoningEffortOption;
+use rune_app_server_protocol::RequestId;
+use rune_protocol::openai_models::InputModality;
+use rune_protocol::openai_models::ReasoningEffort;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 use tokio::time::timeout;
@@ -23,9 +23,9 @@ const INVALID_REQUEST_ERROR_CODE: i64 = -32600;
 
 #[tokio::test]
 async fn list_models_returns_all_models_with_large_limit() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    write_models_cache(codex_home.path())?;
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let rune_home = TempDir::new()?;
+    write_models_cache(rune_home.path())?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
 
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
@@ -49,10 +49,10 @@ async fn list_models_returns_all_models_with_large_limit() -> Result<()> {
 
     let expected_models = vec![
         Model {
-            id: "gpt-5.2-codex".to_string(),
-            model: "gpt-5.2-codex".to_string(),
+            id: "gpt-5.2-rune".to_string(),
+            model: "gpt-5.2-rune".to_string(),
             upgrade: None,
-            display_name: "gpt-5.2-codex".to_string(),
+            display_name: "gpt-5.2-rune".to_string(),
             description: "Latest frontier agentic coding model.".to_string(),
             supported_reasoning_efforts: vec![
                 ReasoningEffortOption {
@@ -81,9 +81,9 @@ async fn list_models_returns_all_models_with_large_limit() -> Result<()> {
         Model {
             id: "gpt-5.1-rune-max".to_string(),
             model: "gpt-5.1-rune-max".to_string(),
-            upgrade: Some("gpt-5.2-codex".to_string()),
+            upgrade: Some("gpt-5.2-rune".to_string()),
             display_name: "gpt-5.1-rune-max".to_string(),
-            description: "Codex-optimized flagship for deep and fast reasoning.".to_string(),
+            description: "Rune-optimized flagship for deep and fast reasoning.".to_string(),
             supported_reasoning_efforts: vec![
                 ReasoningEffortOption {
                     reasoning_effort: ReasoningEffort::Low,
@@ -111,9 +111,9 @@ async fn list_models_returns_all_models_with_large_limit() -> Result<()> {
         Model {
             id: "gpt-5.1-rune-mini".to_string(),
             model: "gpt-5.1-rune-mini".to_string(),
-            upgrade: Some("gpt-5.2-codex".to_string()),
+            upgrade: Some("gpt-5.2-rune".to_string()),
             display_name: "gpt-5.1-rune-mini".to_string(),
-            description: "Optimized for codex. Cheaper, faster, but less capable.".to_string(),
+            description: "Optimized for rune. Cheaper, faster, but less capable.".to_string(),
             supported_reasoning_efforts: vec![
                 ReasoningEffortOption {
                     reasoning_effort: ReasoningEffort::Medium,
@@ -133,7 +133,7 @@ async fn list_models_returns_all_models_with_large_limit() -> Result<()> {
         Model {
             id: "gpt-5.2".to_string(),
             model: "gpt-5.2".to_string(),
-            upgrade: Some("gpt-5.2-codex".to_string()),
+            upgrade: Some("gpt-5.2-rune".to_string()),
             display_name: "gpt-5.2".to_string(),
             description:
                 "Latest frontier model with improvements across knowledge, reasoning and coding"
@@ -175,9 +175,9 @@ async fn list_models_returns_all_models_with_large_limit() -> Result<()> {
 
 #[tokio::test]
 async fn list_models_pagination_works() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    write_models_cache(codex_home.path())?;
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let rune_home = TempDir::new()?;
+    write_models_cache(rune_home.path())?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
 
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 
@@ -200,7 +200,7 @@ async fn list_models_pagination_works() -> Result<()> {
     } = to_response::<ModelListResponse>(first_response)?;
 
     assert_eq!(first_items.len(), 1);
-    assert_eq!(first_items[0].id, "gpt-5.2-codex");
+    assert_eq!(first_items[0].id, "gpt-5.2-rune");
     let next_cursor = first_cursor.ok_or_else(|| anyhow!("cursor for second page"))?;
 
     let second_request = mcp
@@ -273,9 +273,9 @@ async fn list_models_pagination_works() -> Result<()> {
 
 #[tokio::test]
 async fn list_models_rejects_invalid_cursor() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    write_models_cache(codex_home.path())?;
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let rune_home = TempDir::new()?;
+    write_models_cache(rune_home.path())?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
 
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 

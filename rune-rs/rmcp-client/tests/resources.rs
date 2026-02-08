@@ -2,10 +2,10 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use codex_rmcp_client::ElicitationAction;
-use codex_rmcp_client::ElicitationResponse;
-use codex_rmcp_client::RmcpClient;
-use codex_utils_cargo_bin::CargoBinError;
+use rune_rmcp_client::ElicitationAction;
+use rune_rmcp_client::ElicitationResponse;
+use rune_rmcp_client::RmcpClient;
+use rune_utils_cargo_bin::CargoBinError;
 use futures::FutureExt as _;
 use rmcp::model::AnnotateAble;
 use rmcp::model::ClientCapabilities;
@@ -18,10 +18,10 @@ use rmcp::model::ReadResourceRequestParam;
 use rmcp::model::ResourceContents;
 use serde_json::json;
 
-const RESOURCE_URI: &str = "memo://codex/example-note";
+const RESOURCE_URI: &str = "memo://rune/example-note";
 
 fn stdio_server_bin() -> Result<PathBuf, CargoBinError> {
-    codex_utils_cargo_bin::cargo_bin("test_stdio_server")
+    rune_utils_cargo_bin::cargo_bin("test_stdio_server")
 }
 
 fn init_params() -> InitializeRequestParam {
@@ -37,7 +37,7 @@ fn init_params() -> InitializeRequestParam {
         client_info: Implementation {
             name: "rune-test".into(),
             version: "0.0.0-test".into(),
-            title: Some("Codex rmcp resource test".into()),
+            title: Some("Rune rmcp resource test".into()),
             icons: None,
             website_url: None,
         },
@@ -104,11 +104,11 @@ async fn rmcp_client_can_list_and_read_resources() -> anyhow::Result<()> {
             next_cursor: None,
             resource_templates: vec![
                 rmcp::model::RawResourceTemplate {
-                    uri_template: "memo://codex/{slug}".to_string(),
+                    uri_template: "memo://rune/{slug}".to_string(),
                     name: "rune-memo".to_string(),
-                    title: Some("Codex Memo".to_string()),
+                    title: Some("Rune Memo".to_string()),
                     description: Some(
-                        "Template for memo://codex/{slug} resources used in tests.".to_string(),
+                        "Template for memo://rune/{slug} resources used in tests.".to_string(),
                     ),
                     mime_type: Some("text/plain".to_string()),
                 }

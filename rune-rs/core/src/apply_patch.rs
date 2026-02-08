@@ -1,15 +1,15 @@
-use crate::codex::TurnContext;
+use crate::rune::TurnContext;
 use crate::function_tool::FunctionCallError;
 use crate::protocol::FileChange;
 use crate::safety::SafetyCheck;
 use crate::safety::assess_patch_safety;
 use crate::tools::sandboxing::ExecApprovalRequirement;
-use codex_apply_patch::ApplyPatchAction;
-use codex_apply_patch::ApplyPatchFileChange;
+use rune_apply_patch::ApplyPatchAction;
+use rune_apply_patch::ApplyPatchFileChange;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-pub const CODEX_APPLY_PATCH_ARG1: &str = "--rune-run-as-apply-patch";
+pub const RUNE_APPLY_PATCH_ARG1: &str = "--rune-run-as-apply-patch";
 
 pub(crate) enum InternalApplyPatchInvocation {
     /// The `apply_patch` call was handled programmatically, without any sort
@@ -20,7 +20,7 @@ pub(crate) enum InternalApplyPatchInvocation {
     /// The `apply_patch` call was approved, either automatically because it
     /// appears that it should be allowed based on the user's sandbox policy
     /// *or* because the user explicitly approved it. In either case, we use
-    /// exec with [`CODEX_APPLY_PATCH_ARG1`] to realize the `apply_patch` call,
+    /// exec with [`RUNE_APPLY_PATCH_ARG1`] to realize the `apply_patch` call,
     /// but [`ApplyPatchExec::auto_approved`] is used to determine the sandbox
     /// used with the `exec()`.
     DelegateToExec(ApplyPatchExec),

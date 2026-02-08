@@ -4,11 +4,11 @@ use std::time::Duration;
 
 use anyhow::Context as _;
 use anyhow::Result;
-use codex_core::MCP_SANDBOX_STATE_CAPABILITY;
-use codex_core::MCP_SANDBOX_STATE_METHOD;
-use codex_core::SandboxState;
-use codex_core::protocol::SandboxPolicy;
-use codex_execpolicy::Policy;
+use rune_core::MCP_SANDBOX_STATE_CAPABILITY;
+use rune_core::MCP_SANDBOX_STATE_METHOD;
+use rune_core::SandboxState;
+use rune_core::protocol::SandboxPolicy;
+use rune_execpolicy::Policy;
 use rmcp::ErrorData as McpError;
 use rmcp::RoleServer;
 use rmcp::ServerHandler;
@@ -34,14 +34,14 @@ use crate::posix::mcp_escalation_policy::McpEscalationPolicy;
 use crate::posix::stopwatch::Stopwatch;
 
 /// Path to our patched bash.
-const CODEX_BASH_PATH_ENV_VAR: &str = "CODEX_BASH_PATH";
+const RUNE_BASH_PATH_ENV_VAR: &str = "RUNE_BASH_PATH";
 
 const SANDBOX_STATE_CAPABILITY_VERSION: &str = "1.0.0";
 
 pub(crate) fn get_bash_path() -> Result<PathBuf> {
-    std::env::var(CODEX_BASH_PATH_ENV_VAR)
+    std::env::var(RUNE_BASH_PATH_ENV_VAR)
         .map(PathBuf::from)
-        .context(format!("{CODEX_BASH_PATH_ENV_VAR} must be set"))
+        .context(format!("{RUNE_BASH_PATH_ENV_VAR} must be set"))
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -113,7 +113,7 @@ impl ExecTool {
         let effective_timeout = Duration::from_millis(
             params
                 .timeout_ms
-                .unwrap_or(codex_core::exec::DEFAULT_EXEC_COMMAND_TIMEOUT_MS),
+                .unwrap_or(rune_core::exec::DEFAULT_EXEC_COMMAND_TIMEOUT_MS),
         );
         let stopwatch = Stopwatch::new(effective_timeout);
         let cancel_token = stopwatch.cancellation_token();
@@ -124,7 +124,7 @@ impl ExecTool {
                 .clone()
                 .unwrap_or_else(|| SandboxState {
                     sandbox_policy: SandboxPolicy::ReadOnly,
-                    codex_linux_sandbox_exe: None,
+                    rune_linux_sandbox_exe: None,
                     sandbox_cwd: PathBuf::from(&params.workdir),
                     use_linux_sandbox_bwrap: false,
                 });
@@ -150,9 +150,9 @@ impl ExecTool {
 }
 
 #[derive(Default)]
-pub struct CodexSandboxStateUpdateMethod;
+pub struct RuneSandboxStateUpdateMethod;
 
-impl rmcp::model::ConstString for CodexSandboxStateUpdateMethod {
+impl rmcp::model::ConstString for RuneSandboxStateUpdateMethod {
     const VALUE: &'static str = MCP_SANDBOX_STATE_METHOD;
 }
 
@@ -198,7 +198,7 @@ impl ServerHandler for ExecTool {
     ) -> Result<CustomResult, McpError> {
         let CustomRequest { method, params, .. } = request;
         if method != MCP_SANDBOX_STATE_METHOD {
-            return Err(McpError::method_not_found::<CodexSandboxStateUpdateMethod>());
+            return Err(McpError::method_not_found::<RuneSandboxStateUpdateMethod>());
         }
 
         let Some(params) = params else {

@@ -1,5 +1,5 @@
-use codex_protocol::protocol::AgentStatus;
-use codex_protocol::protocol::EventMsg;
+use rune_protocol::protocol::AgentStatus;
+use rune_protocol::protocol::EventMsg;
 
 /// Derive the next agent status from a single emitted event.
 /// Returns `None` when the event does not affect status tracking.

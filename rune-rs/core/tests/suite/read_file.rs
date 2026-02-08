@@ -3,7 +3,7 @@
 use core_test_support::responses::mount_function_call_agent_response;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 
@@ -13,7 +13,7 @@ async fn read_file_tool_returns_requested_lines() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let test = test_codex().build(&server).await?;
+    let test = test_rune().build(&server).await?;
 
     let file_path = test.cwd.path().join("sample.txt");
     std::fs::write(&file_path, "first\nsecond\nthird\nfourth\n")?;

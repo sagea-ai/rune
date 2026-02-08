@@ -1,5 +1,5 @@
 use anyhow::Result;
-use codex_core::features::Feature;
+use rune_core::features::Feature;
 use core_test_support::responses;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
@@ -7,7 +7,7 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use pretty_assertions::assert_eq;
 use wiremock::Mock;
 use wiremock::ResponseTemplate;
@@ -32,11 +32,11 @@ async fn websocket_fallback_switches_to_http_on_upgrade_required_connect() -> Re
     )
     .await;
 
-    let mut builder = test_codex().with_config({
+    let mut builder = test_rune().with_config({
         let base_url = format!("{}/v1", server.uri());
         move |config| {
             config.model_provider.base_url = Some(base_url);
-            config.model_provider.wire_api = codex_core::WireApi::Responses;
+            config.model_provider.wire_api = rune_core::WireApi::Responses;
             config.features.enable(Feature::ResponsesWebsockets);
             // If we don't treat 426 specially, the sampling loop would retry the WebSocket
             // handshake before switching to the HTTP transport.
@@ -60,7 +60,7 @@ async fn websocket_fallback_switches_to_http_on_upgrade_required_connect() -> Re
 
     // One websocket attempt comes from startup preconnect and one from the first turn's stream
     // attempt before fallback activates; after fallback, transport is HTTP. This matches the
-    // retry-budget tradeoff documented in [`codex_core::client`] module docs.
+    // retry-budget tradeoff documented in [`rune_core::client`] module docs.
     assert_eq!(websocket_attempts, 2);
     assert_eq!(http_attempts, 1);
     assert_eq!(response_mock.requests().len(), 1);
@@ -79,11 +79,11 @@ async fn websocket_fallback_switches_to_http_after_retries_exhausted() -> Result
     )
     .await;
 
-    let mut builder = test_codex().with_config({
+    let mut builder = test_rune().with_config({
         let base_url = format!("{}/v1", server.uri());
         move |config| {
             config.model_provider.base_url = Some(base_url);
-            config.model_provider.wire_api = codex_core::WireApi::Responses;
+            config.model_provider.wire_api = rune_core::WireApi::Responses;
             config.features.enable(Feature::ResponsesWebsockets);
             config.model_provider.stream_max_retries = Some(2);
             config.model_provider.request_max_retries = Some(0);
@@ -127,11 +127,11 @@ async fn websocket_fallback_is_sticky_across_turns() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex().with_config({
+    let mut builder = test_rune().with_config({
         let base_url = format!("{}/v1", server.uri());
         move |config| {
             config.model_provider.base_url = Some(base_url);
-            config.model_provider.wire_api = codex_core::WireApi::Responses;
+            config.model_provider.wire_api = rune_core::WireApi::Responses;
             config.features.enable(Feature::ResponsesWebsockets);
             config.model_provider.stream_max_retries = Some(2);
             config.model_provider.request_max_retries = Some(0);

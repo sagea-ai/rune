@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use codex_core::sandboxing::SandboxPermissions;
-use codex_execpolicy::Policy;
+use rune_core::sandboxing::SandboxPermissions;
+use rune_execpolicy::Policy;
 use rmcp::ErrorData as McpError;
 use rmcp::RoleServer;
 use rmcp::model::CreateElicitationRequestParam;

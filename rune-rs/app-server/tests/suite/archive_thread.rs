@@ -2,19 +2,19 @@ use anyhow::Result;
 use app_test_support::McpProcess;
 use app_test_support::create_mock_responses_server_repeating_assistant;
 use app_test_support::to_response;
-use codex_app_server_protocol::AddConversationListenerParams;
-use codex_app_server_protocol::AddConversationSubscriptionResponse;
-use codex_app_server_protocol::ArchiveConversationParams;
-use codex_app_server_protocol::ArchiveConversationResponse;
-use codex_app_server_protocol::InputItem;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::NewConversationParams;
-use codex_app_server_protocol::NewConversationResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SendUserMessageParams;
-use codex_app_server_protocol::SendUserMessageResponse;
-use codex_core::ARCHIVED_SESSIONS_SUBDIR;
+use rune_app_server_protocol::AddConversationListenerParams;
+use rune_app_server_protocol::AddConversationSubscriptionResponse;
+use rune_app_server_protocol::ArchiveConversationParams;
+use rune_app_server_protocol::ArchiveConversationResponse;
+use rune_app_server_protocol::InputItem;
+use rune_app_server_protocol::JSONRPCNotification;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::NewConversationParams;
+use rune_app_server_protocol::NewConversationResponse;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::SendUserMessageParams;
+use rune_app_server_protocol::SendUserMessageResponse;
+use rune_core::ARCHIVED_SESSIONS_SUBDIR;
 use std::path::Path;
 use tempfile::TempDir;
 use tokio::time::timeout;
@@ -24,10 +24,10 @@ const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn archive_conversation_moves_rollout_into_archived_directory() -> Result<()> {
     let server = create_mock_responses_server_repeating_assistant("Done").await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let new_request_id = mcp
@@ -85,7 +85,7 @@ async fn archive_conversation_moves_rollout_into_archived_directory() -> Result<
     let _: SendUserMessageResponse = to_response::<SendUserMessageResponse>(send_response)?;
     let _: JSONRPCNotification = timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
 
@@ -110,7 +110,7 @@ async fn archive_conversation_moves_rollout_into_archived_directory() -> Result<
     let _: ArchiveConversationResponse =
         to_response::<ArchiveConversationResponse>(archive_response)?;
 
-    let archived_directory = codex_home.path().join(ARCHIVED_SESSIONS_SUBDIR);
+    let archived_directory = rune_home.path().join(ARCHIVED_SESSIONS_SUBDIR);
     let archived_rollout_path =
         archived_directory.join(rollout_path.file_name().unwrap_or_else(|| {
             panic!("rollout path {} missing file name", rollout_path.display())
@@ -130,8 +130,8 @@ async fn archive_conversation_moves_rollout_into_archived_directory() -> Result<
     Ok(())
 }
 
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(config_toml, config_contents(server_uri))
 }
 

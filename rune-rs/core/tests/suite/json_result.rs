@@ -1,15 +1,15 @@
 #![cfg(not(target_os = "windows"))]
 
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::user_input::UserInput;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRune;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use responses::ev_assistant_message;
@@ -30,16 +30,16 @@ const SCHEMA: &str = r#"
 "#;
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn codex_returns_json_result_for_gpt5() -> anyhow::Result<()> {
-    codex_returns_json_result("gpt-5.1".to_string()).await
+async fn rune_returns_json_result_for_gpt5() -> anyhow::Result<()> {
+    rune_returns_json_result("gpt-5.1".to_string()).await
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn codex_returns_json_result_for_gpt5_codex() -> anyhow::Result<()> {
-    codex_returns_json_result("gpt-5.1-codex".to_string()).await
+async fn rune_returns_json_result_for_gpt5_rune() -> anyhow::Result<()> {
+    rune_returns_json_result("gpt-5.1-rune".to_string()).await
 }
 
-async fn codex_returns_json_result(model: String) -> anyhow::Result<()> {
+async fn rune_returns_json_result(model: String) -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
@@ -62,17 +62,17 @@ async fn codex_returns_json_result(model: String) -> anyhow::Result<()> {
             return false;
         };
 
-        format.get("name") == Some(&serde_json::Value::String("codex_output_schema".into()))
+        format.get("name") == Some(&serde_json::Value::String("rune_output_schema".into()))
             && format.get("type") == Some(&serde_json::Value::String("json_schema".into()))
             && format.get("strict") == Some(&serde_json::Value::Bool(true))
             && format.get("schema") == Some(&expected_schema)
     };
     responses::mount_sse_once_match(&server, match_json_text_param, sse1).await;
 
-    let TestCodex { codex, cwd, .. } = test_codex().build(&server).await?;
+    let TestRune { rune, cwd, .. } = test_rune().build(&server).await?;
 
     // 1) Normal user input – should hit server once.
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello world".into(),
@@ -90,7 +90,7 @@ async fn codex_returns_json_result(model: String) -> anyhow::Result<()> {
         })
         .await?;
 
-    let message = wait_for_event(&codex, |ev| matches!(ev, EventMsg::AgentMessage(_))).await;
+    let message = wait_for_event(&rune, |ev| matches!(ev, EventMsg::AgentMessage(_))).await;
     if let EventMsg::AgentMessage(message) = message {
         let json: serde_json::Value = serde_json::from_str(&message.message)?;
         assert_eq!(

@@ -1,6 +1,6 @@
 # rune-core
 
-This crate implements the business logic for Codex. It is designed to be used by the various Codex UIs written in Rust.
+This crate implements the business logic for Rune. It is designed to be used by the various Rune UIs written in Rust.
 
 ## Dependencies
 
@@ -12,11 +12,11 @@ Expects `/usr/bin/sandbox-exec` to be present.
 
 When using the workspace-write sandbox policy, the Seatbelt profile allows
 writes under the configured writable roots while keeping `.git` (directory or
-pointer file), the resolved `gitdir:` target, and `.codex` read-only.
+pointer file), the resolved `gitdir:` target, and `.rune` read-only.
 
 ### Linux
 
-Expects the binary containing `rune-core` to run the equivalent of `codex sandbox linux` (legacy alias: `codex debug landlock`) when `arg0` is `rune-linux-sandbox`. See the `rune-arg0` crate for details.
+Expects the binary containing `rune-core` to run the equivalent of `rune sandbox linux` (legacy alias: `rune debug landlock`) when `arg0` is `rune-linux-sandbox`. See the `rune-arg0` crate for details.
 
 ### All Platforms
 

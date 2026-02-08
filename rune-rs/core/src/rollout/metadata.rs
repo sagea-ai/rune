@@ -6,22 +6,22 @@ use chrono::DateTime;
 use chrono::NaiveDateTime;
 use chrono::Timelike;
 use chrono::Utc;
-use codex_otel::OtelManager;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::SessionSource;
-use codex_state::BackfillState;
-use codex_state::BackfillStats;
-use codex_state::BackfillStatus;
-use codex_state::DB_ERROR_METRIC;
-use codex_state::DB_METRIC_BACKFILL;
-use codex_state::DB_METRIC_BACKFILL_DURATION_MS;
-use codex_state::ExtractionOutcome;
-use codex_state::ThreadMetadataBuilder;
-use codex_state::apply_rollout_item;
+use rune_otel::OtelManager;
+use rune_protocol::ThreadId;
+use rune_protocol::protocol::AskForApproval;
+use rune_protocol::protocol::RolloutItem;
+use rune_protocol::protocol::SandboxPolicy;
+use rune_protocol::protocol::SessionMetaLine;
+use rune_protocol::protocol::SessionSource;
+use rune_state::BackfillState;
+use rune_state::BackfillStats;
+use rune_state::BackfillStatus;
+use rune_state::DB_ERROR_METRIC;
+use rune_state::DB_METRIC_BACKFILL;
+use rune_state::DB_METRIC_BACKFILL_DURATION_MS;
+use rune_state::ExtractionOutcome;
+use rune_state::ThreadMetadataBuilder;
+use rune_state::apply_rollout_item;
 use std::path::Path;
 use std::path::PathBuf;
 use tracing::info;
@@ -128,7 +128,7 @@ pub(crate) async fn extract_metadata_from_rollout(
 }
 
 pub(crate) async fn backfill_sessions(
-    runtime: &codex_state::StateRuntime,
+    runtime: &rune_state::StateRuntime,
     config: &Config,
     otel: Option<&OtelManager>,
 ) {
@@ -138,7 +138,7 @@ pub(crate) async fn backfill_sessions(
         Err(err) => {
             warn!(
                 "failed to read backfill state at {}: {err}",
-                config.codex_home.display()
+                config.rune_home.display()
             );
             if let Some(otel) = otel {
                 otel.counter(DB_ERROR_METRIC, 1, &[("stage", "backfill_state_read")]);
@@ -152,7 +152,7 @@ pub(crate) async fn backfill_sessions(
     if let Err(err) = runtime.mark_backfill_running().await {
         warn!(
             "failed to mark backfill running at {}: {err}",
-            config.codex_home.display()
+            config.rune_home.display()
         );
         if let Some(otel) = otel {
             otel.counter(
@@ -165,8 +165,8 @@ pub(crate) async fn backfill_sessions(
         backfill_state.status = BackfillStatus::Running;
     }
 
-    let sessions_root = config.codex_home.join(rollout::SESSIONS_SUBDIR);
-    let archived_root = config.codex_home.join(rollout::ARCHIVED_SESSIONS_SUBDIR);
+    let sessions_root = config.rune_home.join(rollout::SESSIONS_SUBDIR);
+    let archived_root = config.rune_home.join(rollout::ARCHIVED_SESSIONS_SUBDIR);
     let mut rollout_paths: Vec<BackfillRolloutPath> = Vec::new();
     for (root, archived) in [(sessions_root, false), (archived_root, true)] {
         if !tokio::fs::try_exists(&root).await.unwrap_or(false) {
@@ -175,7 +175,7 @@ pub(crate) async fn backfill_sessions(
         match collect_rollout_paths(&root).await {
             Ok(paths) => {
                 rollout_paths.extend(paths.into_iter().map(|path| BackfillRolloutPath {
-                    watermark: backfill_watermark_for_path(config.codex_home.as_path(), &path),
+                    watermark: backfill_watermark_for_path(config.rune_home.as_path(), &path),
                     path,
                     archived,
                 }));
@@ -278,7 +278,7 @@ pub(crate) async fn backfill_sessions(
             {
                 warn!(
                     "failed to checkpoint backfill at {}: {err}",
-                    config.codex_home.display()
+                    config.rune_home.display()
                 );
                 if let Some(otel) = otel {
                     otel.counter(
@@ -298,7 +298,7 @@ pub(crate) async fn backfill_sessions(
     {
         warn!(
             "failed to mark backfill complete at {}: {err}",
-            config.codex_home.display()
+            config.rune_home.display()
         );
         if let Some(otel) = otel {
             otel.counter(
@@ -344,8 +344,8 @@ struct BackfillRolloutPath {
     archived: bool,
 }
 
-fn backfill_watermark_for_path(codex_home: &Path, path: &Path) -> String {
-    path.strip_prefix(codex_home)
+fn backfill_watermark_for_path(rune_home: &Path, path: &Path) -> String {
+    path.strip_prefix(rune_home)
         .unwrap_or(path)
         .to_string_lossy()
         .replace('\\', "/")
@@ -428,15 +428,15 @@ mod tests {
     use chrono::NaiveDateTime;
     use chrono::Timelike;
     use chrono::Utc;
-    use codex_protocol::ThreadId;
-    use codex_protocol::protocol::CompactedItem;
-    use codex_protocol::protocol::RolloutItem;
-    use codex_protocol::protocol::RolloutLine;
-    use codex_protocol::protocol::SessionMeta;
-    use codex_protocol::protocol::SessionMetaLine;
-    use codex_protocol::protocol::SessionSource;
-    use codex_state::BackfillStatus;
-    use codex_state::ThreadMetadataBuilder;
+    use rune_protocol::ThreadId;
+    use rune_protocol::protocol::CompactedItem;
+    use rune_protocol::protocol::RolloutItem;
+    use rune_protocol::protocol::RolloutLine;
+    use rune_protocol::protocol::SessionMeta;
+    use rune_protocol::protocol::SessionMetaLine;
+    use rune_protocol::protocol::SessionSource;
+    use rune_state::BackfillStatus;
+    use rune_state::ThreadMetadataBuilder;
     use pretty_assertions::assert_eq;
     use std::fs::File;
     use std::io::Write;
@@ -523,28 +523,28 @@ mod tests {
     #[tokio::test]
     async fn backfill_sessions_resumes_from_watermark_and_marks_complete() {
         let dir = tempdir().expect("tempdir");
-        let codex_home = dir.path().to_path_buf();
+        let rune_home = dir.path().to_path_buf();
         let first_uuid = Uuid::new_v4();
         let second_uuid = Uuid::new_v4();
         let first_path = write_rollout_in_sessions(
-            codex_home.as_path(),
+            rune_home.as_path(),
             "2026-01-27T12-34-56",
             "2026-01-27T12:34:56Z",
             first_uuid,
         );
         let second_path = write_rollout_in_sessions(
-            codex_home.as_path(),
+            rune_home.as_path(),
             "2026-01-27T12-35-56",
             "2026-01-27T12:35:56Z",
             second_uuid,
         );
 
         let runtime =
-            codex_state::StateRuntime::init(codex_home.clone(), "test-provider".to_string(), None)
+            rune_state::StateRuntime::init(rune_home.clone(), "test-provider".to_string(), None)
                 .await
                 .expect("initialize runtime");
         let first_watermark =
-            backfill_watermark_for_path(codex_home.as_path(), first_path.as_path());
+            backfill_watermark_for_path(rune_home.as_path(), first_path.as_path());
         runtime.mark_backfill_running().await.expect("mark running");
         runtime
             .checkpoint_backfill(first_watermark.as_str())
@@ -552,7 +552,7 @@ mod tests {
             .expect("checkpoint first watermark");
 
         let mut config = crate::config::test_config();
-        config.codex_home = codex_home.clone();
+        config.rune_home = rune_home.clone();
         config.model_provider_id = "test-provider".to_string();
         backfill_sessions(runtime.as_ref(), &config, None).await;
 
@@ -581,7 +581,7 @@ mod tests {
         assert_eq!(
             state.last_watermark,
             Some(backfill_watermark_for_path(
-                codex_home.as_path(),
+                rune_home.as_path(),
                 second_path.as_path()
             ))
         );
@@ -589,20 +589,20 @@ mod tests {
     }
 
     fn write_rollout_in_sessions(
-        codex_home: &Path,
+        rune_home: &Path,
         filename_ts: &str,
         event_ts: &str,
         thread_uuid: Uuid,
     ) -> PathBuf {
         let id = ThreadId::from_string(&thread_uuid.to_string()).expect("thread id");
-        let sessions_dir = codex_home.join("sessions");
+        let sessions_dir = rune_home.join("sessions");
         std::fs::create_dir_all(sessions_dir.as_path()).expect("create sessions dir");
         let path = sessions_dir.join(format!("rollout-{filename_ts}-{thread_uuid}.jsonl"));
         let session_meta = SessionMeta {
             id,
             forked_from_id: None,
             timestamp: event_ts.to_string(),
-            cwd: codex_home.to_path_buf(),
+            cwd: rune_home.to_path_buf(),
             originator: "cli".to_string(),
             cli_version: "0.0.0".to_string(),
             source: SessionSource::default(),

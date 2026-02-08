@@ -1,23 +1,23 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
-use codex_core::AuthManager;
-use codex_core::CodexAuth;
-use codex_core::NewThread;
-use codex_core::ThreadManager;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::InitialHistory;
-use codex_core::protocol::ResumedHistory;
-use codex_core::protocol::RolloutItem;
-use codex_core::protocol::TurnContextItem;
-use codex_core::protocol::WarningEvent;
-use codex_protocol::ThreadId;
+use rune_core::AuthManager;
+use rune_core::RuneAuth;
+use rune_core::NewThread;
+use rune_core::ThreadManager;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::InitialHistory;
+use rune_core::protocol::ResumedHistory;
+use rune_core::protocol::RolloutItem;
+use rune_core::protocol::TurnContextItem;
+use rune_core::protocol::WarningEvent;
+use rune_protocol::ThreadId;
 use core::time::Duration;
 use core_test_support::load_default_config_for_test;
 use core_test_support::wait_for_event;
 use tempfile::TempDir;
 
 fn resume_history(
-    config: &codex_core::config::Config,
+    config: &rune_core::config::Config,
     previous_model: &str,
     rollout_path: &std::path::Path,
 ) -> InitialHistory {
@@ -58,10 +58,10 @@ async fn emits_warning_when_resumed_model_differs() {
     let initial_history = resume_history(&config, "previous-model", &rollout_path);
 
     let thread_manager = ThreadManager::with_models_provider(
-        CodexAuth::from_api_key("test"),
+        RuneAuth::from_api_key("test"),
         config.model_provider.clone(),
     );
-    let auth_manager = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("test"));
+    let auth_manager = AuthManager::from_auth_for_testing(RuneAuth::from_api_key("test"));
 
     // Act: resume the conversation.
     let NewThread {

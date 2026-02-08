@@ -17,7 +17,7 @@ use crate::protocol::common::EXPERIMENTAL_CLIENT_METHODS;
 use anyhow::Context;
 use anyhow::Result;
 use anyhow::anyhow;
-use codex_protocol::protocol::EventMsg;
+use rune_protocol::protocol::EventMsg;
 use schemars::JsonSchema;
 use schemars::schema_for;
 use serde::Serialize;
@@ -187,7 +187,7 @@ pub fn generate_json_with_experimental(out_dir: &Path, experimental_api: bool) -
         filter_experimental_schema(&mut bundle)?;
     }
     write_pretty_json(
-        out_dir.join("codex_app_server_protocol.schemas.json"),
+        out_dir.join("rune_app_server_protocol.schemas.json"),
         &bundle,
     )?;
 
@@ -917,7 +917,7 @@ fn build_schema_bundle(schemas: Vec<GeneratedSchema>) -> Result<Value> {
     );
     root.insert(
         "title".to_string(),
-        Value::String("CodexAppServerProtocol".into()),
+        Value::String("RuneAppServerProtocol".into()),
     );
     root.insert("type".to_string(), Value::String("object".into()));
     root.insert("definitions".to_string(), Value::Object(definitions));
@@ -1410,7 +1410,7 @@ mod tests {
     #[test]
     fn generated_ts_optional_nullable_fields_only_in_params() -> Result<()> {
         // Assert that "?: T | null" only appears in generated *Params types.
-        let output_dir = std::env::temp_dir().join(format!("codex_ts_types_{}", Uuid::now_v7()));
+        let output_dir = std::env::temp_dir().join(format!("rune_ts_types_{}", Uuid::now_v7()));
         fs::create_dir(&output_dir)?;
 
         struct TempDirGuard(PathBuf);
@@ -1642,7 +1642,7 @@ mod tests {
     #[test]
     fn generate_ts_with_experimental_api_retains_experimental_entries() -> Result<()> {
         let output_dir =
-            std::env::temp_dir().join(format!("codex_ts_types_experimental_{}", Uuid::now_v7()));
+            std::env::temp_dir().join(format!("rune_ts_types_experimental_{}", Uuid::now_v7()));
         fs::create_dir(&output_dir)?;
 
         struct TempDirGuard(PathBuf);
@@ -1689,7 +1689,7 @@ mod tests {
 
     #[test]
     fn stable_schema_filter_removes_mock_thread_start_field() -> Result<()> {
-        let output_dir = std::env::temp_dir().join(format!("codex_schema_{}", Uuid::now_v7()));
+        let output_dir = std::env::temp_dir().join(format!("rune_schema_{}", Uuid::now_v7()));
         fs::create_dir(&output_dir)?;
         let schema = write_json_schema_with_return::<v2::ThreadStartParams>(
             &output_dir,
@@ -1715,7 +1715,7 @@ mod tests {
 
     #[test]
     fn experimental_type_fields_ts_filter_handles_interface_shape() -> Result<()> {
-        let output_dir = std::env::temp_dir().join(format!("codex_ts_filter_{}", Uuid::now_v7()));
+        let output_dir = std::env::temp_dir().join(format!("rune_ts_filter_{}", Uuid::now_v7()));
         fs::create_dir_all(&output_dir)?;
 
         struct TempDirGuard(PathBuf);
@@ -1754,7 +1754,7 @@ mod tests {
     #[test]
     fn experimental_type_fields_ts_filter_keeps_imports_used_in_intersection_suffix() -> Result<()>
     {
-        let output_dir = std::env::temp_dir().join(format!("codex_ts_filter_{}", Uuid::now_v7()));
+        let output_dir = std::env::temp_dir().join(format!("rune_ts_filter_{}", Uuid::now_v7()));
         fs::create_dir_all(&output_dir)?;
 
         struct TempDirGuard(PathBuf);
@@ -1797,7 +1797,7 @@ export type Config = { stableField: Keep, unstableField: string | null } & ({ [k
 
     #[test]
     fn stable_schema_filter_removes_mock_experimental_method() -> Result<()> {
-        let output_dir = std::env::temp_dir().join(format!("codex_schema_{}", Uuid::now_v7()));
+        let output_dir = std::env::temp_dir().join(format!("rune_schema_{}", Uuid::now_v7()));
         fs::create_dir(&output_dir)?;
         let schema =
             write_json_schema_with_return::<crate::ClientRequest>(&output_dir, "ClientRequest")?;
@@ -1812,7 +1812,7 @@ export type Config = { stableField: Keep, unstableField: string | null } & ({ [k
 
     #[test]
     fn generate_json_filters_experimental_fields_and_methods() -> Result<()> {
-        let output_dir = std::env::temp_dir().join(format!("codex_schema_{}", Uuid::now_v7()));
+        let output_dir = std::env::temp_dir().join(format!("rune_schema_{}", Uuid::now_v7()));
         fs::create_dir(&output_dir)?;
         generate_json_with_experimental(&output_dir, false)?;
 
@@ -1827,7 +1827,7 @@ export type Config = { stableField: Keep, unstableField: string | null } & ({ [k
         );
 
         let bundle_json =
-            fs::read_to_string(output_dir.join("codex_app_server_protocol.schemas.json"))?;
+            fs::read_to_string(output_dir.join("rune_app_server_protocol.schemas.json"))?;
         assert_eq!(bundle_json.contains("mockExperimentalField"), false);
         assert_eq!(bundle_json.contains("MockExperimentalMethodParams"), false);
         assert_eq!(

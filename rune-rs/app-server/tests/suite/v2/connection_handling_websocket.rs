@@ -2,13 +2,13 @@ use anyhow::Context;
 use anyhow::Result;
 use anyhow::bail;
 use app_test_support::create_mock_responses_server_sequence_unchecked;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::JSONRPCRequest;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
+use rune_app_server_protocol::ClientInfo;
+use rune_app_server_protocol::InitializeParams;
+use rune_app_server_protocol::JSONRPCError;
+use rune_app_server_protocol::JSONRPCMessage;
+use rune_app_server_protocol::JSONRPCRequest;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::RequestId;
 use futures::SinkExt;
 use futures::StreamExt;
 use serde_json::json;
@@ -35,11 +35,11 @@ type WsClient = WebSocketStream<MaybeTlsStream<tokio::net::TcpStream>>;
 #[tokio::test]
 async fn websocket_transport_routes_per_connection_handshake_and_responses() -> Result<()> {
     let server = create_mock_responses_server_sequence_unchecked(Vec::new()).await;
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri(), "never")?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri(), "never")?;
 
     let bind_addr = reserve_local_addr()?;
-    let mut process = spawn_websocket_server(codex_home.path(), bind_addr).await?;
+    let mut process = spawn_websocket_server(rune_home.path(), bind_addr).await?;
 
     let mut ws1 = connect_websocket(bind_addr).await?;
     let mut ws2 = connect_websocket(bind_addr).await?;
@@ -78,8 +78,8 @@ async fn websocket_transport_routes_per_connection_handshake_and_responses() -> 
     Ok(())
 }
 
-async fn spawn_websocket_server(codex_home: &Path, bind_addr: SocketAddr) -> Result<Child> {
-    let program = codex_utils_cargo_bin::cargo_bin("rune-app-server")
+async fn spawn_websocket_server(rune_home: &Path, bind_addr: SocketAddr) -> Result<Child> {
+    let program = rune_utils_cargo_bin::cargo_bin("rune-app-server")
         .context("should find app-server binary")?;
     let mut cmd = Command::new(program);
     cmd.arg("--listen")
@@ -87,7 +87,7 @@ async fn spawn_websocket_server(codex_home: &Path, bind_addr: SocketAddr) -> Res
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::piped())
-        .env("CODEX_HOME", codex_home)
+        .env("RUNE_HOME", rune_home)
         .env("RUST_LOG", "debug");
     let mut process = cmd
         .kill_on_drop(true)
@@ -236,11 +236,11 @@ async fn assert_no_message(stream: &mut WsClient, wait_for: Duration) -> Result<
 }
 
 fn create_config_toml(
-    codex_home: &Path,
+    rune_home: &Path,
     server_uri: &str,
     approval_policy: &str,
 ) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

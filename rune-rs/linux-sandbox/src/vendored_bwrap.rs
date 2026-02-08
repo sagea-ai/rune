@@ -52,9 +52,9 @@ mod imp {
     pub(crate) fn run_vendored_bwrap_main(_argv: &[String]) -> libc::c_int {
         panic!(
             "build-time bubblewrap is not available in this build.\n\
-Rebuild rune-linux-sandbox on Linux with CODEX_BWRAP_ENABLE_FFI=1.\n\
+Rebuild rune-linux-sandbox on Linux with RUNE_BWRAP_ENABLE_FFI=1.\n\
 Example:\n\
-- cd rune-rs && CODEX_BWRAP_ENABLE_FFI=1 cargo build -p rune-linux-sandbox\n\
+- cd rune-rs && RUNE_BWRAP_ENABLE_FFI=1 cargo build -p rune-linux-sandbox\n\
 If this crate was already built without it, run:\n\
 - cargo clean -p rune-linux-sandbox\n\
 Notes:\n\

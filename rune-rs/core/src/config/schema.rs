@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn config_schema_matches_fixture() {
-        let fixture_path = codex_utils_cargo_bin::find_resource!("config.schema.json")
+        let fixture_path = rune_utils_cargo_bin::find_resource!("config.schema.json")
             .expect("resolve config schema fixture path");
         let fixture = std::fs::read_to_string(fixture_path).expect("read config schema fixture");
         let fixture_value: serde_json::Value =
@@ -132,7 +132,7 @@ Run `just write-config-schema` to overwrite with your changes.\n\n{diff}"
             );
         }
 
-        // Make sure the version in the repo matches exactly: https://github.com/openai/codex/pull/10977.
+        // Make sure the version in the repo matches exactly: https://github.com/openai/rune/pull/10977.
         let tmp = TempDir::new().expect("create temp dir");
         let tmp_path = tmp.path().join("config.schema.json");
         write_config_schema(&tmp_path).expect("write config schema to temp path");

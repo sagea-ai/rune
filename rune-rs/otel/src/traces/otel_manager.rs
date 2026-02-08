@@ -18,17 +18,17 @@ use crate::metrics::names::WEBSOCKET_REQUEST_DURATION_METRIC;
 use crate::otel_provider::traceparent_context_from_env;
 use chrono::SecondsFormat;
 use chrono::Utc;
-use codex_api::ApiError;
-use codex_api::ResponseEvent;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::user_input::UserInput;
+use rune_api::ApiError;
+use rune_api::ResponseEvent;
+use rune_protocol::ThreadId;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::openai_models::ReasoningEffort;
+use rune_protocol::protocol::AskForApproval;
+use rune_protocol::protocol::ReviewDecision;
+use rune_protocol::protocol::SandboxPolicy;
+use rune_protocol::protocol::SessionSource;
+use rune_protocol::user_input::UserInput;
 use eventsource_stream::Event as StreamEvent;
 use eventsource_stream::EventStreamError as StreamError;
 use reqwest::Error;
@@ -131,7 +131,7 @@ impl OtelManager {
     ) {
         tracing::event!(
             tracing::Level::INFO,
-            event.name = "codex.conversation_starts",
+            event.name = "rune.conversation_starts",
             event.timestamp = %timestamp(),
             conversation.id = %self.metadata.conversation_id,
             app.version = %self.metadata.app_version,
@@ -196,7 +196,7 @@ impl OtelManager {
         );
         tracing::event!(
             tracing::Level::INFO,
-            event.name = "codex.api_request",
+            event.name = "rune.api_request",
             event.timestamp = %timestamp(),
             conversation.id = %self.metadata.conversation_id,
             app.version = %self.metadata.app_version,
@@ -228,7 +228,7 @@ impl OtelManager {
         );
         tracing::event!(
             tracing::Level::INFO,
-            event.name = "codex.websocket_request",
+            event.name = "rune.websocket_request",
             event.timestamp = %timestamp(),
             conversation.id = %self.metadata.conversation_id,
             app.version = %self.metadata.app_version,
@@ -329,7 +329,7 @@ impl OtelManager {
         self.record_duration(WEBSOCKET_EVENT_DURATION_METRIC, duration, &tags);
         tracing::event!(
             tracing::Level::INFO,
-            event.name = "codex.websocket_event",
+            event.name = "rune.websocket_event",
             event.timestamp = %timestamp(),
             event.kind = %kind_str,
             conversation.id = %self.metadata.conversation_id,
@@ -407,7 +407,7 @@ impl OtelManager {
         );
         tracing::event!(
             tracing::Level::INFO,
-            event.name = "codex.sse_event",
+            event.name = "rune.sse_event",
             event.timestamp = %timestamp(),
             event.kind = %kind,
             conversation.id = %self.metadata.conversation_id,
@@ -441,7 +441,7 @@ impl OtelManager {
         match kind {
             Some(kind) => tracing::event!(
                 tracing::Level::INFO,
-                event.name = "codex.sse_event",
+                event.name = "rune.sse_event",
                 event.timestamp = %timestamp(),
                 event.kind = %kind,
                 conversation.id = %self.metadata.conversation_id,
@@ -458,7 +458,7 @@ impl OtelManager {
             ),
             None => tracing::event!(
                 tracing::Level::INFO,
-                event.name = "codex.sse_event",
+                event.name = "rune.sse_event",
                 event.timestamp = %timestamp(),
                 conversation.id = %self.metadata.conversation_id,
                 app.version = %self.metadata.app_version,
@@ -481,7 +481,7 @@ impl OtelManager {
     {
         tracing::event!(
             tracing::Level::INFO,
-            event.name = "codex.sse_event",
+            event.name = "rune.sse_event",
             event.kind = %"response.completed",
             event.timestamp = %timestamp(),
             conversation.id = %self.metadata.conversation_id,
@@ -507,7 +507,7 @@ impl OtelManager {
     ) {
         tracing::event!(
             tracing::Level::INFO,
-            event.name = "codex.sse_event",
+            event.name = "rune.sse_event",
             event.timestamp = %timestamp(),
             event.kind = %"response.completed",
             conversation.id = %self.metadata.conversation_id,
@@ -544,7 +544,7 @@ impl OtelManager {
 
         tracing::event!(
             tracing::Level::INFO,
-            event.name = "codex.user_prompt",
+            event.name = "rune.user_prompt",
             event.timestamp = %timestamp(),
             conversation.id = %self.metadata.conversation_id,
             app.version = %self.metadata.app_version,
@@ -569,7 +569,7 @@ impl OtelManager {
     ) {
         tracing::event!(
             tracing::Level::INFO,
-            event.name = "codex.tool_decision",
+            event.name = "rune.tool_decision",
             event.timestamp = %timestamp(),
             conversation.id = %self.metadata.conversation_id,
             app.version = %self.metadata.app_version,
@@ -625,7 +625,7 @@ impl OtelManager {
     pub fn log_tool_failed(&self, tool_name: &str, error: &str) {
         tracing::event!(
             tracing::Level::INFO,
-            event.name = "codex.tool_result",
+            event.name = "rune.tool_result",
             event.timestamp = %timestamp(),
             conversation.id = %self.metadata.conversation_id,
             app.version = %self.metadata.app_version,
@@ -663,7 +663,7 @@ impl OtelManager {
         self.record_duration(TOOL_CALL_DURATION_METRIC, duration, &tags);
         tracing::event!(
             tracing::Level::INFO,
-            event.name = "codex.tool_result",
+            event.name = "rune.tool_result",
             event.timestamp = %timestamp(),
             conversation.id = %self.metadata.conversation_id,
             app.version = %self.metadata.app_version,

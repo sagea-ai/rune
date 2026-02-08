@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-use codex_utils_image::load_and_resize_to_fit;
+use rune_utils_image::load_and_resize_to_fit;
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
@@ -17,9 +17,9 @@ use crate::protocol::NetworkAccess;
 use crate::protocol::SandboxPolicy;
 use crate::protocol::WritableRoot;
 use crate::user_input::UserInput;
-use codex_execpolicy::Policy;
-use codex_git::GhostCommit;
-use codex_utils_image::error::ImageProcessingError;
+use rune_execpolicy::Policy;
+use rune_git::GhostCommit;
+use rune_utils_image::error::ImageProcessingError;
 use schemars::JsonSchema;
 
 use crate::mcp::CallToolResult;
@@ -497,7 +497,7 @@ fn local_image_error_placeholder(
 ) -> ContentItem {
     ContentItem::InputText {
         text: format!(
-            "Codex could not read the local image at `{}`: {}",
+            "Rune could not read the local image at `{}`: {}",
             path.display(),
             error
         ),
@@ -562,7 +562,7 @@ fn invalid_image_error_placeholder(
 fn unsupported_image_error_placeholder(path: &std::path::Path, mime: &str) -> ContentItem {
     ContentItem::InputText {
         text: format!(
-            "Codex cannot attach image at `{}`: unsupported image format `{}`.",
+            "Rune cannot attach image at `{}`: unsupported image format `{}`.",
             path.display(),
             mime
         ),
@@ -1074,7 +1074,7 @@ mod tests {
     use crate::config_types::SandboxMode;
     use crate::protocol::AskForApproval;
     use anyhow::Result;
-    use codex_execpolicy::Policy;
+    use rune_execpolicy::Policy;
     use pretty_assertions::assert_eq;
     use std::path::PathBuf;
     use tempfile::tempdir;
@@ -1246,7 +1246,7 @@ mod tests {
         exec_policy
             .add_prefix_rule(
                 &["git".to_string(), "pull".to_string()],
-                codex_execpolicy::Decision::Allow,
+                rune_execpolicy::Decision::Allow,
             )
             .expect("add rule");
         let instructions = DeveloperInstructions::from_permissions_with_network(
@@ -1307,7 +1307,7 @@ mod tests {
             exec_policy
                 .add_prefix_rule(
                     &[format!("tool-{i:03}"), "x".repeat(500)],
-                    codex_execpolicy::Decision::Allow,
+                    rune_execpolicy::Decision::Allow,
                 )
                 .expect("add rule");
         }
@@ -1692,7 +1692,7 @@ mod tests {
             ResponseInputItem::Message { content, .. } => {
                 assert_eq!(content.len(), 1);
                 let expected = format!(
-                    "Codex cannot attach image at `{}`: unsupported image format `image/svg+xml`.",
+                    "Rune cannot attach image at `{}`: unsupported image format `image/svg+xml`.",
                     svg_path.display()
                 );
                 match &content[0] {

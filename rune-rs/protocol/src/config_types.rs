@@ -214,7 +214,7 @@ impl ModeKind {
     }
 }
 
-/// Collaboration mode for a Codex session.
+/// Collaboration mode for a Rune session.
 #[derive(Clone, PartialEq, Eq, Hash, Debug, Serialize, Deserialize, JsonSchema, TS)]
 #[serde(rename_all = "lowercase")]
 pub struct CollaborationMode {
@@ -313,7 +313,7 @@ mod tests {
         let mode = CollaborationMode {
             mode: ModeKind::Default,
             settings: Settings {
-                model: "gpt-5.2-codex".to_string(),
+                model: "gpt-5.2-rune".to_string(),
                 reasoning_effort: Some(ReasoningEffort::High),
                 developer_instructions: Some("stay focused".to_string()),
             },
@@ -329,7 +329,7 @@ mod tests {
         let expected = CollaborationMode {
             mode: ModeKind::Default,
             settings: Settings {
-                model: "gpt-5.2-codex".to_string(),
+                model: "gpt-5.2-rune".to_string(),
                 reasoning_effort: None,
                 developer_instructions: None,
             },

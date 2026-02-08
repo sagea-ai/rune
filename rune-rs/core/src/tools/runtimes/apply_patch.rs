@@ -2,9 +2,9 @@
 //!
 //! Assumes `apply_patch` verification/approval happened upstream. Reuses that
 //! decision to avoid re-prompting, builds the self-invocation command for
-//! `codex --rune-run-as-apply-patch`, and runs under the current
+//! `rune --rune-run-as-apply-patch`, and runs under the current
 //! `SandboxAttempt` with a minimal environment.
-use crate::CODEX_APPLY_PATCH_ARG1;
+use crate::RUNE_APPLY_PATCH_ARG1;
 use crate::exec::ExecToolCallOutput;
 use crate::sandboxing::CommandSpec;
 use crate::sandboxing::SandboxPermissions;
@@ -19,11 +19,11 @@ use crate::tools::sandboxing::ToolCtx;
 use crate::tools::sandboxing::ToolError;
 use crate::tools::sandboxing::ToolRuntime;
 use crate::tools::sandboxing::with_cached_approval;
-use codex_apply_patch::ApplyPatchAction;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::FileChange;
-use codex_protocol::protocol::ReviewDecision;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_apply_patch::ApplyPatchAction;
+use rune_protocol::protocol::AskForApproval;
+use rune_protocol::protocol::FileChange;
+use rune_protocol::protocol::ReviewDecision;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use futures::future::BoxFuture;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -35,7 +35,7 @@ pub struct ApplyPatchRequest {
     pub changes: std::collections::HashMap<PathBuf, FileChange>,
     pub exec_approval_requirement: ExecApprovalRequirement,
     pub timeout_ms: Option<u64>,
-    pub codex_exe: Option<PathBuf>,
+    pub rune_exe: Option<PathBuf>,
 }
 
 #[derive(Default)]
@@ -48,16 +48,16 @@ impl ApplyPatchRuntime {
 
     fn build_command_spec(req: &ApplyPatchRequest) -> Result<CommandSpec, ToolError> {
         use std::env;
-        let exe = if let Some(path) = &req.codex_exe {
+        let exe = if let Some(path) = &req.rune_exe {
             path.clone()
         } else {
             env::current_exe()
-                .map_err(|e| ToolError::Rejected(format!("failed to determine codex exe: {e}")))?
+                .map_err(|e| ToolError::Rejected(format!("failed to determine rune exe: {e}")))?
         };
         let program = exe.to_string_lossy().to_string();
         Ok(CommandSpec {
             program,
-            args: vec![CODEX_APPLY_PATCH_ARG1.to_string(), req.action.patch.clone()],
+            args: vec![RUNE_APPLY_PATCH_ARG1.to_string(), req.action.patch.clone()],
             cwd: req.action.cwd.clone(),
             expiration: req.timeout_ms.into(),
             // Run apply_patch with a minimal environment for determinism and to avoid leaks.
@@ -152,10 +152,10 @@ impl ToolRuntime<ApplyPatchRequest, ExecToolCallOutput> for ApplyPatchRuntime {
         let spec = Self::build_command_spec(req)?;
         let env = attempt
             .env_for(spec)
-            .map_err(|err| ToolError::Codex(err.into()))?;
+            .map_err(|err| ToolError::Rune(err.into()))?;
         let out = execute_env(env, attempt.policy, Self::stdout_stream(ctx))
             .await
-            .map_err(ToolError::Codex)?;
+            .map_err(ToolError::Rune)?;
         Ok(out)
     }
 }

@@ -2,7 +2,7 @@
 
 use anyhow::Context;
 use assert_cmd::prelude::*;
-use codex_core::CODEX_APPLY_PATCH_ARG1;
+use rune_core::RUNE_APPLY_PATCH_ARG1;
 use core_test_support::responses::ev_apply_patch_custom_tool_call;
 use core_test_support::responses::ev_apply_patch_function_call;
 use core_test_support::responses::ev_completed;
@@ -13,7 +13,7 @@ use std::fs;
 use std::process::Command;
 use tempfile::tempdir;
 
-/// While we may add an `apply-patch` subcommand to the `codex` CLI multitool
+/// While we may add an `apply-patch` subcommand to the `rune` CLI multitool
 /// at some point, we must ensure that the smaller `rune-exec` CLI can still
 /// emulate the `apply_patch` CLI.
 #[test]
@@ -23,8 +23,8 @@ fn test_standalone_exec_cli_can_use_apply_patch() -> anyhow::Result<()> {
     let absolute_path = tmp.path().join(relative_path);
     fs::write(&absolute_path, "original content\n")?;
 
-    Command::new(codex_utils_cargo_bin::cargo_bin("rune-exec")?)
-        .arg(CODEX_APPLY_PATCH_ARG1)
+    Command::new(rune_utils_cargo_bin::cargo_bin("rune-exec")?)
+        .arg(RUNE_APPLY_PATCH_ARG1)
         .arg(
             r#"*** Begin Patch
 *** Update File: source.txt
@@ -49,11 +49,11 @@ fn test_standalone_exec_cli_can_use_apply_patch() -> anyhow::Result<()> {
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn test_apply_patch_tool() -> anyhow::Result<()> {
     use core_test_support::skip_if_no_network;
-    use core_test_support::test_codex_exec::test_codex_exec;
+    use core_test_support::test_rune_exec::test_rune_exec;
 
     skip_if_no_network!(Ok(()));
 
-    let test = test_codex_exec();
+    let test = test_rune_exec();
     let tmp_path = test.cwd_path().to_path_buf();
     let add_patch = r#"*** Begin Patch
 *** Add File: test.md
@@ -98,11 +98,11 @@ async fn test_apply_patch_tool() -> anyhow::Result<()> {
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn test_apply_patch_freeform_tool() -> anyhow::Result<()> {
     use core_test_support::skip_if_no_network;
-    use core_test_support::test_codex_exec::test_codex_exec;
+    use core_test_support::test_rune_exec::test_rune_exec;
 
     skip_if_no_network!(Ok(()));
 
-    let test = test_codex_exec();
+    let test = test_rune_exec();
     let freeform_add_patch = r#"*** Begin Patch
 *** Add File: app.py
 +class BaseClass:

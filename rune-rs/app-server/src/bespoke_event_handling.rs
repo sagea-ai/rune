@@ -1,99 +1,99 @@
-use crate::codex_message_processor::ApiVersion;
-use crate::codex_message_processor::PendingInterrupts;
-use crate::codex_message_processor::PendingRollbacks;
-use crate::codex_message_processor::TurnSummary;
-use crate::codex_message_processor::TurnSummaryStore;
-use crate::codex_message_processor::read_event_msgs_from_rollout;
-use crate::codex_message_processor::read_summary_from_rollout;
-use crate::codex_message_processor::summary_to_thread;
+use crate::rune_message_processor::ApiVersion;
+use crate::rune_message_processor::PendingInterrupts;
+use crate::rune_message_processor::PendingRollbacks;
+use crate::rune_message_processor::TurnSummary;
+use crate::rune_message_processor::TurnSummaryStore;
+use crate::rune_message_processor::read_event_msgs_from_rollout;
+use crate::rune_message_processor::read_summary_from_rollout;
+use crate::rune_message_processor::summary_to_thread;
 use crate::error_code::INTERNAL_ERROR_CODE;
 use crate::error_code::INVALID_REQUEST_ERROR_CODE;
 use crate::outgoing_message::OutgoingMessageSender;
-use codex_app_server_protocol::AccountRateLimitsUpdatedNotification;
-use codex_app_server_protocol::AgentMessageDeltaNotification;
-use codex_app_server_protocol::ApplyPatchApprovalParams;
-use codex_app_server_protocol::ApplyPatchApprovalResponse;
-use codex_app_server_protocol::CodexErrorInfo as V2CodexErrorInfo;
-use codex_app_server_protocol::CollabAgentState as V2CollabAgentStatus;
-use codex_app_server_protocol::CollabAgentTool;
-use codex_app_server_protocol::CollabAgentToolCallStatus as V2CollabToolCallStatus;
-use codex_app_server_protocol::CommandAction as V2ParsedCommand;
-use codex_app_server_protocol::CommandExecutionApprovalDecision;
-use codex_app_server_protocol::CommandExecutionOutputDeltaNotification;
-use codex_app_server_protocol::CommandExecutionRequestApprovalParams;
-use codex_app_server_protocol::CommandExecutionRequestApprovalResponse;
-use codex_app_server_protocol::CommandExecutionStatus;
-use codex_app_server_protocol::ContextCompactedNotification;
-use codex_app_server_protocol::DeprecationNoticeNotification;
-use codex_app_server_protocol::DynamicToolCallParams;
-use codex_app_server_protocol::ErrorNotification;
-use codex_app_server_protocol::ExecCommandApprovalParams;
-use codex_app_server_protocol::ExecCommandApprovalResponse;
-use codex_app_server_protocol::ExecPolicyAmendment as V2ExecPolicyAmendment;
-use codex_app_server_protocol::FileChangeApprovalDecision;
-use codex_app_server_protocol::FileChangeOutputDeltaNotification;
-use codex_app_server_protocol::FileChangeRequestApprovalParams;
-use codex_app_server_protocol::FileChangeRequestApprovalResponse;
-use codex_app_server_protocol::FileUpdateChange;
-use codex_app_server_protocol::InterruptConversationResponse;
-use codex_app_server_protocol::ItemCompletedNotification;
-use codex_app_server_protocol::ItemStartedNotification;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::McpToolCallError;
-use codex_app_server_protocol::McpToolCallResult;
-use codex_app_server_protocol::McpToolCallStatus;
-use codex_app_server_protocol::PatchApplyStatus;
-use codex_app_server_protocol::PatchChangeKind as V2PatchChangeKind;
-use codex_app_server_protocol::PlanDeltaNotification;
-use codex_app_server_protocol::RawResponseItemCompletedNotification;
-use codex_app_server_protocol::ReasoningSummaryPartAddedNotification;
-use codex_app_server_protocol::ReasoningSummaryTextDeltaNotification;
-use codex_app_server_protocol::ReasoningTextDeltaNotification;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequestPayload;
-use codex_app_server_protocol::TerminalInteractionNotification;
-use codex_app_server_protocol::ThreadItem;
-use codex_app_server_protocol::ThreadNameUpdatedNotification;
-use codex_app_server_protocol::ThreadRollbackResponse;
-use codex_app_server_protocol::ThreadTokenUsage;
-use codex_app_server_protocol::ThreadTokenUsageUpdatedNotification;
-use codex_app_server_protocol::ToolRequestUserInputOption;
-use codex_app_server_protocol::ToolRequestUserInputParams;
-use codex_app_server_protocol::ToolRequestUserInputQuestion;
-use codex_app_server_protocol::ToolRequestUserInputResponse;
-use codex_app_server_protocol::Turn;
-use codex_app_server_protocol::TurnCompletedNotification;
-use codex_app_server_protocol::TurnDiffUpdatedNotification;
-use codex_app_server_protocol::TurnError;
-use codex_app_server_protocol::TurnInterruptResponse;
-use codex_app_server_protocol::TurnPlanStep;
-use codex_app_server_protocol::TurnPlanUpdatedNotification;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::build_turns_from_event_msgs;
-use codex_core::CodexThread;
-use codex_core::parse_command::shlex_join;
-use codex_core::protocol::ApplyPatchApprovalRequestEvent;
-use codex_core::protocol::CodexErrorInfo as CoreCodexErrorInfo;
-use codex_core::protocol::Event;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ExecApprovalRequestEvent;
-use codex_core::protocol::ExecCommandEndEvent;
-use codex_core::protocol::FileChange as CoreFileChange;
-use codex_core::protocol::McpToolCallBeginEvent;
-use codex_core::protocol::McpToolCallEndEvent;
-use codex_core::protocol::Op;
-use codex_core::protocol::ReviewDecision;
-use codex_core::protocol::TokenCountEvent;
-use codex_core::protocol::TurnDiffEvent;
-use codex_core::review_format::format_review_findings_block;
-use codex_core::review_prompts;
-use codex_protocol::ThreadId;
-use codex_protocol::dynamic_tools::DynamicToolCallOutputContentItem as CoreDynamicToolCallOutputContentItem;
-use codex_protocol::dynamic_tools::DynamicToolResponse as CoreDynamicToolResponse;
-use codex_protocol::plan_tool::UpdatePlanArgs;
-use codex_protocol::protocol::ReviewOutputEvent;
-use codex_protocol::request_user_input::RequestUserInputAnswer as CoreRequestUserInputAnswer;
-use codex_protocol::request_user_input::RequestUserInputResponse as CoreRequestUserInputResponse;
+use rune_app_server_protocol::AccountRateLimitsUpdatedNotification;
+use rune_app_server_protocol::AgentMessageDeltaNotification;
+use rune_app_server_protocol::ApplyPatchApprovalParams;
+use rune_app_server_protocol::ApplyPatchApprovalResponse;
+use rune_app_server_protocol::RuneErrorInfo as V2RuneErrorInfo;
+use rune_app_server_protocol::CollabAgentState as V2CollabAgentStatus;
+use rune_app_server_protocol::CollabAgentTool;
+use rune_app_server_protocol::CollabAgentToolCallStatus as V2CollabToolCallStatus;
+use rune_app_server_protocol::CommandAction as V2ParsedCommand;
+use rune_app_server_protocol::CommandExecutionApprovalDecision;
+use rune_app_server_protocol::CommandExecutionOutputDeltaNotification;
+use rune_app_server_protocol::CommandExecutionRequestApprovalParams;
+use rune_app_server_protocol::CommandExecutionRequestApprovalResponse;
+use rune_app_server_protocol::CommandExecutionStatus;
+use rune_app_server_protocol::ContextCompactedNotification;
+use rune_app_server_protocol::DeprecationNoticeNotification;
+use rune_app_server_protocol::DynamicToolCallParams;
+use rune_app_server_protocol::ErrorNotification;
+use rune_app_server_protocol::ExecCommandApprovalParams;
+use rune_app_server_protocol::ExecCommandApprovalResponse;
+use rune_app_server_protocol::ExecPolicyAmendment as V2ExecPolicyAmendment;
+use rune_app_server_protocol::FileChangeApprovalDecision;
+use rune_app_server_protocol::FileChangeOutputDeltaNotification;
+use rune_app_server_protocol::FileChangeRequestApprovalParams;
+use rune_app_server_protocol::FileChangeRequestApprovalResponse;
+use rune_app_server_protocol::FileUpdateChange;
+use rune_app_server_protocol::InterruptConversationResponse;
+use rune_app_server_protocol::ItemCompletedNotification;
+use rune_app_server_protocol::ItemStartedNotification;
+use rune_app_server_protocol::JSONRPCErrorError;
+use rune_app_server_protocol::McpToolCallError;
+use rune_app_server_protocol::McpToolCallResult;
+use rune_app_server_protocol::McpToolCallStatus;
+use rune_app_server_protocol::PatchApplyStatus;
+use rune_app_server_protocol::PatchChangeKind as V2PatchChangeKind;
+use rune_app_server_protocol::PlanDeltaNotification;
+use rune_app_server_protocol::RawResponseItemCompletedNotification;
+use rune_app_server_protocol::ReasoningSummaryPartAddedNotification;
+use rune_app_server_protocol::ReasoningSummaryTextDeltaNotification;
+use rune_app_server_protocol::ReasoningTextDeltaNotification;
+use rune_app_server_protocol::ServerNotification;
+use rune_app_server_protocol::ServerRequestPayload;
+use rune_app_server_protocol::TerminalInteractionNotification;
+use rune_app_server_protocol::ThreadItem;
+use rune_app_server_protocol::ThreadNameUpdatedNotification;
+use rune_app_server_protocol::ThreadRollbackResponse;
+use rune_app_server_protocol::ThreadTokenUsage;
+use rune_app_server_protocol::ThreadTokenUsageUpdatedNotification;
+use rune_app_server_protocol::ToolRequestUserInputOption;
+use rune_app_server_protocol::ToolRequestUserInputParams;
+use rune_app_server_protocol::ToolRequestUserInputQuestion;
+use rune_app_server_protocol::ToolRequestUserInputResponse;
+use rune_app_server_protocol::Turn;
+use rune_app_server_protocol::TurnCompletedNotification;
+use rune_app_server_protocol::TurnDiffUpdatedNotification;
+use rune_app_server_protocol::TurnError;
+use rune_app_server_protocol::TurnInterruptResponse;
+use rune_app_server_protocol::TurnPlanStep;
+use rune_app_server_protocol::TurnPlanUpdatedNotification;
+use rune_app_server_protocol::TurnStatus;
+use rune_app_server_protocol::build_turns_from_event_msgs;
+use rune_core::RuneThread;
+use rune_core::parse_command::shlex_join;
+use rune_core::protocol::ApplyPatchApprovalRequestEvent;
+use rune_core::protocol::RuneErrorInfo as CoreRuneErrorInfo;
+use rune_core::protocol::Event;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ExecApprovalRequestEvent;
+use rune_core::protocol::ExecCommandEndEvent;
+use rune_core::protocol::FileChange as CoreFileChange;
+use rune_core::protocol::McpToolCallBeginEvent;
+use rune_core::protocol::McpToolCallEndEvent;
+use rune_core::protocol::Op;
+use rune_core::protocol::ReviewDecision;
+use rune_core::protocol::TokenCountEvent;
+use rune_core::protocol::TurnDiffEvent;
+use rune_core::review_format::format_review_findings_block;
+use rune_core::review_prompts;
+use rune_protocol::ThreadId;
+use rune_protocol::dynamic_tools::DynamicToolCallOutputContentItem as CoreDynamicToolCallOutputContentItem;
+use rune_protocol::dynamic_tools::DynamicToolResponse as CoreDynamicToolResponse;
+use rune_protocol::plan_tool::UpdatePlanArgs;
+use rune_protocol::protocol::ReviewOutputEvent;
+use rune_protocol::request_user_input::RequestUserInputAnswer as CoreRequestUserInputAnswer;
+use rune_protocol::request_user_input::RequestUserInputResponse as CoreRequestUserInputResponse;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::path::PathBuf;
@@ -107,7 +107,7 @@ type JsonValue = serde_json::Value;
 pub(crate) async fn apply_bespoke_event_handling(
     event: Event,
     conversation_id: ThreadId,
-    conversation: Arc<CodexThread>,
+    conversation: Arc<RuneThread>,
     outgoing: Arc<OutgoingMessageSender>,
     pending_interrupts: PendingInterrupts,
     pending_rollbacks: PendingRollbacks,
@@ -406,8 +406,8 @@ pub(crate) async fn apply_bespoke_event_handling(
         EventMsg::CollabAgentSpawnEnd(end_event) => {
             let has_receiver = end_event.new_thread_id.is_some();
             let status = match &end_event.status {
-                codex_protocol::protocol::AgentStatus::Errored(_)
-                | codex_protocol::protocol::AgentStatus::NotFound => V2CollabToolCallStatus::Failed,
+                rune_protocol::protocol::AgentStatus::Errored(_)
+                | rune_protocol::protocol::AgentStatus::NotFound => V2CollabToolCallStatus::Failed,
                 _ if has_receiver => V2CollabToolCallStatus::Completed,
                 _ => V2CollabToolCallStatus::Failed,
             };
@@ -462,8 +462,8 @@ pub(crate) async fn apply_bespoke_event_handling(
         }
         EventMsg::CollabAgentInteractionEnd(end_event) => {
             let status = match &end_event.status {
-                codex_protocol::protocol::AgentStatus::Errored(_)
-                | codex_protocol::protocol::AgentStatus::NotFound => V2CollabToolCallStatus::Failed,
+                rune_protocol::protocol::AgentStatus::Errored(_)
+                | rune_protocol::protocol::AgentStatus::NotFound => V2CollabToolCallStatus::Failed,
                 _ => V2CollabToolCallStatus::Completed,
             };
             let receiver_id = end_event.receiver_thread_id.to_string();
@@ -514,8 +514,8 @@ pub(crate) async fn apply_bespoke_event_handling(
             let status = if end_event.statuses.values().any(|status| {
                 matches!(
                     status,
-                    codex_protocol::protocol::AgentStatus::Errored(_)
-                        | codex_protocol::protocol::AgentStatus::NotFound
+                    rune_protocol::protocol::AgentStatus::Errored(_)
+                        | rune_protocol::protocol::AgentStatus::NotFound
                 )
             }) {
                 V2CollabToolCallStatus::Failed
@@ -567,8 +567,8 @@ pub(crate) async fn apply_bespoke_event_handling(
         }
         EventMsg::CollabCloseEnd(end_event) => {
             let status = match &end_event.status {
-                codex_protocol::protocol::AgentStatus::Errored(_)
-                | codex_protocol::protocol::AgentStatus::NotFound => V2CollabToolCallStatus::Failed,
+                rune_protocol::protocol::AgentStatus::Errored(_)
+                | rune_protocol::protocol::AgentStatus::NotFound => V2CollabToolCallStatus::Failed,
                 _ => V2CollabToolCallStatus::Completed,
             };
             let receiver_id = end_event.receiver_thread_id.to_string();
@@ -619,7 +619,7 @@ pub(crate) async fn apply_bespoke_event_handling(
                 .await;
         }
         EventMsg::AgentMessageContentDelta(event) => {
-            let codex_protocol::protocol::AgentMessageContentDeltaEvent { item_id, delta, .. } =
+            let rune_protocol::protocol::AgentMessageContentDeltaEvent { item_id, delta, .. } =
                 event;
             let notification = AgentMessageDeltaNotification {
                 thread_id: conversation_id.to_string(),
@@ -705,15 +705,15 @@ pub(crate) async fn apply_bespoke_event_handling(
         }
         EventMsg::Error(ev) => {
             let message = ev.message.clone();
-            let codex_error_info = ev.codex_error_info.clone();
+            let rune_error_info = ev.rune_error_info.clone();
 
             // If this error belongs to an in-flight `thread/rollback` request, fail that request
             // (and clear pending state) so subsequent rollbacks are unblocked.
             //
             // Don't send a notification for this error.
             if matches!(
-                codex_error_info,
-                Some(CoreCodexErrorInfo::ThreadRollbackFailed)
+                rune_error_info,
+                Some(CoreRuneErrorInfo::ThreadRollbackFailed)
             ) {
                 return handle_thread_rollback_failed(
                     conversation_id,
@@ -726,7 +726,7 @@ pub(crate) async fn apply_bespoke_event_handling(
 
             let turn_error = TurnError {
                 message: ev.message,
-                codex_error_info: ev.codex_error_info.map(V2CodexErrorInfo::from),
+                rune_error_info: ev.rune_error_info.map(V2RuneErrorInfo::from),
                 additional_details: None,
             };
             handle_error(conversation_id, turn_error.clone(), &turn_summary_store).await;
@@ -744,7 +744,7 @@ pub(crate) async fn apply_bespoke_event_handling(
             // but we notify the client.
             let turn_error = TurnError {
                 message: ev.message,
-                codex_error_info: ev.codex_error_info.map(V2CodexErrorInfo::from),
+                rune_error_info: ev.rune_error_info.map(V2RuneErrorInfo::from),
                 additional_details: ev.additional_details,
             };
             outgoing
@@ -1306,7 +1306,7 @@ async fn maybe_emit_raw_response_item_completed(
     api_version: ApiVersion,
     conversation_id: ThreadId,
     turn_id: &str,
-    item: codex_protocol::models::ResponseItem,
+    item: rune_protocol::models::ResponseItem,
     outgoing: &OutgoingMessageSender,
 ) {
     let ApiVersion::V2 = api_version else {
@@ -1430,14 +1430,14 @@ async fn handle_error(
 async fn on_patch_approval_response(
     event_turn_id: String,
     receiver: oneshot::Receiver<JsonValue>,
-    codex: Arc<CodexThread>,
+    rune: Arc<RuneThread>,
 ) {
     let response = receiver.await;
     let value = match response {
         Ok(value) => value,
         Err(err) => {
             error!("request failed: {err:?}");
-            if let Err(submit_err) = codex
+            if let Err(submit_err) = rune
                 .submit(Op::PatchApproval {
                     id: event_turn_id.clone(),
                     decision: ReviewDecision::Denied,
@@ -1458,7 +1458,7 @@ async fn on_patch_approval_response(
             }
         });
 
-    if let Err(err) = codex
+    if let Err(err) = rune
         .submit(Op::PatchApproval {
             id: event_turn_id,
             decision: response.decision,
@@ -1472,7 +1472,7 @@ async fn on_patch_approval_response(
 async fn on_exec_approval_response(
     event_turn_id: String,
     receiver: oneshot::Receiver<JsonValue>,
-    conversation: Arc<CodexThread>,
+    conversation: Arc<RuneThread>,
 ) {
     let response = receiver.await;
     let value = match response {
@@ -1483,7 +1483,7 @@ async fn on_exec_approval_response(
         }
     };
 
-    // Try to deserialize `value` and then make the appropriate call to `codex`.
+    // Try to deserialize `value` and then make the appropriate call to `rune`.
     let response =
         serde_json::from_value::<ExecCommandApprovalResponse>(value).unwrap_or_else(|err| {
             error!("failed to deserialize ExecCommandApprovalResponse: {err}");
@@ -1508,7 +1508,7 @@ async fn on_exec_approval_response(
 async fn on_request_user_input_response(
     event_turn_id: String,
     receiver: oneshot::Receiver<JsonValue>,
-    conversation: Arc<CodexThread>,
+    conversation: Arc<RuneThread>,
 ) {
     let response = receiver.await;
     let value = match response {
@@ -1648,7 +1648,7 @@ async fn on_file_change_request_approval_response(
     item_id: String,
     changes: Vec<FileUpdateChange>,
     receiver: oneshot::Receiver<JsonValue>,
-    codex: Arc<CodexThread>,
+    rune: Arc<RuneThread>,
     outgoing: Arc<OutgoingMessageSender>,
     turn_summary_store: TurnSummaryStore,
 ) {
@@ -1688,7 +1688,7 @@ async fn on_file_change_request_approval_response(
         .await;
     }
 
-    if let Err(err) = codex
+    if let Err(err) = rune
         .submit(Op::PatchApproval {
             id: event_turn_id,
             decision,
@@ -1708,7 +1708,7 @@ async fn on_command_execution_request_approval_response(
     cwd: PathBuf,
     command_actions: Vec<V2ParsedCommand>,
     receiver: oneshot::Receiver<JsonValue>,
-    conversation: Arc<CodexThread>,
+    conversation: Arc<RuneThread>,
     outgoing: Arc<OutgoingMessageSender>,
 ) {
     let response = receiver.await;
@@ -1781,7 +1781,7 @@ async fn on_command_execution_request_approval_response(
 }
 
 fn collab_resume_begin_item(
-    begin_event: codex_core::protocol::CollabResumeBeginEvent,
+    begin_event: rune_core::protocol::CollabResumeBeginEvent,
 ) -> ThreadItem {
     ThreadItem::CollabAgentToolCall {
         id: begin_event.call_id,
@@ -1794,10 +1794,10 @@ fn collab_resume_begin_item(
     }
 }
 
-fn collab_resume_end_item(end_event: codex_core::protocol::CollabResumeEndEvent) -> ThreadItem {
+fn collab_resume_end_item(end_event: rune_core::protocol::CollabResumeEndEvent) -> ThreadItem {
     let status = match &end_event.status {
-        codex_protocol::protocol::AgentStatus::Errored(_)
-        | codex_protocol::protocol::AgentStatus::NotFound => V2CollabToolCallStatus::Failed,
+        rune_protocol::protocol::AgentStatus::Errored(_)
+        | rune_protocol::protocol::AgentStatus::NotFound => V2CollabToolCallStatus::Failed,
         _ => V2CollabToolCallStatus::Completed,
     };
     let receiver_id = end_event.receiver_thread_id.to_string();
@@ -1897,18 +1897,18 @@ mod tests {
     use anyhow::Result;
     use anyhow::anyhow;
     use anyhow::bail;
-    use codex_app_server_protocol::TurnPlanStepStatus;
-    use codex_core::protocol::CollabResumeBeginEvent;
-    use codex_core::protocol::CollabResumeEndEvent;
-    use codex_core::protocol::CreditsSnapshot;
-    use codex_core::protocol::McpInvocation;
-    use codex_core::protocol::RateLimitSnapshot;
-    use codex_core::protocol::RateLimitWindow;
-    use codex_core::protocol::TokenUsage;
-    use codex_core::protocol::TokenUsageInfo;
-    use codex_protocol::mcp::CallToolResult;
-    use codex_protocol::plan_tool::PlanItemArg;
-    use codex_protocol::plan_tool::StepStatus;
+    use rune_app_server_protocol::TurnPlanStepStatus;
+    use rune_core::protocol::CollabResumeBeginEvent;
+    use rune_core::protocol::CollabResumeEndEvent;
+    use rune_core::protocol::CreditsSnapshot;
+    use rune_core::protocol::McpInvocation;
+    use rune_core::protocol::RateLimitSnapshot;
+    use rune_core::protocol::RateLimitWindow;
+    use rune_core::protocol::TokenUsage;
+    use rune_core::protocol::TokenUsageInfo;
+    use rune_protocol::mcp::CallToolResult;
+    use rune_protocol::plan_tool::PlanItemArg;
+    use rune_protocol::plan_tool::StepStatus;
     use pretty_assertions::assert_eq;
     use rmcp::model::Content;
     use serde_json::Value as JsonValue;
@@ -1971,7 +1971,7 @@ mod tests {
             call_id: "call-2".to_string(),
             sender_thread_id: ThreadId::new(),
             receiver_thread_id: ThreadId::new(),
-            status: codex_protocol::protocol::AgentStatus::NotFound,
+            status: rune_protocol::protocol::AgentStatus::NotFound,
         };
 
         let item = collab_resume_end_item(event.clone());
@@ -1985,7 +1985,7 @@ mod tests {
             prompt: None,
             agents_states: [(
                 receiver_id,
-                V2CollabAgentStatus::from(codex_protocol::protocol::AgentStatus::NotFound),
+                V2CollabAgentStatus::from(rune_protocol::protocol::AgentStatus::NotFound),
             )]
             .into_iter()
             .collect(),
@@ -2002,7 +2002,7 @@ mod tests {
             conversation_id,
             TurnError {
                 message: "boom".to_string(),
-                codex_error_info: Some(V2CodexErrorInfo::InternalServerError),
+                rune_error_info: Some(V2RuneErrorInfo::InternalServerError),
                 additional_details: None,
             },
             &turn_summary_store,
@@ -2014,7 +2014,7 @@ mod tests {
             turn_summary.last_error,
             Some(TurnError {
                 message: "boom".to_string(),
-                codex_error_info: Some(V2CodexErrorInfo::InternalServerError),
+                rune_error_info: Some(V2RuneErrorInfo::InternalServerError),
                 additional_details: None,
             })
         );
@@ -2059,7 +2059,7 @@ mod tests {
             conversation_id,
             TurnError {
                 message: "oops".to_string(),
-                codex_error_info: None,
+                rune_error_info: None,
                 additional_details: None,
             },
             &turn_summary_store,
@@ -2098,7 +2098,7 @@ mod tests {
             conversation_id,
             TurnError {
                 message: "bad".to_string(),
-                codex_error_info: Some(V2CodexErrorInfo::Other),
+                rune_error_info: Some(V2RuneErrorInfo::Other),
                 additional_details: None,
             },
             &turn_summary_store,
@@ -2124,7 +2124,7 @@ mod tests {
                     n.turn.error,
                     Some(TurnError {
                         message: "bad".to_string(),
-                        codex_error_info: Some(V2CodexErrorInfo::Other),
+                        rune_error_info: Some(V2RuneErrorInfo::Other),
                         additional_details: None,
                     })
                 );
@@ -2291,7 +2291,7 @@ mod tests {
         let begin_event = McpToolCallBeginEvent {
             call_id: "call_123".to_string(),
             invocation: McpInvocation {
-                server: "codex".to_string(),
+                server: "rune".to_string(),
                 tool: "list_mcp_resources".to_string(),
                 arguments: Some(serde_json::json!({"server": ""})),
             },
@@ -2340,7 +2340,7 @@ mod tests {
             conversation_a,
             TurnError {
                 message: "a1".to_string(),
-                codex_error_info: Some(V2CodexErrorInfo::BadRequest),
+                rune_error_info: Some(V2RuneErrorInfo::BadRequest),
                 additional_details: None,
             },
             &turn_summary_store,
@@ -2360,7 +2360,7 @@ mod tests {
             conversation_b,
             TurnError {
                 message: "b1".to_string(),
-                codex_error_info: None,
+                rune_error_info: None,
                 additional_details: None,
             },
             &turn_summary_store,
@@ -2394,7 +2394,7 @@ mod tests {
                     n.turn.error,
                     Some(TurnError {
                         message: "a1".to_string(),
-                        codex_error_info: Some(V2CodexErrorInfo::BadRequest),
+                        rune_error_info: Some(V2RuneErrorInfo::BadRequest),
                         additional_details: None,
                     })
                 );
@@ -2412,7 +2412,7 @@ mod tests {
                     n.turn.error,
                     Some(TurnError {
                         message: "b1".to_string(),
-                        codex_error_info: None,
+                        rune_error_info: None,
                         additional_details: None,
                     })
                 );
@@ -2440,7 +2440,7 @@ mod tests {
         let begin_event = McpToolCallBeginEvent {
             call_id: "call_456".to_string(),
             invocation: McpInvocation {
-                server: "codex".to_string(),
+                server: "rune".to_string(),
                 tool: "list_mcp_resources".to_string(),
                 arguments: None,
             },
@@ -2489,7 +2489,7 @@ mod tests {
         let end_event = McpToolCallEndEvent {
             call_id: "call_789".to_string(),
             invocation: McpInvocation {
-                server: "codex".to_string(),
+                server: "rune".to_string(),
                 tool: "list_mcp_resources".to_string(),
                 arguments: Some(serde_json::json!({"server": ""})),
             },
@@ -2532,7 +2532,7 @@ mod tests {
         let end_event = McpToolCallEndEvent {
             call_id: "call_err".to_string(),
             invocation: McpInvocation {
-                server: "codex".to_string(),
+                server: "rune".to_string(),
                 tool: "list_mcp_resources".to_string(),
                 arguments: None,
             },

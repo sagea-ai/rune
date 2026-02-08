@@ -24,7 +24,7 @@ pub struct LandlockCommand {
     pub sandbox_policy_cwd: PathBuf,
 
     #[arg(long = "sandbox-policy")]
-    pub sandbox_policy: codex_core::protocol::SandboxPolicy,
+    pub sandbox_policy: rune_core::protocol::SandboxPolicy,
 
     /// Opt-in: use the bubblewrap-based Linux sandbox pipeline.
     ///
@@ -116,7 +116,7 @@ pub fn run_main() -> ! {
 
 fn run_bwrap_with_proc_fallback(
     sandbox_policy_cwd: &Path,
-    sandbox_policy: &codex_core::protocol::SandboxPolicy,
+    sandbox_policy: &rune_core::protocol::SandboxPolicy,
     inner: Vec<String>,
     mount_proc: bool,
 ) -> ! {
@@ -134,7 +134,7 @@ fn run_bwrap_with_proc_fallback(
 
 fn build_bwrap_argv(
     inner: Vec<String>,
-    sandbox_policy: &codex_core::protocol::SandboxPolicy,
+    sandbox_policy: &rune_core::protocol::SandboxPolicy,
     sandbox_policy_cwd: &Path,
     options: BwrapOptions,
 ) -> Vec<String> {
@@ -157,7 +157,7 @@ fn build_bwrap_argv(
 
 fn preflight_proc_mount_support(
     sandbox_policy_cwd: &Path,
-    sandbox_policy: &codex_core::protocol::SandboxPolicy,
+    sandbox_policy: &rune_core::protocol::SandboxPolicy,
 ) -> bool {
     let preflight_command = vec![resolve_true_command()];
     let preflight_argv = build_bwrap_argv(
@@ -266,7 +266,7 @@ fn is_proc_mount_failure(stderr: &str) -> bool {
 /// Build the inner command that applies seccomp after bubblewrap.
 fn build_inner_seccomp_command(
     sandbox_policy_cwd: &Path,
-    sandbox_policy: &codex_core::protocol::SandboxPolicy,
+    sandbox_policy: &rune_core::protocol::SandboxPolicy,
     use_bwrap_sandbox: bool,
     command: Vec<String>,
 ) -> Vec<String> {
@@ -321,7 +321,7 @@ fn exec_or_panic(command: Vec<String>) -> ! {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_core::protocol::SandboxPolicy;
+    use rune_core::protocol::SandboxPolicy;
     use pretty_assertions::assert_eq;
 
     #[test]

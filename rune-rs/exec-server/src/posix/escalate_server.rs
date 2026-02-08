@@ -8,10 +8,10 @@ use std::time::Duration;
 use anyhow::Context as _;
 use path_absolutize::Absolutize as _;
 
-use codex_core::SandboxState;
-use codex_core::exec::process_exec_tool_call;
-use codex_core::protocol_config_types::WindowsSandboxLevel;
-use codex_core::sandboxing::SandboxPermissions;
+use rune_core::SandboxState;
+use rune_core::exec::process_exec_tool_call;
+use rune_core::protocol_config_types::WindowsSandboxLevel;
+use rune_core::sandboxing::SandboxPermissions;
 use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
 
@@ -26,7 +26,7 @@ use crate::posix::escalation_policy::EscalationPolicy;
 use crate::posix::mcp::ExecParams;
 use crate::posix::socket::AsyncDatagramSocket;
 use crate::posix::socket::AsyncSocket;
-use codex_core::exec::ExecExpiration;
+use rune_core::exec::ExecExpiration;
 
 pub(crate) struct EscalateServer {
     bash_path: PathBuf,
@@ -74,7 +74,7 @@ impl EscalateServer {
             login,
         } = params;
         let result = process_exec_tool_call(
-            codex_core::exec::ExecParams {
+            rune_core::exec::ExecParams {
                 command: vec![
                     self.bash_path.to_string_lossy().to_string(),
                     if login == Some(false) {
@@ -94,7 +94,7 @@ impl EscalateServer {
             },
             &sandbox_state.sandbox_policy,
             &sandbox_state.sandbox_cwd,
-            &sandbox_state.codex_linux_sandbox_exe,
+            &sandbox_state.rune_linux_sandbox_exe,
             sandbox_state.use_linux_sandbox_bwrap,
             None,
         )
@@ -265,7 +265,7 @@ mod tests {
         let mut env = HashMap::new();
         for i in 0..10 {
             let value = "A".repeat(1024);
-            env.insert(format!("CODEX_TEST_VAR{i}"), value);
+            env.insert(format!("RUNE_TEST_VAR{i}"), value);
         }
 
         client

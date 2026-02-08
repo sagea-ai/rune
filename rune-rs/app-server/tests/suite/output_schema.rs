@@ -1,18 +1,18 @@
 use anyhow::Result;
 use app_test_support::McpProcess;
 use app_test_support::to_response;
-use codex_app_server_protocol::AddConversationListenerParams;
-use codex_app_server_protocol::InputItem;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::NewConversationParams;
-use codex_app_server_protocol::NewConversationResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SendUserTurnParams;
-use codex_app_server_protocol::SendUserTurnResponse;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::openai_models::ReasoningEffort;
+use rune_app_server_protocol::AddConversationListenerParams;
+use rune_app_server_protocol::InputItem;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::NewConversationParams;
+use rune_app_server_protocol::NewConversationResponse;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::SendUserTurnParams;
+use rune_app_server_protocol::SendUserTurnResponse;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::openai_models::ReasoningEffort;
 use core_test_support::responses;
 use core_test_support::skip_if_no_network;
 use pretty_assertions::assert_eq;
@@ -34,10 +34,10 @@ async fn send_user_turn_accepts_output_schema_v1() -> Result<()> {
     ]);
     let response_mock = responses::mount_sse_once(&server, body).await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let new_conv_id = mcp
@@ -82,7 +82,7 @@ async fn send_user_turn_accepts_output_schema_v1() -> Result<()> {
                 text: "Hello".to_string(),
                 text_elements: Vec::new(),
             }],
-            cwd: codex_home.path().to_path_buf(),
+            cwd: rune_home.path().to_path_buf(),
             approval_policy: AskForApproval::Never,
             sandbox_policy: SandboxPolicy::new_read_only_policy(),
             model: "mock-model".to_string(),
@@ -101,7 +101,7 @@ async fn send_user_turn_accepts_output_schema_v1() -> Result<()> {
 
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
 
@@ -114,7 +114,7 @@ async fn send_user_turn_accepts_output_schema_v1() -> Result<()> {
     assert_eq!(
         format,
         &serde_json::json!({
-            "name": "codex_output_schema",
+            "name": "rune_output_schema",
             "type": "json_schema",
             "strict": true,
             "schema": output_schema,
@@ -136,10 +136,10 @@ async fn send_user_turn_output_schema_is_per_turn_v1() -> Result<()> {
     ]);
     let response_mock1 = responses::mount_sse_once(&server, body1).await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let new_conv_id = mcp
@@ -184,7 +184,7 @@ async fn send_user_turn_output_schema_is_per_turn_v1() -> Result<()> {
                 text: "Hello".to_string(),
                 text_elements: Vec::new(),
             }],
-            cwd: codex_home.path().to_path_buf(),
+            cwd: rune_home.path().to_path_buf(),
             approval_policy: AskForApproval::Never,
             sandbox_policy: SandboxPolicy::new_read_only_policy(),
             model: "mock-model".to_string(),
@@ -203,7 +203,7 @@ async fn send_user_turn_output_schema_is_per_turn_v1() -> Result<()> {
 
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
 
@@ -211,7 +211,7 @@ async fn send_user_turn_output_schema_is_per_turn_v1() -> Result<()> {
     assert_eq!(
         payload1.pointer("/text/format"),
         Some(&serde_json::json!({
-            "name": "codex_output_schema",
+            "name": "rune_output_schema",
             "type": "json_schema",
             "strict": true,
             "schema": output_schema,
@@ -232,7 +232,7 @@ async fn send_user_turn_output_schema_is_per_turn_v1() -> Result<()> {
                 text: "Hello again".to_string(),
                 text_elements: Vec::new(),
             }],
-            cwd: codex_home.path().to_path_buf(),
+            cwd: rune_home.path().to_path_buf(),
             approval_policy: AskForApproval::Never,
             sandbox_policy: SandboxPolicy::new_read_only_policy(),
             model: "mock-model".to_string(),
@@ -251,7 +251,7 @@ async fn send_user_turn_output_schema_is_per_turn_v1() -> Result<()> {
 
     timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
 
@@ -261,8 +261,8 @@ async fn send_user_turn_output_schema_is_per_turn_v1() -> Result<()> {
     Ok(())
 }
 
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(

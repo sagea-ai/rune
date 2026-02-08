@@ -7,40 +7,40 @@ use additional_dirs::add_dir_warning_message;
 use app::App;
 pub use app::AppExitInfo;
 pub use app::ExitReason;
-use codex_cloud_requirements::cloud_requirements_loader;
-use codex_common::oss::ensure_oss_provider_ready;
-use codex_common::oss::get_default_model_for_oss_provider;
-use codex_core::AuthManager;
-use codex_core::CodexAuth;
-use codex_core::INTERACTIVE_SESSION_SOURCES;
-use codex_core::RolloutRecorder;
-use codex_core::ThreadSortKey;
-use codex_core::auth::AuthMode;
-use codex_core::auth::enforce_login_restrictions;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_core::config::ConfigOverrides;
-use codex_core::config::find_codex_home;
-use codex_core::config::load_config_as_toml_with_cli_overrides;
-use codex_core::config::resolve_oss_provider;
-use codex_core::config_loader::CloudRequirementsLoader;
-use codex_core::config_loader::ConfigLoadError;
-use codex_core::config_loader::format_config_error_with_source;
-use codex_core::default_client::set_default_client_residency_requirement;
-use codex_core::find_thread_path_by_id_str;
-use codex_core::find_thread_path_by_name_str;
-use codex_core::path_utils;
-use codex_core::protocol::AskForApproval;
-use codex_core::read_session_meta_line;
-use codex_core::terminal::Multiplexer;
-use codex_core::windows_sandbox::WindowsSandboxLevelExt;
-use codex_protocol::config_types::AltScreenMode;
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_state::log_db;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_cloud_requirements::cloud_requirements_loader;
+use rune_common::oss::ensure_oss_provider_ready;
+use rune_common::oss::get_default_model_for_oss_provider;
+use rune_core::AuthManager;
+use rune_core::RuneAuth;
+use rune_core::INTERACTIVE_SESSION_SOURCES;
+use rune_core::RolloutRecorder;
+use rune_core::ThreadSortKey;
+use rune_core::auth::AuthMode;
+use rune_core::auth::enforce_login_restrictions;
+use rune_core::config::Config;
+use rune_core::config::ConfigBuilder;
+use rune_core::config::ConfigOverrides;
+use rune_core::config::find_rune_home;
+use rune_core::config::load_config_as_toml_with_cli_overrides;
+use rune_core::config::resolve_oss_provider;
+use rune_core::config_loader::CloudRequirementsLoader;
+use rune_core::config_loader::ConfigLoadError;
+use rune_core::config_loader::format_config_error_with_source;
+use rune_core::default_client::set_default_client_residency_requirement;
+use rune_core::find_thread_path_by_id_str;
+use rune_core::find_thread_path_by_name_str;
+use rune_core::path_utils;
+use rune_core::protocol::AskForApproval;
+use rune_core::read_session_meta_line;
+use rune_core::terminal::Multiplexer;
+use rune_core::windows_sandbox::WindowsSandboxLevelExt;
+use rune_protocol::config_types::AltScreenMode;
+use rune_protocol::config_types::SandboxMode;
+use rune_protocol::config_types::WindowsSandboxLevel;
+use rune_protocol::protocol::RolloutItem;
+use rune_protocol::protocol::RolloutLine;
+use rune_state::log_db;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use cwd_prompt::CwdPromptAction;
 use cwd_prompt::CwdSelection;
 use std::fs::OpenOptions;
@@ -126,7 +126,7 @@ pub use public_widgets::composer_input::ComposerInput;
 
 pub async fn run_main(
     mut cli: Cli,
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
 ) -> std::io::Result<AppExitInfo> {
     let (sandbox_mode, approval_policy) = if cli.full_auto {
         (
@@ -156,7 +156,7 @@ pub async fn run_main(
     // gpt-oss:20b) and ensure it is present locally. Also, force the built‑in
     let raw_overrides = cli.config_overrides.raw_overrides.clone();
     // `oss` model provider.
-    let overrides_cli = codex_common::CliConfigOverrides { raw_overrides };
+    let overrides_cli = rune_common::CliConfigOverrides { raw_overrides };
     let cli_kv_overrides = match overrides_cli.parse_overrides() {
         // Parse `-c` overrides from the CLI.
         Ok(v) => v,
@@ -169,10 +169,10 @@ pub async fn run_main(
 
     // we load config.toml here to determine project state.
     #[allow(clippy::print_stderr)]
-    let codex_home = match find_codex_home() {
-        Ok(codex_home) => codex_home.to_path_buf(),
+    let rune_home = match find_rune_home() {
+        Ok(rune_home) => rune_home.to_path_buf(),
         Err(err) => {
-            eprintln!("Error finding codex home: {err}");
+            eprintln!("Error finding rune home: {err}");
             std::process::exit(1);
         }
     };
@@ -185,7 +185,7 @@ pub async fn run_main(
 
     #[allow(clippy::print_stderr)]
     let config_toml = match load_config_as_toml_with_cli_overrides(
-        &codex_home,
+        &rune_home,
         &config_cwd,
         cli_kv_overrides.clone(),
     )
@@ -210,14 +210,14 @@ pub async fn run_main(
     };
 
     if let Err(err) =
-        codex_core::personality_migration::maybe_migrate_personality(&codex_home, &config_toml)
+        rune_core::personality_migration::maybe_migrate_personality(&rune_home, &config_toml)
             .await
     {
         tracing::warn!(error = %err, "failed to run personality migration");
     }
 
     let cloud_auth_manager = AuthManager::shared(
-        codex_home.to_path_buf(),
+        rune_home.to_path_buf(),
         false,
         config_toml.cli_auth_credentials_store.unwrap_or_default(),
     );
@@ -238,7 +238,7 @@ pub async fn run_main(
             Some(provider)
         } else {
             // No provider configured, prompt the user
-            let provider = oss_selection::select_oss_provider(&codex_home).await?;
+            let provider = oss_selection::select_oss_provider(&rune_home).await?;
             if provider == "__CANCELLED__" {
                 return Err(std::io::Error::other(
                     "OSS provider selection was cancelled by user",
@@ -272,7 +272,7 @@ pub async fn run_main(
         cwd,
         model_provider: model_provider_override.clone(),
         config_profile: cli.config_profile.clone(),
-        codex_linux_sandbox_exe,
+        rune_linux_sandbox_exe,
         show_raw_agent_reasoning: cli.oss.then_some(true),
         additional_writable_roots: additional_dirs,
         ..Default::default()
@@ -300,7 +300,7 @@ pub async fn run_main(
         std::process::exit(1);
     }
 
-    let log_dir = codex_core::config::log_dir(&config)?;
+    let log_dir = rune_core::config::log_dir(&config)?;
     std::fs::create_dir_all(&log_dir)?;
     // Open (or create) your log file, appending to it.
     let mut log_file_opts = OpenOptions::new();
@@ -309,7 +309,7 @@ pub async fn run_main(
     // Ensure the file is only readable and writable by the current user.
     // Doing the equivalent to `chmod 600` on Windows is quite a bit more code
     // and requires the Windows API crates, so we can reconsider that when
-    // Codex CLI is officially supported on Windows.
+    // Rune CLI is officially supported on Windows.
     #[cfg(unix)]
     {
         use std::os::unix::fs::OpenOptionsExt;
@@ -321,10 +321,10 @@ pub async fn run_main(
     // Wrap file in non‑blocking writer.
     let (non_blocking, _guard) = non_blocking(log_file);
 
-    // use RUST_LOG env var, default to info for codex crates.
+    // use RUST_LOG env var, default to info for rune crates.
     let env_filter = || {
         EnvFilter::try_from_default_env().unwrap_or_else(|_| {
-            EnvFilter::new("codex_core=info,codex_tui=info,codex_rmcp_client=info")
+            EnvFilter::new("rune_core=info,rune_tui=info,rune_rmcp_client=info")
         })
     };
 
@@ -341,7 +341,7 @@ pub async fn run_main(
         )
         .with_filter(env_filter());
 
-    let feedback = codex_feedback::CodexFeedback::new();
+    let feedback = rune_feedback::RuneFeedback::new();
     let feedback_layer = feedback.logger_layer();
     let feedback_metadata_layer = feedback.metadata_layer();
 
@@ -361,7 +361,7 @@ pub async fn run_main(
     }
 
     let otel = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        codex_core::otel_init::build_provider(&config, env!("CARGO_PKG_VERSION"), None, true)
+        rune_core::otel_init::build_provider(&config, env!("CARGO_PKG_VERSION"), None, true)
     })) {
         Ok(Ok(otel)) => otel,
         Ok(Err(e)) => {
@@ -384,7 +384,7 @@ pub async fn run_main(
 
     let otel_tracing_layer = otel.as_ref().and_then(|o| o.tracing_layer());
 
-    let log_db_layer = codex_core::state_db::get_state_db(&config, None)
+    let log_db_layer = rune_core::state_db::get_state_db(&config, None)
         .await
         .map(|db| log_db::start(db).with_filter(env_filter()));
 
@@ -415,7 +415,7 @@ async fn run_ratatui_app(
     overrides: ConfigOverrides,
     cli_kv_overrides: Vec<(String, toml::Value)>,
     mut cloud_requirements: CloudRequirementsLoader,
-    feedback: codex_feedback::CodexFeedback,
+    feedback: rune_feedback::RuneFeedback,
 ) -> color_eyre::Result<AppExitInfo> {
     color_eyre::install()?;
 
@@ -446,7 +446,7 @@ async fn run_ratatui_app(
                 UpdatePromptOutcome::RunUpdate(action) => {
                     crate::tui::restore()?;
                     return Ok(AppExitInfo {
-                        token_usage: codex_core::protocol::TokenUsage::default(),
+                        token_usage: rune_core::protocol::TokenUsage::default(),
                         thread_id: None,
                         thread_name: None,
                         update_action: Some(action),
@@ -461,7 +461,7 @@ async fn run_ratatui_app(
     session_log::maybe_init(&initial_config);
 
     let auth_manager = AuthManager::shared(
-        initial_config.codex_home.clone(),
+        initial_config.rune_home.clone(),
         false,
         initial_config.cli_auth_credentials_store_mode,
     );
@@ -488,7 +488,7 @@ async fn run_ratatui_app(
             session_log::log_session_end();
             let _ = tui.terminal.clear();
             return Ok(AppExitInfo {
-                token_usage: codex_core::protocol::TokenUsage::default(),
+                token_usage: rune_core::protocol::TokenUsage::default(),
                 thread_id: None,
                 thread_name: None,
                 update_action: None,
@@ -526,12 +526,12 @@ async fn run_ratatui_app(
         session_log::log_session_end();
         let _ = tui.terminal.clear();
         Ok(AppExitInfo {
-            token_usage: codex_core::protocol::TokenUsage::default(),
+            token_usage: rune_core::protocol::TokenUsage::default(),
             thread_id: None,
             thread_name: None,
             update_action: None,
             exit_reason: ExitReason::Fatal(format!(
-                "No saved session found with ID {id_str}. Run `codex {action}` without an ID to choose from existing sessions."
+                "No saved session found with ID {id_str}. Run `rune {action}` without an ID to choose from existing sessions."
             )),
         })
     };
@@ -541,9 +541,9 @@ async fn run_ratatui_app(
         if let Some(id_str) = cli.fork_session_id.as_deref() {
             let is_uuid = Uuid::parse_str(id_str).is_ok();
             let path = if is_uuid {
-                find_thread_path_by_id_str(&config.codex_home, id_str).await?
+                find_thread_path_by_id_str(&config.rune_home, id_str).await?
             } else {
-                find_thread_path_by_name_str(&config.codex_home, id_str).await?
+                find_thread_path_by_name_str(&config.rune_home, id_str).await?
             };
             match path {
                 Some(path) => resume_picker::SessionSelection::Fork(path),
@@ -552,7 +552,7 @@ async fn run_ratatui_app(
         } else if cli.fork_last {
             let provider_filter = vec![config.model_provider_id.clone()];
             match RolloutRecorder::list_threads(
-                &config.codex_home,
+                &config.rune_home,
                 1,
                 None,
                 ThreadSortKey::UpdatedAt,
@@ -572,7 +572,7 @@ async fn run_ratatui_app(
         } else if cli.fork_picker {
             match resume_picker::run_fork_picker(
                 &mut tui,
-                &config.codex_home,
+                &config.rune_home,
                 &config.model_provider_id,
                 cli.fork_show_all,
             )
@@ -582,7 +582,7 @@ async fn run_ratatui_app(
                     restore();
                     session_log::log_session_end();
                     return Ok(AppExitInfo {
-                        token_usage: codex_core::protocol::TokenUsage::default(),
+                        token_usage: rune_core::protocol::TokenUsage::default(),
                         thread_id: None,
                         thread_name: None,
                         update_action: None,
@@ -597,9 +597,9 @@ async fn run_ratatui_app(
     } else if let Some(id_str) = cli.resume_session_id.as_deref() {
         let is_uuid = Uuid::parse_str(id_str).is_ok();
         let path = if is_uuid {
-            find_thread_path_by_id_str(&config.codex_home, id_str).await?
+            find_thread_path_by_id_str(&config.rune_home, id_str).await?
         } else {
-            find_thread_path_by_name_str(&config.codex_home, id_str).await?
+            find_thread_path_by_name_str(&config.rune_home, id_str).await?
         };
         match path {
             Some(path) => resume_picker::SessionSelection::Resume(path),
@@ -613,7 +613,7 @@ async fn run_ratatui_app(
             Some(config.cwd.as_path())
         };
         match RolloutRecorder::find_latest_thread_path(
-            &config.codex_home,
+            &config.rune_home,
             1,
             None,
             ThreadSortKey::UpdatedAt,
@@ -630,7 +630,7 @@ async fn run_ratatui_app(
     } else if cli.resume_picker {
         match resume_picker::run_resume_picker(
             &mut tui,
-            &config.codex_home,
+            &config.rune_home,
             &config.model_provider_id,
             cli.resume_show_all,
         )
@@ -640,7 +640,7 @@ async fn run_ratatui_app(
                 restore();
                 session_log::log_session_end();
                 return Ok(AppExitInfo {
-                    token_usage: codex_core::protocol::TokenUsage::default(),
+                    token_usage: rune_core::protocol::TokenUsage::default(),
                     thread_id: None,
                     thread_name: None,
                     update_action: None,
@@ -823,7 +823,7 @@ fn determine_alt_screen_mode(no_alt_screen: bool, tui_alternate_screen: AltScree
             AltScreenMode::Always => true,
             AltScreenMode::Never => false,
             AltScreenMode::Auto => {
-                let terminal_info = codex_core::terminal::terminal_info();
+                let terminal_info = rune_core::terminal::terminal_info();
                 !matches!(terminal_info.multiplexer, Some(Multiplexer::Zellij { .. }))
             }
         }
@@ -840,8 +840,8 @@ fn get_login_status(config: &Config) -> LoginStatus {
     if config.model_provider.requires_openai_auth {
         // Reading the OpenAI API key is an async operation because it may need
         // to refresh the token. Block on it.
-        let codex_home = config.codex_home.clone();
-        match CodexAuth::from_auth_storage(&codex_home, config.cli_auth_credentials_store_mode) {
+        let rune_home = config.rune_home.clone();
+        match RuneAuth::from_auth_storage(&rune_home, config.cli_auth_credentials_store_mode) {
             Ok(Some(auth)) => LoginStatus::AuthMode(auth.auth_mode()),
             Ok(None) => LoginStatus::NotAuthenticated,
             Err(err) => {
@@ -929,21 +929,21 @@ fn should_show_login_screen(login_status: LoginStatus, config: &Config) -> bool 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_core::config::ConfigBuilder;
-    use codex_core::config::ConfigOverrides;
-    use codex_core::config::ProjectConfig;
-    use codex_core::protocol::AskForApproval;
-    use codex_protocol::protocol::RolloutItem;
-    use codex_protocol::protocol::RolloutLine;
-    use codex_protocol::protocol::SessionMeta;
-    use codex_protocol::protocol::SessionMetaLine;
-    use codex_protocol::protocol::TurnContextItem;
+    use rune_core::config::ConfigBuilder;
+    use rune_core::config::ConfigOverrides;
+    use rune_core::config::ProjectConfig;
+    use rune_core::protocol::AskForApproval;
+    use rune_protocol::protocol::RolloutItem;
+    use rune_protocol::protocol::RolloutLine;
+    use rune_protocol::protocol::SessionMeta;
+    use rune_protocol::protocol::SessionMetaLine;
+    use rune_protocol::protocol::TurnContextItem;
     use serial_test::serial;
     use tempfile::TempDir;
 
     async fn build_config(temp_dir: &TempDir) -> std::io::Result<Config> {
         ConfigBuilder::default()
-            .codex_home(temp_dir.path().to_path_buf())
+            .rune_home(temp_dir.path().to_path_buf())
             .build()
             .await
     }
@@ -996,7 +996,7 @@ mod tests {
     }
     #[tokio::test]
     async fn untrusted_project_skips_trust_prompt() -> std::io::Result<()> {
-        use codex_protocol::config_types::TrustLevel;
+        use rune_protocol::config_types::TrustLevel;
         let temp_dir = TempDir::new()?;
         let mut config = build_config(&temp_dir).await?;
         config.did_user_set_custom_approval_policy_or_sandbox_mode = false;
@@ -1109,7 +1109,7 @@ mod tests {
     #[tokio::test]
     async fn config_rebuild_changes_trust_defaults_with_cwd() -> std::io::Result<()> {
         let temp_dir = TempDir::new()?;
-        let codex_home = temp_dir.path().to_path_buf();
+        let rune_home = temp_dir.path().to_path_buf();
         let trusted = temp_dir.path().join("trusted");
         let untrusted = temp_dir.path().join("untrusted");
         std::fs::create_dir_all(&trusted)?;
@@ -1133,7 +1133,7 @@ trust_level = "untrusted"
             ..Default::default()
         };
         let trusted_config = ConfigBuilder::default()
-            .codex_home(codex_home.clone())
+            .rune_home(rune_home.clone())
             .harness_overrides(trusted_overrides.clone())
             .build()
             .await?;
@@ -1147,7 +1147,7 @@ trust_level = "untrusted"
             ..trusted_overrides
         };
         let untrusted_config = ConfigBuilder::default()
-            .codex_home(codex_home)
+            .rune_home(rune_home)
             .harness_overrides(untrusted_overrides)
             .build()
             .await?;

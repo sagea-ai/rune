@@ -3,17 +3,17 @@ use std::env;
 use std::path::PathBuf;
 
 use async_channel::unbounded;
-pub use codex_app_server_protocol::AppInfo;
-use codex_protocol::protocol::SandboxPolicy;
+pub use rune_app_server_protocol::AppInfo;
+use rune_protocol::protocol::SandboxPolicy;
 use tokio_util::sync::CancellationToken;
 
 use crate::AuthManager;
 use crate::SandboxState;
 use crate::config::Config;
 use crate::features::Feature;
-use crate::mcp::CODEX_APPS_MCP_SERVER_NAME;
+use crate::mcp::RUNE_APPS_MCP_SERVER_NAME;
 use crate::mcp::auth::compute_auth_statuses;
-use crate::mcp::with_codex_apps_mcp;
+use crate::mcp::with_rune_apps_mcp;
 use crate::mcp_connection_manager::DEFAULT_STARTUP_TIMEOUT;
 use crate::mcp_connection_manager::McpConnectionManager;
 
@@ -26,7 +26,7 @@ pub async fn list_accessible_connectors_from_mcp_tools(
 
     let auth_manager = auth_manager_from_config(config);
     let auth = auth_manager.auth().await;
-    let mcp_servers = with_codex_apps_mcp(HashMap::new(), true, auth.as_ref(), config);
+    let mcp_servers = with_rune_apps_mcp(HashMap::new(), true, auth.as_ref(), config);
     if mcp_servers.is_empty() {
         return Ok(Vec::new());
     }
@@ -41,7 +41,7 @@ pub async fn list_accessible_connectors_from_mcp_tools(
 
     let sandbox_state = SandboxState {
         sandbox_policy: SandboxPolicy::ReadOnly,
-        codex_linux_sandbox_exe: config.codex_linux_sandbox_exe.clone(),
+        rune_linux_sandbox_exe: config.rune_linux_sandbox_exe.clone(),
         sandbox_cwd: env::current_dir().unwrap_or_else(|_| PathBuf::from("/")),
         use_linux_sandbox_bwrap: config.features.enabled(Feature::UseLinuxSandboxBwrap),
     };
@@ -57,10 +57,10 @@ pub async fn list_accessible_connectors_from_mcp_tools(
         )
         .await;
 
-    if let Some(cfg) = mcp_servers.get(CODEX_APPS_MCP_SERVER_NAME) {
+    if let Some(cfg) = mcp_servers.get(RUNE_APPS_MCP_SERVER_NAME) {
         let timeout = cfg.startup_timeout_sec.unwrap_or(DEFAULT_STARTUP_TIMEOUT);
         mcp_connection_manager
-            .wait_for_server_ready(CODEX_APPS_MCP_SERVER_NAME, timeout)
+            .wait_for_server_ready(RUNE_APPS_MCP_SERVER_NAME, timeout)
             .await;
     }
 
@@ -72,7 +72,7 @@ pub async fn list_accessible_connectors_from_mcp_tools(
 
 fn auth_manager_from_config(config: &Config) -> std::sync::Arc<AuthManager> {
     AuthManager::shared(
-        config.codex_home.clone(),
+        config.rune_home.clone(),
         false,
         config.cli_auth_credentials_store_mode,
     )
@@ -90,7 +90,7 @@ pub(crate) fn accessible_connectors_from_mcp_tools(
     mcp_tools: &HashMap<String, crate::mcp_connection_manager::ToolInfo>,
 ) -> Vec<AppInfo> {
     let tools = mcp_tools.values().filter_map(|tool| {
-        if tool.server_name != CODEX_APPS_MCP_SERVER_NAME {
+        if tool.server_name != RUNE_APPS_MCP_SERVER_NAME {
             return None;
         }
         let connector_id = tool.connector_id.as_deref()?;

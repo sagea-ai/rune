@@ -18,7 +18,7 @@ use crate::unified_exec::UnifiedExecProcessManager;
 use crate::unified_exec::UnifiedExecResponse;
 use crate::unified_exec::WriteStdinRequest;
 use async_trait::async_trait;
-use codex_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputBody;
 use serde::Deserialize;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -153,7 +153,7 @@ impl ToolHandler for UnifiedExecHandler {
                 if sandbox_permissions.requires_escalated_permissions()
                     && !matches!(
                         context.turn.approval_policy,
-                        codex_protocol::protocol::AskForApproval::OnRequest
+                        rune_protocol::protocol::AskForApproval::OnRequest
                     )
                 {
                     let approval_policy = context.turn.approval_policy;

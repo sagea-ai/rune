@@ -1,6 +1,6 @@
 # `rune-core` config loader
 
-This module is the canonical place to **load and describe Codex configuration layers** (user config, CLI/session overrides, managed config, and MDM-managed preferences) and to produce:
+This module is the canonical place to **load and describe Rune configuration layers** (user config, CLI/session overrides, managed config, and MDM-managed preferences) and to produce:
 
 - An **effective merged** TOML config.
 - **Per-key origins** metadata (which layer “wins” for a given key).
@@ -8,9 +8,9 @@ This module is the canonical place to **load and describe Codex configuration la
 
 ## Public surface
 
-Exported from `codex_core::config_loader`:
+Exported from `rune_core::config_loader`:
 
-- `load_config_layers_state(codex_home, cwd_opt, cli_overrides, overrides, cloud_requirements) -> ConfigLayerStack`
+- `load_config_layers_state(rune_home, cwd_opt, cli_overrides, overrides, cloud_requirements) -> ConfigLayerStack`
 - `ConfigLayerStack`
   - `effective_config() -> toml::Value`
   - `origins() -> HashMap<String, ConfigLayerMetadata>`
@@ -38,14 +38,14 @@ computing the effective config and origins metadata. This is what
 Most callers want the effective config plus metadata:
 
 ```rust
-use codex_core::config_loader::{load_config_layers_state, LoaderOverrides};
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_core::config_loader::{load_config_layers_state, LoaderOverrides};
+use rune_utils_absolute_path::AbsolutePathBuf;
 use toml::Value as TomlValue;
 
 let cli_overrides: Vec<(String, TomlValue)> = Vec::new();
 let cwd = AbsolutePathBuf::current_dir()?;
 let layers = load_config_layers_state(
-    &codex_home,
+    &rune_home,
     Some(cwd),
     &cli_overrides,
     LoaderOverrides::default(),

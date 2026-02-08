@@ -1,4 +1,4 @@
-use codex_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputBody;
 use std::collections::BTreeMap;
 use std::path::Path;
 
@@ -9,8 +9,8 @@ use crate::client_common::tools::FreeformTool;
 use crate::client_common::tools::FreeformToolFormat;
 use crate::client_common::tools::ResponsesApiTool;
 use crate::client_common::tools::ToolSpec;
-use crate::codex::Session;
-use crate::codex::TurnContext;
+use crate::rune::Session;
+use crate::rune::TurnContext;
 use crate::function_tool::FunctionCallError;
 use crate::tools::context::SharedTurnDiffTracker;
 use crate::tools::context::ToolInvocation;
@@ -28,9 +28,9 @@ use crate::tools::sandboxing::ToolCtx;
 use crate::tools::spec::ApplyPatchToolArgs;
 use crate::tools::spec::JsonSchema;
 use async_trait::async_trait;
-use codex_apply_patch::ApplyPatchAction;
-use codex_apply_patch::ApplyPatchFileChange;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_apply_patch::ApplyPatchAction;
+use rune_apply_patch::ApplyPatchFileChange;
+use rune_utils_absolute_path::AbsolutePathBuf;
 
 pub struct ApplyPatchHandler;
 
@@ -104,8 +104,8 @@ impl ToolHandler for ApplyPatchHandler {
         // Avoid building temporary ExecParams/command vectors; derive directly from inputs.
         let cwd = turn.cwd.clone();
         let command = vec!["apply_patch".to_string(), patch_input.clone()];
-        match codex_apply_patch::maybe_parse_apply_patch_verified(&command, &cwd) {
-            codex_apply_patch::MaybeApplyPatchVerified::Body(changes) => {
+        match rune_apply_patch::maybe_parse_apply_patch_verified(&command, &cwd) {
+            rune_apply_patch::MaybeApplyPatchVerified::Body(changes) => {
                 match apply_patch::apply_patch(turn.as_ref(), changes).await {
                     InternalApplyPatchInvocation::Output(item) => {
                         let content = item?;
@@ -133,7 +133,7 @@ impl ToolHandler for ApplyPatchHandler {
                             changes,
                             exec_approval_requirement: apply.exec_approval_requirement,
                             timeout_ms: None,
-                            codex_exe: turn.codex_linux_sandbox_exe.clone(),
+                            rune_exe: turn.rune_linux_sandbox_exe.clone(),
                         };
 
                         let mut orchestrator = ToolOrchestrator::new();
@@ -161,18 +161,18 @@ impl ToolHandler for ApplyPatchHandler {
                     }
                 }
             }
-            codex_apply_patch::MaybeApplyPatchVerified::CorrectnessError(parse_error) => {
+            rune_apply_patch::MaybeApplyPatchVerified::CorrectnessError(parse_error) => {
                 Err(FunctionCallError::RespondToModel(format!(
                     "apply_patch verification failed: {parse_error}"
                 )))
             }
-            codex_apply_patch::MaybeApplyPatchVerified::ShellParseError(error) => {
+            rune_apply_patch::MaybeApplyPatchVerified::ShellParseError(error) => {
                 tracing::trace!("Failed to parse apply_patch input, {error:?}");
                 Err(FunctionCallError::RespondToModel(
                     "apply_patch handler received invalid patch input".to_string(),
                 ))
             }
-            codex_apply_patch::MaybeApplyPatchVerified::NotApplyPatch => {
+            rune_apply_patch::MaybeApplyPatchVerified::NotApplyPatch => {
                 Err(FunctionCallError::RespondToModel(
                     "apply_patch handler received non-apply_patch input".to_string(),
                 ))
@@ -192,8 +192,8 @@ pub(crate) async fn intercept_apply_patch(
     call_id: &str,
     tool_name: &str,
 ) -> Result<Option<ToolOutput>, FunctionCallError> {
-    match codex_apply_patch::maybe_parse_apply_patch_verified(command, cwd) {
-        codex_apply_patch::MaybeApplyPatchVerified::Body(changes) => {
+    match rune_apply_patch::maybe_parse_apply_patch_verified(command, cwd) {
+        rune_apply_patch::MaybeApplyPatchVerified::Body(changes) => {
             session
                 .record_model_warning(
                     format!("apply_patch was requested via {tool_name}. Use the apply_patch tool instead of exec_command."),
@@ -222,7 +222,7 @@ pub(crate) async fn intercept_apply_patch(
                         changes,
                         exec_approval_requirement: apply.exec_approval_requirement,
                         timeout_ms,
-                        codex_exe: turn.codex_linux_sandbox_exe.clone(),
+                        rune_exe: turn.rune_linux_sandbox_exe.clone(),
                     };
 
                     let mut orchestrator = ToolOrchestrator::new();
@@ -246,16 +246,16 @@ pub(crate) async fn intercept_apply_patch(
                 }
             }
         }
-        codex_apply_patch::MaybeApplyPatchVerified::CorrectnessError(parse_error) => {
+        rune_apply_patch::MaybeApplyPatchVerified::CorrectnessError(parse_error) => {
             Err(FunctionCallError::RespondToModel(format!(
                 "apply_patch verification failed: {parse_error}"
             )))
         }
-        codex_apply_patch::MaybeApplyPatchVerified::ShellParseError(error) => {
+        rune_apply_patch::MaybeApplyPatchVerified::ShellParseError(error) => {
             tracing::trace!("Failed to parse apply_patch input, {error:?}");
             Ok(None)
         }
-        codex_apply_patch::MaybeApplyPatchVerified::NotApplyPatch => Ok(None),
+        rune_apply_patch::MaybeApplyPatchVerified::NotApplyPatch => Ok(None),
     }
 }
 
@@ -366,7 +366,7 @@ It is important to remember:
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_apply_patch::MaybeApplyPatchVerified;
+    use rune_apply_patch::MaybeApplyPatchVerified;
     use pretty_assertions::assert_eq;
     use tempfile::TempDir;
 
@@ -385,7 +385,7 @@ mod tests {
 +new content
 *** End Patch"#;
         let argv = vec!["apply_patch".to_string(), patch.to_string()];
-        let action = match codex_apply_patch::maybe_parse_apply_patch_verified(&argv, cwd) {
+        let action = match rune_apply_patch::maybe_parse_apply_patch_verified(&argv, cwd) {
             MaybeApplyPatchVerified::Body(action) => action,
             other => panic!("expected patch body, got: {other:?}"),
         };

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::codex::TurnContext;
+use crate::rune::TurnContext;
 use crate::protocol::EventMsg;
 use crate::protocol::UndoCompletedEvent;
 use crate::protocol::UndoStartedEvent;
@@ -8,10 +8,10 @@ use crate::state::TaskKind;
 use crate::tasks::SessionTask;
 use crate::tasks::SessionTaskContext;
 use async_trait::async_trait;
-use codex_git::RestoreGhostCommitOptions;
-use codex_git::restore_ghost_commit_with_options;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::user_input::UserInput;
+use rune_git::RestoreGhostCommitOptions;
+use rune_git::restore_ghost_commit_with_options;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::user_input::UserInput;
 use tokio_util::sync::CancellationToken;
 use tracing::error;
 use tracing::info;
@@ -42,7 +42,7 @@ impl SessionTask for UndoTask {
             .session
             .services
             .otel_manager
-            .counter("codex.task.undo", 1, &[]);
+            .counter("rune.task.undo", 1, &[]);
         let sess = session.clone_session();
         sess.send_event(
             ctx.as_ref(),

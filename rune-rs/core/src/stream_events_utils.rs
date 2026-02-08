@@ -1,23 +1,23 @@
 use std::pin::Pin;
 use std::sync::Arc;
 
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::items::TurnItem;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::items::TurnItem;
 use tokio_util::sync::CancellationToken;
 
-use crate::codex::Session;
-use crate::codex::TurnContext;
-use crate::error::CodexErr;
+use crate::rune::Session;
+use crate::rune::TurnContext;
+use crate::error::RuneErr;
 use crate::error::Result;
 use crate::function_tool::FunctionCallError;
 use crate::parse_turn_item;
 use crate::proposed_plan_parser::strip_proposed_plan_blocks;
 use crate::tools::parallel::ToolCallRuntime;
 use crate::tools::router::ToolRouter;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ResponseItem;
+use rune_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputPayload;
+use rune_protocol::models::ResponseInputItem;
+use rune_protocol::models::ResponseItem;
 use futures::Future;
 use tracing::debug;
 use tracing::instrument;
@@ -151,7 +151,7 @@ pub(crate) async fn handle_output_item_done(
         }
         // A fatal error occurred; surface it back into history.
         Err(FunctionCallError::Fatal(message)) => {
-            return Err(CodexErr::Fatal(message));
+            return Err(RuneErr::Fatal(message));
         }
     }
 
@@ -174,12 +174,12 @@ pub(crate) async fn handle_non_tool_response_item(
                     .content
                     .iter()
                     .map(|entry| match entry {
-                        codex_protocol::items::AgentMessageContent::Text { text } => text.as_str(),
+                        rune_protocol::items::AgentMessageContent::Text { text } => text.as_str(),
                     })
                     .collect::<String>();
                 let stripped = strip_proposed_plan_blocks(&combined);
                 agent_message.content =
-                    vec![codex_protocol::items::AgentMessageContent::Text { text: stripped }];
+                    vec![rune_protocol::items::AgentMessageContent::Text { text: stripped }];
             }
             Some(turn_item)
         }
@@ -201,7 +201,7 @@ pub(crate) fn last_assistant_message_from_item(
         let combined = content
             .iter()
             .filter_map(|ci| match ci {
-                codex_protocol::models::ContentItem::OutputText { text } => Some(text.as_str()),
+                rune_protocol::models::ContentItem::OutputText { text } => Some(text.as_str()),
                 _ => None,
             })
             .collect::<String>();

@@ -1,8 +1,8 @@
 #![cfg(not(target_os = "windows"))]
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
-use codex_utils_cargo_bin::find_resource;
-use core_test_support::test_codex_exec::test_codex_exec;
+use rune_utils_cargo_bin::find_resource;
+use core_test_support::test_rune_exec::test_rune_exec;
 use walkdir::WalkDir;
 
 fn session_rollout_count(home_path: &std::path::Path) -> usize {
@@ -21,11 +21,11 @@ fn session_rollout_count(home_path: &std::path::Path) -> usize {
 
 #[test]
 fn persists_rollout_file_by_default() -> anyhow::Result<()> {
-    let test = test_codex_exec();
+    let test = test_rune_exec();
     let fixture = find_resource!("tests/fixtures/cli_responses_fixture.sse")?;
 
     test.cmd()
-        .env("CODEX_RS_SSE_FIXTURE", &fixture)
+        .env("RUNE_RS_SSE_FIXTURE", &fixture)
         .env("OPENAI_BASE_URL", "http://unused.local")
         .arg("--skip-git-repo-check")
         .arg("default persistence behavior")
@@ -38,11 +38,11 @@ fn persists_rollout_file_by_default() -> anyhow::Result<()> {
 
 #[test]
 fn does_not_persist_rollout_file_in_ephemeral_mode() -> anyhow::Result<()> {
-    let test = test_codex_exec();
+    let test = test_rune_exec();
     let fixture = find_resource!("tests/fixtures/cli_responses_fixture.sse")?;
 
     test.cmd()
-        .env("CODEX_RS_SSE_FIXTURE", &fixture)
+        .env("RUNE_RS_SSE_FIXTURE", &fixture)
         .env("OPENAI_BASE_URL", "http://unused.local")
         .arg("--skip-git-repo-check")
         .arg("--ephemeral")

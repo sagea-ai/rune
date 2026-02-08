@@ -1,15 +1,15 @@
-use codex_common::CliConfigOverrides;
-use codex_core::CodexAuth;
-use codex_core::auth::AuthCredentialsStoreMode;
-use codex_core::auth::AuthMode;
-use codex_core::auth::CLIENT_ID;
-use codex_core::auth::login_with_api_key;
-use codex_core::auth::logout;
-use codex_core::config::Config;
-use codex_login::ServerOptions;
-use codex_login::run_device_code_login;
-use codex_login::run_login_server;
-use codex_protocol::config_types::ForcedLoginMethod;
+use rune_common::CliConfigOverrides;
+use rune_core::RuneAuth;
+use rune_core::auth::AuthCredentialsStoreMode;
+use rune_core::auth::AuthMode;
+use rune_core::auth::CLIENT_ID;
+use rune_core::auth::login_with_api_key;
+use rune_core::auth::logout;
+use rune_core::config::Config;
+use rune_login::ServerOptions;
+use rune_login::run_device_code_login;
+use rune_login::run_login_server;
+use rune_protocol::config_types::ForcedLoginMethod;
 use std::io::IsTerminal;
 use std::io::Read;
 use std::path::PathBuf;
@@ -27,12 +27,12 @@ fn print_login_server_start(actual_port: u16, auth_url: &str) {
 }
 
 pub async fn login_with_chatgpt(
-    codex_home: PathBuf,
+    rune_home: PathBuf,
     forced_chatgpt_workspace_id: Option<String>,
     cli_auth_credentials_store_mode: AuthCredentialsStoreMode,
 ) -> std::io::Result<()> {
     let opts = ServerOptions::new(
-        codex_home,
+        rune_home,
         CLIENT_ID.to_string(),
         forced_chatgpt_workspace_id,
         cli_auth_credentials_store_mode,
@@ -55,7 +55,7 @@ pub async fn run_login_with_chatgpt(cli_config_overrides: CliConfigOverrides) ->
     let forced_chatgpt_workspace_id = config.forced_chatgpt_workspace_id.clone();
 
     match login_with_chatgpt(
-        config.codex_home,
+        config.rune_home,
         forced_chatgpt_workspace_id,
         config.cli_auth_credentials_store_mode,
     )
@@ -84,7 +84,7 @@ pub async fn run_login_with_api_key(
     }
 
     match login_with_api_key(
-        &config.codex_home,
+        &config.rune_home,
         &api_key,
         config.cli_auth_credentials_store_mode,
     ) {
@@ -104,7 +104,7 @@ pub fn read_api_key_from_stdin() -> String {
 
     if stdin.is_terminal() {
         eprintln!(
-            "--with-api-key expects the API key on stdin. Try piping it, e.g. `printenv OPENAI_API_KEY | codex login --with-api-key`."
+            "--with-api-key expects the API key on stdin. Try piping it, e.g. `printenv OPENAI_API_KEY | rune login --with-api-key`."
         );
         std::process::exit(1);
     }
@@ -139,7 +139,7 @@ pub async fn run_login_with_device_code(
     }
     let forced_chatgpt_workspace_id = config.forced_chatgpt_workspace_id.clone();
     let mut opts = ServerOptions::new(
-        config.codex_home,
+        config.rune_home,
         client_id.unwrap_or(CLIENT_ID.to_string()),
         forced_chatgpt_workspace_id,
         config.cli_auth_credentials_store_mode,
@@ -160,7 +160,7 @@ pub async fn run_login_with_device_code(
 }
 
 /// Prefers device-code login (with `open_browser = false`) when headless environment is detected, but keeps
-/// `codex login` working in environments where device-code may be disabled/feature-gated.
+/// `rune login` working in environments where device-code may be disabled/feature-gated.
 /// If `run_device_code_login` returns `ErrorKind::NotFound` ("device-code unsupported"), this
 /// falls back to starting the local browser login server.
 pub async fn run_login_with_device_code_fallback_to_browser(
@@ -176,7 +176,7 @@ pub async fn run_login_with_device_code_fallback_to_browser(
 
     let forced_chatgpt_workspace_id = config.forced_chatgpt_workspace_id.clone();
     let mut opts = ServerOptions::new(
-        config.codex_home,
+        config.rune_home,
         client_id.unwrap_or(CLIENT_ID.to_string()),
         forced_chatgpt_workspace_id,
         config.cli_auth_credentials_store_mode,
@@ -224,7 +224,7 @@ pub async fn run_login_with_device_code_fallback_to_browser(
 pub async fn run_login_status(cli_config_overrides: CliConfigOverrides) -> ! {
     let config = load_config_or_exit(cli_config_overrides).await;
 
-    match CodexAuth::from_auth_storage(&config.codex_home, config.cli_auth_credentials_store_mode) {
+    match RuneAuth::from_auth_storage(&config.rune_home, config.cli_auth_credentials_store_mode) {
         Ok(Some(auth)) => match auth.auth_mode() {
             AuthMode::ApiKey => match auth.get_token() {
                 Ok(api_key) => {
@@ -255,7 +255,7 @@ pub async fn run_login_status(cli_config_overrides: CliConfigOverrides) -> ! {
 pub async fn run_logout(cli_config_overrides: CliConfigOverrides) -> ! {
     let config = load_config_or_exit(cli_config_overrides).await;
 
-    match logout(&config.codex_home, config.cli_auth_credentials_store_mode) {
+    match logout(&config.rune_home, config.cli_auth_credentials_store_mode) {
         Ok(true) => {
             eprintln!("Successfully logged out");
             std::process::exit(0);

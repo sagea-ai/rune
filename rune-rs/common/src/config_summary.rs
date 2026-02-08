@@ -1,5 +1,5 @@
-use codex_core::WireApi;
-use codex_core::config::Config;
+use rune_core::WireApi;
+use rune_core::config::Config;
 
 use crate::sandbox_summary::summarize_sandbox_policy;
 

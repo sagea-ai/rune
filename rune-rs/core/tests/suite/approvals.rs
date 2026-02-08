@@ -1,19 +1,19 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use anyhow::Result;
-use codex_core::config::Constrained;
-use codex_core::features::Feature;
-use codex_core::protocol::ApplyPatchApprovalRequestEvent;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ExecApprovalRequestEvent;
-use codex_core::protocol::ExecPolicyAmendment;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_core::sandboxing::SandboxPermissions;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::user_input::UserInput;
+use rune_core::config::Constrained;
+use rune_core::features::Feature;
+use rune_core::protocol::ApplyPatchApprovalRequestEvent;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ExecApprovalRequestEvent;
+use rune_core::protocol::ExecPolicyAmendment;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_core::sandboxing::SandboxPermissions;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::protocol::ReviewDecision;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses::ev_apply_patch_function_call;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -23,8 +23,8 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRune;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use regex_lite::Regex;
@@ -46,7 +46,7 @@ enum TargetPath {
 }
 
 impl TargetPath {
-    fn resolve_for_patch(self, test: &TestCodex) -> (PathBuf, String) {
+    fn resolve_for_patch(self, test: &TestRune) -> (PathBuf, String) {
         match self {
             TargetPath::Workspace(name) => {
                 let path = test.cwd.path().join(name);
@@ -95,7 +95,7 @@ const DEFAULT_UNIFIED_EXEC_JUSTIFICATION: &str =
 impl ActionKind {
     async fn prepare(
         &self,
-        test: &TestCodex,
+        test: &TestRune,
         server: &MockServer,
         call_id: &str,
         sandbox_permissions: SandboxPermissions,
@@ -257,7 +257,7 @@ enum Expectation {
 }
 
 impl Expectation {
-    fn verify(&self, test: &TestCodex, result: &CommandResult) -> Result<()> {
+    fn verify(&self, test: &TestRune, result: &CommandResult) -> Result<()> {
         match self {
             Expectation::FileCreated { target, content } => {
                 let (path, _) = target.resolve_for_patch(test);
@@ -481,14 +481,14 @@ struct CommandResult {
 }
 
 async fn submit_turn(
-    test: &TestCodex,
+    test: &TestRune,
     prompt: &str,
     approval_policy: AskForApproval,
     sandbox_policy: SandboxPolicy,
 ) -> Result<()> {
     let session_model = test.session_configured.model.clone();
 
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: prompt.into(),
@@ -550,10 +550,10 @@ fn parse_result(item: &Value) -> CommandResult {
 }
 
 async fn expect_exec_approval(
-    test: &TestCodex,
+    test: &TestRune,
     expected_command: &str,
 ) -> ExecApprovalRequestEvent {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.rune, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -577,10 +577,10 @@ async fn expect_exec_approval(
 }
 
 async fn expect_patch_approval(
-    test: &TestCodex,
+    test: &TestRune,
     expected_call_id: &str,
 ) -> ApplyPatchApprovalRequestEvent {
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.rune, |event| {
         matches!(
             event,
             EventMsg::ApplyPatchApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -598,8 +598,8 @@ async fn expect_patch_approval(
     }
 }
 
-async fn wait_for_completion_without_approval(test: &TestCodex) {
-    let event = wait_for_event(&test.codex, |event| {
+async fn wait_for_completion_without_approval(test: &TestRune) {
+    let event = wait_for_event(&test.rune, |event| {
         matches!(
             event,
             EventMsg::ExecApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -616,8 +616,8 @@ async fn wait_for_completion_without_approval(test: &TestCodex) {
     }
 }
 
-async fn wait_for_completion(test: &TestCodex) {
-    wait_for_event(&test.codex, |event| {
+async fn wait_for_completion(test: &TestRune) {
+    wait_for_event(&test.rune, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1052,7 +1052,7 @@ fn scenarios() -> Vec<ScenarioSpec> {
             },
             sandbox_permissions: SandboxPermissions::UseDefault,
             features: vec![],
-            model_override: Some("gpt-5.1-codex"),
+            model_override: Some("gpt-5.1-rune"),
             outcome: Outcome::Auto,
             expectation: Expectation::PatchApplied {
                 target: TargetPath::Workspace("apply_patch_function.txt"),
@@ -1069,7 +1069,7 @@ fn scenarios() -> Vec<ScenarioSpec> {
             },
             sandbox_permissions: SandboxPermissions::UseDefault,
             features: vec![Feature::ApplyPatchFreeform],
-            model_override: Some("gpt-5.1-codex"),
+            model_override: Some("gpt-5.1-rune"),
             outcome: Outcome::Auto,
             expectation: Expectation::PatchApplied {
                 target: TargetPath::OutsideWorkspace("apply_patch_function_danger.txt"),
@@ -1086,7 +1086,7 @@ fn scenarios() -> Vec<ScenarioSpec> {
             },
             sandbox_permissions: SandboxPermissions::UseDefault,
             features: vec![],
-            model_override: Some("gpt-5.1-codex"),
+            model_override: Some("gpt-5.1-rune"),
             outcome: Outcome::PatchApproval {
                 decision: ReviewDecision::Approved,
                 expected_reason: None,
@@ -1106,7 +1106,7 @@ fn scenarios() -> Vec<ScenarioSpec> {
             },
             sandbox_permissions: SandboxPermissions::UseDefault,
             features: vec![],
-            model_override: Some("gpt-5.1-codex"),
+            model_override: Some("gpt-5.1-rune"),
             outcome: Outcome::PatchApproval {
                 decision: ReviewDecision::Denied,
                 expected_reason: None,
@@ -1146,7 +1146,7 @@ fn scenarios() -> Vec<ScenarioSpec> {
             },
             sandbox_permissions: SandboxPermissions::UseDefault,
             features: vec![],
-            model_override: Some("gpt-5.1-codex"),
+            model_override: Some("gpt-5.1-rune"),
             outcome: Outcome::PatchApproval {
                 decision: ReviewDecision::Approved,
                 expected_reason: None,
@@ -1166,7 +1166,7 @@ fn scenarios() -> Vec<ScenarioSpec> {
             },
             sandbox_permissions: SandboxPermissions::UseDefault,
             features: vec![],
-            model_override: Some("gpt-5.1-codex"),
+            model_override: Some("gpt-5.1-rune"),
             outcome: Outcome::Auto,
             expectation: Expectation::FileNotCreated {
                 target: TargetPath::OutsideWorkspace("apply_patch_function_never.txt"),
@@ -1465,7 +1465,7 @@ async fn run_scenario(scenario: &ScenarioSpec) -> Result<()> {
     let model_override = scenario.model_override;
     let model = model_override.unwrap_or("gpt-5.1");
 
-    let mut builder = test_codex().with_model(model).with_config(move |config| {
+    let mut builder = test_rune().with_model(model).with_config(move |config| {
         config.approval_policy = Constrained::allow_any(approval_policy);
         config.sandbox_policy = Constrained::allow_any(sandbox_policy.clone());
         for feature in features {
@@ -1526,7 +1526,7 @@ async fn run_scenario(scenario: &ScenarioSpec) -> Result<()> {
                     scenario.name
                 );
             }
-            test.codex
+            test.rune
                 .submit(Op::ExecApproval {
                     id: "0".into(),
                     decision: decision.clone(),
@@ -1547,7 +1547,7 @@ async fn run_scenario(scenario: &ScenarioSpec) -> Result<()> {
                     scenario.name
                 );
             }
-            test.codex
+            test.rune
                 .submit(Op::PatchApproval {
                     id: "0".into(),
                     decision: decision.clone(),
@@ -1579,8 +1579,8 @@ async fn approving_apply_patch_for_session_skips_future_prompts_for_same_file() 
     };
     let sandbox_policy_for_config = sandbox_policy.clone();
 
-    let mut builder = test_codex()
-        .with_model("gpt-5.1-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5.1-rune")
         .with_config(move |config| {
             config.approval_policy = Constrained::allow_any(approval_policy);
             config.sandbox_policy = Constrained::allow_any(sandbox_policy_for_config);
@@ -1625,7 +1625,7 @@ async fn approving_apply_patch_for_session_skips_future_prompts_for_same_file() 
     )
     .await?;
     let _ = expect_patch_approval(&test, call_id_1).await;
-    test.codex
+    test.rune
         .submit(Op::PatchApproval {
             id: "0".into(),
             decision: ReviewDecision::ApprovedForSession,
@@ -1660,7 +1660,7 @@ async fn approving_apply_patch_for_session_skips_future_prompts_for_same_file() 
     )
     .await?;
 
-    let event = wait_for_event(&test.codex, |event| {
+    let event = wait_for_event(&test.rune, |event| {
         matches!(
             event,
             EventMsg::ApplyPatchApprovalRequest(_) | EventMsg::TurnComplete(_)
@@ -1688,7 +1688,7 @@ async fn approving_execpolicy_amendment_persists_policy_and_skips_future_prompts
     let approval_policy = AskForApproval::UnlessTrusted;
     let sandbox_policy = SandboxPolicy::ReadOnly;
     let sandbox_policy_for_config = sandbox_policy.clone();
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.approval_policy = Constrained::allow_any(approval_policy);
         config.sandbox_policy = Constrained::allow_any(sandbox_policy_for_config);
     });
@@ -1744,7 +1744,7 @@ async fn approving_execpolicy_amendment_persists_policy_and_skips_future_prompts
         Some(expected_execpolicy_amendment.clone())
     );
 
-    test.codex
+    test.rune
         .submit(Op::ExecApproval {
             id: "0".into(),
             decision: ReviewDecision::ApprovedExecpolicyAmendment {

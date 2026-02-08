@@ -1,21 +1,21 @@
 use anyhow::Result;
-use codex_core::features::Feature;
-use codex_protocol::ThreadId;
-use codex_protocol::dynamic_tools::DynamicToolSpec;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::SessionMeta;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::UserMessageEvent;
+use rune_core::features::Feature;
+use rune_protocol::ThreadId;
+use rune_protocol::dynamic_tools::DynamicToolSpec;
+use rune_protocol::protocol::EventMsg;
+use rune_protocol::protocol::RolloutItem;
+use rune_protocol::protocol::RolloutLine;
+use rune_protocol::protocol::SessionMeta;
+use rune_protocol::protocol::SessionMetaLine;
+use rune_protocol::protocol::SessionSource;
+use rune_protocol::protocol::UserMessageEvent;
 use core_test_support::responses;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_function_call;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::start_mock_server;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use pretty_assertions::assert_eq;
 use serde_json::json;
 use std::fs;
@@ -26,14 +26,14 @@ use uuid::Uuid;
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn new_thread_is_recorded_in_state_db() -> Result<()> {
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_rune().with_config(|config| {
         config.features.enable(Feature::Sqlite);
     });
     let test = builder.build(&server).await?;
 
     let thread_id = test.session_configured.session_id;
-    let rollout_path = test.codex.rollout_path().expect("rollout path");
-    let db_path = codex_state::state_db_path(test.config.codex_home.as_path());
+    let rollout_path = test.rune.rollout_path().expect("rollout path");
+    let db_path = rune_state::state_db_path(test.config.rune_home.as_path());
 
     for _ in 0..100 {
         if tokio::fs::try_exists(&db_path).await.unwrap_or(false) {
@@ -42,7 +42,7 @@ async fn new_thread_is_recorded_in_state_db() -> Result<()> {
         tokio::time::sleep(Duration::from_millis(25)).await;
     }
 
-    let db = test.codex.state_db().expect("state db enabled");
+    let db = test.rune.state_db().expect("state db enabled");
     assert!(
         !rollout_path.exists(),
         "fresh thread rollout should not be materialized before first user message"
@@ -107,9 +107,9 @@ async fn backfill_scans_existing_rollouts() -> Result<()> {
     ];
     let dynamic_tools_for_hook = dynamic_tools.clone();
 
-    let mut builder = test_codex()
-        .with_pre_build_hook(move |codex_home| {
-            let rollout_path = codex_home.join(&rollout_rel_path_for_hook);
+    let mut builder = test_rune()
+        .with_pre_build_hook(move |rune_home| {
+            let rollout_path = rune_home.join(&rollout_rel_path_for_hook);
             let parent = rollout_path
                 .parent()
                 .expect("rollout path should have parent");
@@ -119,7 +119,7 @@ async fn backfill_scans_existing_rollouts() -> Result<()> {
                     id: thread_id,
                     forked_from_id: None,
                     timestamp: "2026-01-27T12:00:00Z".to_string(),
-                    cwd: codex_home.to_path_buf(),
+                    cwd: rune_home.to_path_buf(),
                     originator: "test".to_string(),
                     cli_version: "test".to_string(),
                     source: SessionSource::default(),
@@ -159,8 +159,8 @@ async fn backfill_scans_existing_rollouts() -> Result<()> {
 
     let test = builder.build(&server).await?;
 
-    let db_path = codex_state::state_db_path(test.config.codex_home.as_path());
-    let rollout_path = test.config.codex_home.join(&rollout_rel_path);
+    let db_path = rune_state::state_db_path(test.config.rune_home.as_path());
+    let rollout_path = test.config.rune_home.join(&rollout_rel_path);
     let default_provider = test.config.model_provider_id.clone();
 
     for _ in 0..20 {
@@ -170,7 +170,7 @@ async fn backfill_scans_existing_rollouts() -> Result<()> {
         tokio::time::sleep(Duration::from_millis(25)).await;
     }
 
-    let db = test.codex.state_db().expect("state db enabled");
+    let db = test.rune.state_db().expect("state db enabled");
 
     let mut metadata = None;
     for _ in 0..40 {
@@ -213,12 +213,12 @@ async fn user_messages_persist_in_state_db() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_rune().with_config(|config| {
         config.features.enable(Feature::Sqlite);
     });
     let test = builder.build(&server).await?;
 
-    let db_path = codex_state::state_db_path(test.config.codex_home.as_path());
+    let db_path = rune_state::state_db_path(test.config.rune_home.as_path());
     for _ in 0..100 {
         if tokio::fs::try_exists(&db_path).await.unwrap_or(false) {
             break;
@@ -229,7 +229,7 @@ async fn user_messages_persist_in_state_db() -> Result<()> {
     test.submit_turn("hello from sqlite").await?;
     test.submit_turn("another message").await?;
 
-    let db = test.codex.state_db().expect("state db enabled");
+    let db = test.rune.state_db().expect("state db enabled");
     let thread_id = test.session_configured.session_id;
 
     let mut metadata = None;
@@ -274,14 +274,14 @@ async fn tool_call_logs_include_thread_id() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_rune().with_config(|config| {
         config.features.enable(Feature::Sqlite);
     });
     let test = builder.build(&server).await?;
-    let db = test.codex.state_db().expect("state db enabled");
+    let db = test.rune.state_db().expect("state db enabled");
     let expected_thread_id = test.session_configured.session_id.to_string();
 
-    let subscriber = tracing_subscriber::registry().with(codex_state::log_db::start(db.clone()));
+    let subscriber = tracing_subscriber::registry().with(rune_state::log_db::start(db.clone()));
     let dispatch = tracing::Dispatch::new(subscriber);
     let _guard = tracing::dispatcher::set_default(&dispatch);
 
@@ -294,7 +294,7 @@ async fn tool_call_logs_include_thread_id() -> Result<()> {
 
     let mut found = None;
     for _ in 0..80 {
-        let query = codex_state::LogQuery {
+        let query = rune_state::LogQuery {
             descending: true,
             limit: Some(20),
             ..Default::default()

@@ -9,17 +9,17 @@ use crate::config_loader::ConfigLayerStack;
 use crate::config_loader::ConfigLayerStackOrdering;
 use crate::is_dangerous_command::command_might_be_dangerous;
 use crate::is_safe_command::is_known_safe_command;
-use codex_execpolicy::AmendError;
-use codex_execpolicy::Decision;
-use codex_execpolicy::Error as ExecPolicyRuleError;
-use codex_execpolicy::Evaluation;
-use codex_execpolicy::Policy;
-use codex_execpolicy::PolicyParser;
-use codex_execpolicy::RuleMatch;
-use codex_execpolicy::blocking_append_allow_prefix_rule;
-use codex_protocol::approvals::ExecPolicyAmendment;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::SandboxPolicy;
+use rune_execpolicy::AmendError;
+use rune_execpolicy::Decision;
+use rune_execpolicy::Error as ExecPolicyRuleError;
+use rune_execpolicy::Evaluation;
+use rune_execpolicy::Policy;
+use rune_execpolicy::PolicyParser;
+use rune_execpolicy::RuleMatch;
+use rune_execpolicy::blocking_append_allow_prefix_rule;
+use rune_protocol::approvals::ExecPolicyAmendment;
+use rune_protocol::protocol::AskForApproval;
+use rune_protocol::protocol::SandboxPolicy;
 use thiserror::Error;
 use tokio::fs;
 use tokio::task::spawn_blocking;
@@ -59,7 +59,7 @@ pub enum ExecPolicyError {
     #[error("failed to parse rules file {path}: {source}")]
     ParsePolicy {
         path: String,
-        source: codex_execpolicy::Error,
+        source: rune_execpolicy::Error,
     },
 }
 
@@ -170,10 +170,10 @@ impl ExecPolicyManager {
 
     pub(crate) async fn append_amendment_and_update(
         &self,
-        codex_home: &Path,
+        rune_home: &Path,
         amendment: &ExecPolicyAmendment,
     ) -> Result<(), ExecPolicyUpdateError> {
-        let policy_path = default_policy_path(codex_home);
+        let policy_path = default_policy_path(rune_home);
         let prefix = amendment.command.clone();
         spawn_blocking({
             let policy_path = policy_path.clone();
@@ -330,8 +330,8 @@ pub fn render_decision_for_unmatched_command(
     }
 }
 
-fn default_policy_path(codex_home: &Path) -> PathBuf {
-    codex_home.join(RULES_DIR_NAME).join(DEFAULT_POLICY_FILE)
+fn default_policy_path(rune_home: &Path) -> PathBuf {
+    rune_home.join(RULES_DIR_NAME).join(DEFAULT_POLICY_FILE)
 }
 
 /// Derive a proposed execpolicy amendment when a command requires user approval
@@ -365,7 +365,7 @@ fn try_derive_execpolicy_amendment_for_prompt_rules(
         })
 }
 
-/// - Note: we only use this amendment when the command fails to run in sandbox and codex prompts the user to run outside the sandbox
+/// - Note: we only use this amendment when the command fails to run in sandbox and rune prompts the user to run outside the sandbox
 /// - The purpose of this amendment is to bypass sandbox for similar commands in the future
 /// - If any execpolicy rule matches, return None, because we would already be running command outside the sandbox
 fn try_derive_execpolicy_amendment_for_allow_rules(
@@ -531,10 +531,10 @@ mod tests {
     use crate::config_loader::ConfigRequirementsToml;
     use crate::features::Feature;
     use crate::features::Features;
-    use codex_app_server_protocol::ConfigLayerSource;
-    use codex_protocol::protocol::AskForApproval;
-    use codex_protocol::protocol::SandboxPolicy;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use rune_app_server_protocol::ConfigLayerSource;
+    use rune_protocol::protocol::AskForApproval;
+    use rune_protocol::protocol::SandboxPolicy;
+    use rune_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
     use std::fs;
     use std::path::Path;
@@ -542,11 +542,11 @@ mod tests {
     use tempfile::tempdir;
     use toml::Value as TomlValue;
 
-    fn config_stack_for_dot_codex_folder(dot_codex_folder: &Path) -> ConfigLayerStack {
-        let dot_codex_folder = AbsolutePathBuf::from_absolute_path(dot_codex_folder)
-            .expect("absolute dot_codex_folder");
+    fn config_stack_for_dot_rune_folder(dot_rune_folder: &Path) -> ConfigLayerStack {
+        let dot_rune_folder = AbsolutePathBuf::from_absolute_path(dot_rune_folder)
+            .expect("absolute dot_rune_folder");
         let layer = ConfigLayerEntry::new(
-            ConfigLayerSource::Project { dot_codex_folder },
+            ConfigLayerSource::Project { dot_rune_folder },
             TomlValue::Table(Default::default()),
         );
         ConfigLayerStack::new(
@@ -560,7 +560,7 @@ mod tests {
     #[tokio::test]
     async fn returns_empty_policy_when_no_policy_files_exist() {
         let temp_dir = tempdir().expect("create temp dir");
-        let config_stack = config_stack_for_dot_codex_folder(temp_dir.path());
+        let config_stack = config_stack_for_dot_rune_folder(temp_dir.path());
 
         let manager = ExecPolicyManager::load(&config_stack)
             .await
@@ -596,7 +596,7 @@ mod tests {
     #[tokio::test]
     async fn loads_policies_from_policy_subdirectory() {
         let temp_dir = tempdir().expect("create temp dir");
-        let config_stack = config_stack_for_dot_codex_folder(temp_dir.path());
+        let config_stack = config_stack_for_dot_rune_folder(temp_dir.path());
         let policy_dir = temp_dir.path().join(RULES_DIR_NAME);
         fs::create_dir_all(&policy_dir).expect("create policy dir");
         fs::write(
@@ -625,7 +625,7 @@ mod tests {
     #[tokio::test]
     async fn ignores_policies_outside_policy_dir() {
         let temp_dir = tempdir().expect("create temp dir");
-        let config_stack = config_stack_for_dot_codex_folder(temp_dir.path());
+        let config_stack = config_stack_for_dot_rune_folder(temp_dir.path());
         fs::write(
             temp_dir.path().join("root.rules"),
             r#"prefix_rule(pattern=["ls"], decision="prompt")"#,
@@ -658,10 +658,10 @@ mod tests {
             r#"prefix_rule(pattern=["ls"], decision="forbidden")"#,
         )?;
 
-        let project_dot_codex_folder = AbsolutePathBuf::from_absolute_path(project_dir.path())?;
+        let project_dot_rune_folder = AbsolutePathBuf::from_absolute_path(project_dir.path())?;
         let layers = vec![ConfigLayerEntry::new_disabled(
             ConfigLayerSource::Project {
-                dot_codex_folder: project_dot_codex_folder,
+                dot_rune_folder: project_dot_rune_folder,
             },
             TomlValue::Table(Default::default()),
             "marked untrusted",
@@ -708,7 +708,7 @@ mod tests {
 
         let user_config_toml =
             AbsolutePathBuf::from_absolute_path(user_dir.path().join("config.toml"))?;
-        let project_dot_codex_folder = AbsolutePathBuf::from_absolute_path(project_dir.path())?;
+        let project_dot_rune_folder = AbsolutePathBuf::from_absolute_path(project_dir.path())?;
         let layers = vec![
             ConfigLayerEntry::new(
                 ConfigLayerSource::User {
@@ -718,7 +718,7 @@ mod tests {
             ),
             ConfigLayerEntry::new(
                 ConfigLayerSource::Project {
-                    dot_codex_folder: project_dot_codex_folder,
+                    dot_rune_folder: project_dot_rune_folder,
                 },
                 TomlValue::Table(Default::default()),
             ),
@@ -981,12 +981,12 @@ prefix_rule(
 
     #[tokio::test]
     async fn append_execpolicy_amendment_updates_policy_and_file() {
-        let codex_home = tempdir().expect("create temp dir");
+        let rune_home = tempdir().expect("create temp dir");
         let prefix = vec!["echo".to_string(), "hello".to_string()];
         let manager = ExecPolicyManager::default();
 
         manager
-            .append_amendment_and_update(codex_home.path(), &ExecPolicyAmendment::from(prefix))
+            .append_amendment_and_update(rune_home.path(), &ExecPolicyAmendment::from(prefix))
             .await
             .expect("update policy");
         let updated_policy = manager.current();
@@ -1003,7 +1003,7 @@ prefix_rule(
             }
         ));
 
-        let contents = fs::read_to_string(default_policy_path(codex_home.path()))
+        let contents = fs::read_to_string(default_policy_path(rune_home.path()))
             .expect("policy file should have been created");
         assert_eq!(
             contents,
@@ -1014,11 +1014,11 @@ prefix_rule(
 
     #[tokio::test]
     async fn append_execpolicy_amendment_rejects_empty_prefix() {
-        let codex_home = tempdir().expect("create temp dir");
+        let rune_home = tempdir().expect("create temp dir");
         let manager = ExecPolicyManager::default();
 
         let result = manager
-            .append_amendment_and_update(codex_home.path(), &ExecPolicyAmendment::from(vec![]))
+            .append_amendment_and_update(rune_home.path(), &ExecPolicyAmendment::from(vec![]))
             .await;
 
         assert!(matches!(

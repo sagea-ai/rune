@@ -3,23 +3,23 @@
 use std::fs;
 
 use anyhow::Result;
-use codex_core::CodexAuth;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ItemCompletedEvent;
-use codex_core::protocol::ItemStartedEvent;
-use codex_core::protocol::Op;
-use codex_core::protocol::RolloutItem;
-use codex_core::protocol::RolloutLine;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::user_input::UserInput;
+use rune_core::RuneAuth;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ItemCompletedEvent;
+use rune_core::protocol::ItemStartedEvent;
+use rune_core::protocol::Op;
+use rune_core::protocol::RolloutItem;
+use rune_core::protocol::RolloutLine;
+use rune_protocol::items::TurnItem;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses;
 use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodexHarness;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRuneHarness;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
 use pretty_assertions::assert_eq;
@@ -43,11 +43,11 @@ fn estimate_compact_payload_tokens(request: &responses::ResponsesRequest) -> i64
 async fn remote_compact_replaces_history_for_followups() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestRuneHarness::with_builder(
+        test_rune().with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let rune = harness.test().rune.clone();
 
     let responses_mock = responses::mount_sse_sequence(
         harness.server(),
@@ -84,7 +84,7 @@ async fn remote_compact_replaces_history_for_followups() -> Result<()> {
     )
     .await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello remote compact".into(),
@@ -93,12 +93,12 @@ async fn remote_compact_replaces_history_for_followups() -> Result<()> {
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    rune.submit(Op::Compact).await?;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after compact".into(),
@@ -107,7 +107,7 @@ async fn remote_compact_replaces_history_for_followups() -> Result<()> {
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let compact_request = compact_mock.single_request();
     assert_eq!(compact_request.path(), "/v1/responses/compact");
@@ -160,11 +160,11 @@ async fn remote_compact_replaces_history_for_followups() -> Result<()> {
 async fn remote_compact_runs_automatically() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestRuneHarness::with_builder(
+        test_rune().with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let rune = harness.test().rune.clone();
 
     mount_sse_once(
         harness.server(),
@@ -203,7 +203,7 @@ async fn remote_compact_runs_automatically() -> Result<()> {
     )
     .await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello remote compact".into(),
@@ -213,12 +213,12 @@ async fn remote_compact_runs_automatically() -> Result<()> {
         })
         .await?;
 
-    let message = wait_for_event_match(&codex, |event| match event {
+    let message = wait_for_event_match(&rune, |event| match event {
         EventMsg::ContextCompacted(_) => Some(true),
         _ => None,
     })
     .await;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
     assert!(message);
     assert_eq!(compact_mock.requests().len(), 1);
     let follow_up_body = responses_mock.single_request().body_json().to_string();
@@ -240,16 +240,16 @@ async fn remote_compact_trims_function_call_history_to_fit_context_window() -> R
     let retained_command = "echo retained-shell-output";
     let trimmed_command = "yes x | head -n 3000";
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestRuneHarness::with_builder(
+        test_rune()
+            .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_context_window = Some(2_000);
                 config.model_auto_compact_token_limit = Some(200_000);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let rune = harness.test().rune.clone();
 
     responses::mount_sse_sequence(
         harness.server(),
@@ -271,7 +271,7 @@ async fn remote_compact_trims_function_call_history_to_fit_context_window() -> R
     )
     .await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: first_user_message.into(),
@@ -280,9 +280,9 @@ async fn remote_compact_trims_function_call_history_to_fit_context_window() -> R
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: second_user_message.into(),
@@ -291,14 +291,14 @@ async fn remote_compact_trims_function_call_history_to_fit_context_window() -> R
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let compact_mock =
         responses::mount_compact_json_once(harness.server(), serde_json::json!({ "output": [] }))
             .await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    rune.submit(Op::Compact).await?;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let compact_request = compact_mock.single_request();
     let user_messages = compact_request.message_input_texts("user");
@@ -355,16 +355,16 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
     let trimmed_call_id = "trimmed-call";
     let retained_command = "echo retained-shell-output";
     let trimmed_command = "yes x | head -n 3000";
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestRuneHarness::with_builder(
+        test_rune()
+            .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_context_window = Some(2_000);
                 config.model_auto_compact_token_limit = Some(200_000);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let rune = harness.test().rune.clone();
 
     responses::mount_sse_sequence(
         harness.server(),
@@ -393,7 +393,7 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
     )
     .await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: first_user_message.into(),
@@ -402,9 +402,9 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: second_user_message.into(),
@@ -413,13 +413,13 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let compact_mock =
         responses::mount_compact_json_once(harness.server(), serde_json::json!({ "output": [] }))
             .await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "turn that triggers auto compact".into(),
@@ -428,7 +428,7 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
     assert_eq!(
         compact_mock.requests().len(),
         1,
@@ -483,15 +483,15 @@ async fn auto_remote_compact_trims_function_call_history_to_fit_context_window()
 async fn auto_remote_compact_failure_stops_agent_loop() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let harness = TestRuneHarness::with_builder(
+        test_rune()
+            .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_auto_compact_token_limit = Some(120);
             }),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let rune = harness.test().rune.clone();
 
     mount_sse_once(
         harness.server(),
@@ -516,7 +516,7 @@ async fn auto_remote_compact_failure_stops_agent_loop() -> Result<()> {
     )
     .await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "turn that exceeds token threshold".into(),
@@ -525,9 +525,9 @@ async fn auto_remote_compact_failure_stops_agent_loop() -> Result<()> {
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "turn that triggers auto compact".into(),
@@ -537,12 +537,12 @@ async fn auto_remote_compact_failure_stops_agent_loop() -> Result<()> {
         })
         .await?;
 
-    let error_message = wait_for_event_match(&codex, |event| match event {
+    let error_message = wait_for_event_match(&rune, |event| match event {
         EventMsg::Error(err) => Some(err.message.clone()),
         _ => None,
     })
     .await;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     assert!(
         error_message.contains("Error running remote compact task"),
@@ -575,15 +575,15 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
     let retained_command = "printf retained-shell-output";
     let trailing_command = "printf trailing-shell-output";
 
-    let baseline_harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let baseline_harness = TestRuneHarness::with_builder(
+        test_rune()
+            .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config(|config| {
                 config.model_context_window = Some(200_000);
             }),
     )
     .await?;
-    let baseline_codex = baseline_harness.test().codex.clone();
+    let baseline_rune = baseline_harness.test().rune.clone();
 
     responses::mount_sse_sequence(
         baseline_harness.server(),
@@ -607,7 +607,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
     )
     .await;
 
-    baseline_codex
+    baseline_rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: first_user_message.into(),
@@ -616,12 +616,12 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&baseline_codex, |event| {
+    wait_for_event(&baseline_rune, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    baseline_codex
+    baseline_rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: second_user_message.into(),
@@ -630,7 +630,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&baseline_codex, |event| {
+    wait_for_event(&baseline_rune, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -641,8 +641,8 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
     )
     .await;
 
-    baseline_codex.submit(Op::Compact).await?;
-    wait_for_event(&baseline_codex, |event| {
+    baseline_rune.submit(Op::Compact).await?;
+    wait_for_event(&baseline_rune, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -670,9 +670,9 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
         "expected override instructions to push pre-trim estimate past the context window"
     );
 
-    let override_harness = TestCodexHarness::with_builder(
-        test_codex()
-            .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let override_harness = TestRuneHarness::with_builder(
+        test_rune()
+            .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
             .with_config({
                 let override_base_instructions = override_base_instructions.clone();
                 move |config| {
@@ -682,7 +682,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             }),
     )
     .await?;
-    let override_codex = override_harness.test().codex.clone();
+    let override_rune = override_harness.test().rune.clone();
 
     responses::mount_sse_sequence(
         override_harness.server(),
@@ -706,7 +706,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
     )
     .await;
 
-    override_codex
+    override_rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: first_user_message.into(),
@@ -715,12 +715,12 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&override_codex, |event| {
+    wait_for_event(&override_rune, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
 
-    override_codex
+    override_rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: second_user_message.into(),
@@ -729,7 +729,7 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&override_codex, |event| {
+    wait_for_event(&override_rune, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -740,8 +740,8 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
     )
     .await;
 
-    override_codex.submit(Op::Compact).await?;
-    wait_for_event(&override_codex, |event| {
+    override_rune.submit(Op::Compact).await?;
+    wait_for_event(&override_rune, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -767,11 +767,11 @@ async fn remote_compact_trim_estimate_uses_session_base_instructions() -> Result
 async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestRuneHarness::with_builder(
+        test_rune().with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let rune = harness.test().rune.clone();
 
     mount_sse_once(
         harness.server(),
@@ -802,7 +802,7 @@ async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
     )
     .await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "manual remote compact".into(),
@@ -811,9 +811,9 @@ async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await?;
+    rune.submit(Op::Compact).await?;
 
     let mut started_item = None;
     let mut completed_item = None;
@@ -822,7 +822,7 @@ async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
 
     while !saw_turn_complete || started_item.is_none() || completed_item.is_none() || !legacy_event
     {
-        let event = codex.next_event().await.unwrap();
+        let event = rune.next_event().await.unwrap();
         match event.msg {
             EventMsg::ItemStarted(ItemStartedEvent {
                 item: TurnItem::ContextCompaction(item),
@@ -859,11 +859,11 @@ async fn remote_manual_compact_emits_context_compaction_items() -> Result<()> {
 async fn remote_compact_persists_replacement_history_in_rollout() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
-    let harness = TestCodexHarness::with_builder(
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing()),
+    let harness = TestRuneHarness::with_builder(
+        test_rune().with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing()),
     )
     .await?;
-    let codex = harness.test().codex.clone();
+    let rune = harness.test().rune.clone();
     let rollout_path = harness
         .test()
         .session_configured
@@ -909,7 +909,7 @@ async fn remote_compact_persists_replacement_history_in_rollout() -> Result<()> 
     )
     .await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "needs compaction".into(),
@@ -918,13 +918,13 @@ async fn remote_compact_persists_replacement_history_in_rollout() -> Result<()> 
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    rune.submit(Op::Compact).await?;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Shutdown).await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    rune.submit(Op::Shutdown).await?;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
     assert_eq!(responses_mock.requests().len(), 1);
     assert_eq!(compact_mock.requests().len(), 1);
@@ -1012,7 +1012,7 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
     let stale_developer_message = "STALE_DEVELOPER_INSTRUCTIONS_SHOULD_BE_REMOVED";
 
     let mut start_builder =
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        test_rune().with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing());
     let initial = start_builder.build(&server).await?;
     let home = initial.home.clone();
     let rollout_path = initial
@@ -1070,7 +1070,7 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
     .await;
 
     initial
-        .codex
+        .rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "start remote compact flow".into(),
@@ -1079,13 +1079,13 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    initial.codex.submit(Op::Compact).await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    initial.rune.submit(Op::Compact).await?;
+    wait_for_event(&initial.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     initial
-        .codex
+        .rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after compact in same session".into(),
@@ -1094,20 +1094,20 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&initial.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&initial.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    initial.codex.submit(Op::Shutdown).await?;
-    wait_for_event(&initial.codex, |ev| {
+    initial.rune.submit(Op::Shutdown).await?;
+    wait_for_event(&initial.rune, |ev| {
         matches!(ev, EventMsg::ShutdownComplete)
     })
     .await;
 
     let mut resume_builder =
-        test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+        test_rune().with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing());
     let resumed = resume_builder.resume(&server, home, rollout_path).await?;
 
     resumed
-        .codex
+        .rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after resume".into(),
@@ -1116,7 +1116,7 @@ async fn remote_compact_and_resume_refresh_stale_developer_instructions() -> Res
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&resumed.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&resumed.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();
@@ -1163,7 +1163,7 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
     let server = wiremock::MockServer::start().await;
     let stale_developer_message = "STALE_DEVELOPER_INSTRUCTIONS_SHOULD_BE_REMOVED";
 
-    let mut builder = test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+    let mut builder = test_rune().with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing());
     let test = builder.build(&server).await?;
 
     let responses_mock = responses::mount_sse_sequence(
@@ -1210,7 +1210,7 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
     )
     .await;
 
-    test.codex
+    test.rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "start remote compact flow".into(),
@@ -1219,12 +1219,12 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex.submit(Op::Compact).await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    test.rune.submit(Op::Compact).await?;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    test.codex
+    test.rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "after compact in same session".into(),
@@ -1233,7 +1233,7 @@ async fn remote_compact_refreshes_stale_developer_instructions_without_resume() 
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&test.codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&test.rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(compact_mock.requests().len(), 1);
     let requests = responses_mock.requests();

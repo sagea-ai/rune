@@ -19,62 +19,62 @@ use anyhow::bail;
 use clap::ArgAction;
 use clap::Parser;
 use clap::Subcommand;
-use codex_app_server_protocol::AddConversationListenerParams;
-use codex_app_server_protocol::AddConversationSubscriptionResponse;
-use codex_app_server_protocol::AskForApproval;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::ClientRequest;
-use codex_app_server_protocol::CommandExecutionApprovalDecision;
-use codex_app_server_protocol::CommandExecutionRequestApprovalParams;
-use codex_app_server_protocol::CommandExecutionRequestApprovalResponse;
-use codex_app_server_protocol::DynamicToolSpec;
-use codex_app_server_protocol::FileChangeApprovalDecision;
-use codex_app_server_protocol::FileChangeRequestApprovalParams;
-use codex_app_server_protocol::FileChangeRequestApprovalResponse;
-use codex_app_server_protocol::GetAccountRateLimitsResponse;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::InitializeResponse;
-use codex_app_server_protocol::InputItem;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCRequest;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::LoginChatGptCompleteNotification;
-use codex_app_server_protocol::LoginChatGptResponse;
-use codex_app_server_protocol::ModelListParams;
-use codex_app_server_protocol::ModelListResponse;
-use codex_app_server_protocol::NewConversationParams;
-use codex_app_server_protocol::NewConversationResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SandboxPolicy;
-use codex_app_server_protocol::SendUserMessageParams;
-use codex_app_server_protocol::SendUserMessageResponse;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadStartResponse;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnStartResponse;
-use codex_app_server_protocol::TurnStatus;
-use codex_app_server_protocol::UserInput as V2UserInput;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
+use rune_app_server_protocol::AddConversationListenerParams;
+use rune_app_server_protocol::AddConversationSubscriptionResponse;
+use rune_app_server_protocol::AskForApproval;
+use rune_app_server_protocol::ClientInfo;
+use rune_app_server_protocol::ClientRequest;
+use rune_app_server_protocol::CommandExecutionApprovalDecision;
+use rune_app_server_protocol::CommandExecutionRequestApprovalParams;
+use rune_app_server_protocol::CommandExecutionRequestApprovalResponse;
+use rune_app_server_protocol::DynamicToolSpec;
+use rune_app_server_protocol::FileChangeApprovalDecision;
+use rune_app_server_protocol::FileChangeRequestApprovalParams;
+use rune_app_server_protocol::FileChangeRequestApprovalResponse;
+use rune_app_server_protocol::GetAccountRateLimitsResponse;
+use rune_app_server_protocol::InitializeCapabilities;
+use rune_app_server_protocol::InitializeParams;
+use rune_app_server_protocol::InitializeResponse;
+use rune_app_server_protocol::InputItem;
+use rune_app_server_protocol::JSONRPCMessage;
+use rune_app_server_protocol::JSONRPCNotification;
+use rune_app_server_protocol::JSONRPCRequest;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::LoginChatGptCompleteNotification;
+use rune_app_server_protocol::LoginChatGptResponse;
+use rune_app_server_protocol::ModelListParams;
+use rune_app_server_protocol::ModelListResponse;
+use rune_app_server_protocol::NewConversationParams;
+use rune_app_server_protocol::NewConversationResponse;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::SandboxPolicy;
+use rune_app_server_protocol::SendUserMessageParams;
+use rune_app_server_protocol::SendUserMessageResponse;
+use rune_app_server_protocol::ServerNotification;
+use rune_app_server_protocol::ServerRequest;
+use rune_app_server_protocol::ThreadStartParams;
+use rune_app_server_protocol::ThreadStartResponse;
+use rune_app_server_protocol::TurnStartParams;
+use rune_app_server_protocol::TurnStartResponse;
+use rune_app_server_protocol::TurnStatus;
+use rune_app_server_protocol::UserInput as V2UserInput;
+use rune_protocol::ThreadId;
+use rune_protocol::protocol::Event;
+use rune_protocol::protocol::EventMsg;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use uuid::Uuid;
 
-/// Minimal launcher that initializes the Codex app-server and logs the handshake.
+/// Minimal launcher that initializes the Rune app-server and logs the handshake.
 #[derive(Parser)]
-#[command(author = "Codex", version, about = "Bootstrap Codex app-server", long_about = None)]
+#[command(author = "Rune", version, about = "Bootstrap Rune app-server", long_about = None)]
 struct Cli {
-    /// Path to the `codex` CLI binary.
-    #[arg(long, env = "CODEX_BIN", default_value = "codex")]
-    codex_bin: PathBuf,
+    /// Path to the `rune` CLI binary.
+    #[arg(long, env = "RUNE_BIN", default_value = "rune")]
+    rune_bin: PathBuf,
 
-    /// Forwarded to the `codex` CLI as `--config key=value`. Repeatable.
+    /// Forwarded to the `rune` CLI as `--config key=value`. Repeatable.
     ///
     /// Example:
     ///   `--config 'model_providers.mock.base_url="http://localhost:4010/v2"'`
@@ -102,14 +102,14 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum CliCommand {
-    /// Send a user message through the Codex app-server.
+    /// Send a user message through the Rune app-server.
     SendMessage {
-        /// User message to send to Codex.
+        /// User message to send to Rune.
         user_message: String,
     },
     /// Send a user message through the app-server V2 thread/turn APIs.
     SendMessageV2 {
-        /// User message to send to Codex.
+        /// User message to send to Rune.
         user_message: String,
     },
     /// Start a V2 turn that elicits an ExecCommand approval.
@@ -136,16 +136,16 @@ enum CliCommand {
     },
     /// Trigger the ChatGPT login flow and wait for completion.
     TestLogin,
-    /// Fetch the current account rate limits from the Codex app-server.
+    /// Fetch the current account rate limits from the Rune app-server.
     GetAccountRateLimits,
-    /// List the available models from the Codex app-server.
+    /// List the available models from the Rune app-server.
     #[command(name = "model-list")]
     ModelList,
 }
 
 pub fn run() -> Result<()> {
     let Cli {
-        codex_bin,
+        rune_bin,
         config_overrides,
         dynamic_tools,
         command,
@@ -156,25 +156,25 @@ pub fn run() -> Result<()> {
     match command {
         CliCommand::SendMessage { user_message } => {
             ensure_dynamic_tools_unused(&dynamic_tools, "send-message")?;
-            send_message(&codex_bin, &config_overrides, user_message)
+            send_message(&rune_bin, &config_overrides, user_message)
         }
         CliCommand::SendMessageV2 { user_message } => {
-            send_message_v2(&codex_bin, &config_overrides, user_message, &dynamic_tools)
+            send_message_v2(&rune_bin, &config_overrides, user_message, &dynamic_tools)
         }
         CliCommand::TriggerCmdApproval { user_message } => {
-            trigger_cmd_approval(&codex_bin, &config_overrides, user_message, &dynamic_tools)
+            trigger_cmd_approval(&rune_bin, &config_overrides, user_message, &dynamic_tools)
         }
         CliCommand::TriggerPatchApproval { user_message } => {
-            trigger_patch_approval(&codex_bin, &config_overrides, user_message, &dynamic_tools)
+            trigger_patch_approval(&rune_bin, &config_overrides, user_message, &dynamic_tools)
         }
         CliCommand::NoTriggerCmdApproval => {
-            no_trigger_cmd_approval(&codex_bin, &config_overrides, &dynamic_tools)
+            no_trigger_cmd_approval(&rune_bin, &config_overrides, &dynamic_tools)
         }
         CliCommand::SendFollowUpV2 {
             first_message,
             follow_up_message,
         } => send_follow_up_v2(
-            &codex_bin,
+            &rune_bin,
             &config_overrides,
             first_message,
             follow_up_message,
@@ -182,21 +182,21 @@ pub fn run() -> Result<()> {
         ),
         CliCommand::TestLogin => {
             ensure_dynamic_tools_unused(&dynamic_tools, "test-login")?;
-            test_login(&codex_bin, &config_overrides)
+            test_login(&rune_bin, &config_overrides)
         }
         CliCommand::GetAccountRateLimits => {
             ensure_dynamic_tools_unused(&dynamic_tools, "get-account-rate-limits")?;
-            get_account_rate_limits(&codex_bin, &config_overrides)
+            get_account_rate_limits(&rune_bin, &config_overrides)
         }
         CliCommand::ModelList => {
             ensure_dynamic_tools_unused(&dynamic_tools, "model-list")?;
-            model_list(&codex_bin, &config_overrides)
+            model_list(&rune_bin, &config_overrides)
         }
     }
 }
 
-fn send_message(codex_bin: &Path, config_overrides: &[String], user_message: String) -> Result<()> {
-    let mut client = CodexClient::spawn(codex_bin, config_overrides)?;
+fn send_message(rune_bin: &Path, config_overrides: &[String], user_message: String) -> Result<()> {
+    let mut client = RuneClient::spawn(rune_bin, config_overrides)?;
 
     let initialize = client.initialize()?;
     println!("< initialize response: {initialize:?}");
@@ -218,13 +218,13 @@ fn send_message(codex_bin: &Path, config_overrides: &[String], user_message: Str
 }
 
 pub fn send_message_v2(
-    codex_bin: &Path,
+    rune_bin: &Path,
     config_overrides: &[String],
     user_message: String,
     dynamic_tools: &Option<Vec<DynamicToolSpec>>,
 ) -> Result<()> {
     send_message_v2_with_policies(
-        codex_bin,
+        rune_bin,
         config_overrides,
         user_message,
         None,
@@ -234,7 +234,7 @@ pub fn send_message_v2(
 }
 
 fn trigger_cmd_approval(
-    codex_bin: &Path,
+    rune_bin: &Path,
     config_overrides: &[String],
     user_message: Option<String>,
     dynamic_tools: &Option<Vec<DynamicToolSpec>>,
@@ -243,7 +243,7 @@ fn trigger_cmd_approval(
         "Run `touch /tmp/should-trigger-approval` so I can confirm the file exists.";
     let message = user_message.unwrap_or_else(|| default_prompt.to_string());
     send_message_v2_with_policies(
-        codex_bin,
+        rune_bin,
         config_overrides,
         message,
         Some(AskForApproval::OnRequest),
@@ -253,7 +253,7 @@ fn trigger_cmd_approval(
 }
 
 fn trigger_patch_approval(
-    codex_bin: &Path,
+    rune_bin: &Path,
     config_overrides: &[String],
     user_message: Option<String>,
     dynamic_tools: &Option<Vec<DynamicToolSpec>>,
@@ -262,7 +262,7 @@ fn trigger_patch_approval(
         "Create a file named APPROVAL_DEMO.txt containing a short hello message using apply_patch.";
     let message = user_message.unwrap_or_else(|| default_prompt.to_string());
     send_message_v2_with_policies(
-        codex_bin,
+        rune_bin,
         config_overrides,
         message,
         Some(AskForApproval::OnRequest),
@@ -272,13 +272,13 @@ fn trigger_patch_approval(
 }
 
 fn no_trigger_cmd_approval(
-    codex_bin: &Path,
+    rune_bin: &Path,
     config_overrides: &[String],
     dynamic_tools: &Option<Vec<DynamicToolSpec>>,
 ) -> Result<()> {
     let prompt = "Run `touch should_not_trigger_approval.txt`";
     send_message_v2_with_policies(
-        codex_bin,
+        rune_bin,
         config_overrides,
         prompt.to_string(),
         None,
@@ -288,14 +288,14 @@ fn no_trigger_cmd_approval(
 }
 
 fn send_message_v2_with_policies(
-    codex_bin: &Path,
+    rune_bin: &Path,
     config_overrides: &[String],
     user_message: String,
     approval_policy: Option<AskForApproval>,
     sandbox_policy: Option<SandboxPolicy>,
     dynamic_tools: &Option<Vec<DynamicToolSpec>>,
 ) -> Result<()> {
-    let mut client = CodexClient::spawn(codex_bin, config_overrides)?;
+    let mut client = RuneClient::spawn(rune_bin, config_overrides)?;
 
     let initialize = client.initialize()?;
     println!("< initialize response: {initialize:?}");
@@ -326,13 +326,13 @@ fn send_message_v2_with_policies(
 }
 
 fn send_follow_up_v2(
-    codex_bin: &Path,
+    rune_bin: &Path,
     config_overrides: &[String],
     first_message: String,
     follow_up_message: String,
     dynamic_tools: &Option<Vec<DynamicToolSpec>>,
 ) -> Result<()> {
-    let mut client = CodexClient::spawn(codex_bin, config_overrides)?;
+    let mut client = RuneClient::spawn(rune_bin, config_overrides)?;
 
     let initialize = client.initialize()?;
     println!("< initialize response: {initialize:?}");
@@ -372,8 +372,8 @@ fn send_follow_up_v2(
     Ok(())
 }
 
-fn test_login(codex_bin: &Path, config_overrides: &[String]) -> Result<()> {
-    let mut client = CodexClient::spawn(codex_bin, config_overrides)?;
+fn test_login(rune_bin: &Path, config_overrides: &[String]) -> Result<()> {
+    let mut client = RuneClient::spawn(rune_bin, config_overrides)?;
 
     let initialize = client.initialize()?;
     println!("< initialize response: {initialize:?}");
@@ -402,8 +402,8 @@ fn test_login(codex_bin: &Path, config_overrides: &[String]) -> Result<()> {
     }
 }
 
-fn get_account_rate_limits(codex_bin: &Path, config_overrides: &[String]) -> Result<()> {
-    let mut client = CodexClient::spawn(codex_bin, config_overrides)?;
+fn get_account_rate_limits(rune_bin: &Path, config_overrides: &[String]) -> Result<()> {
+    let mut client = RuneClient::spawn(rune_bin, config_overrides)?;
 
     let initialize = client.initialize()?;
     println!("< initialize response: {initialize:?}");
@@ -414,8 +414,8 @@ fn get_account_rate_limits(codex_bin: &Path, config_overrides: &[String]) -> Res
     Ok(())
 }
 
-fn model_list(codex_bin: &Path, config_overrides: &[String]) -> Result<()> {
-    let mut client = CodexClient::spawn(codex_bin, config_overrides)?;
+fn model_list(rune_bin: &Path, config_overrides: &[String]) -> Result<()> {
+    let mut client = RuneClient::spawn(rune_bin, config_overrides)?;
 
     let initialize = client.initialize()?;
     println!("< initialize response: {initialize:?}");
@@ -460,39 +460,39 @@ fn parse_dynamic_tools_arg(dynamic_tools: &Option<String>) -> Result<Option<Vec<
     Ok(Some(tools))
 }
 
-struct CodexClient {
+struct RuneClient {
     child: Child,
     stdin: Option<ChildStdin>,
     stdout: BufReader<ChildStdout>,
     pending_notifications: VecDeque<JSONRPCNotification>,
 }
 
-impl CodexClient {
-    fn spawn(codex_bin: &Path, config_overrides: &[String]) -> Result<Self> {
-        let codex_bin_display = codex_bin.display();
-        let mut cmd = Command::new(codex_bin);
+impl RuneClient {
+    fn spawn(rune_bin: &Path, config_overrides: &[String]) -> Result<Self> {
+        let rune_bin_display = rune_bin.display();
+        let mut cmd = Command::new(rune_bin);
         for override_kv in config_overrides {
             cmd.arg("--config").arg(override_kv);
         }
-        let mut codex_app_server = cmd
+        let mut rune_app_server = cmd
             .arg("app-server")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
             .spawn()
-            .with_context(|| format!("failed to start `{codex_bin_display}` app-server"))?;
+            .with_context(|| format!("failed to start `{rune_bin_display}` app-server"))?;
 
-        let stdin = codex_app_server
+        let stdin = rune_app_server
             .stdin
             .take()
-            .context("codex app-server stdin unavailable")?;
-        let stdout = codex_app_server
+            .context("rune app-server stdin unavailable")?;
+        let stdout = rune_app_server
             .stdout
             .take()
-            .context("codex app-server stdout unavailable")?;
+            .context("rune app-server stdout unavailable")?;
 
         Ok(Self {
-            child: codex_app_server,
+            child: rune_app_server,
             stdin: Some(stdin),
             stdout: BufReader::new(stdout),
             pending_notifications: VecDeque::new(),
@@ -506,7 +506,7 @@ impl CodexClient {
             params: InitializeParams {
                 client_info: ClientInfo {
                     name: "rune-toy-app-server".to_string(),
-                    title: Some("Codex Toy App Server".to_string()),
+                    title: Some("Rune Toy App Server".to_string()),
                     version: env!("CARGO_PKG_VERSION").to_string(),
                 },
                 capabilities: Some(InitializeCapabilities {
@@ -548,10 +548,10 @@ impl CodexClient {
         let request_id = self.request_id();
         let request = ClientRequest::RemoveConversationListener {
             request_id: request_id.clone(),
-            params: codex_app_server_protocol::RemoveConversationListenerParams { subscription_id },
+            params: rune_app_server_protocol::RemoveConversationListenerParams { subscription_id },
         };
 
-        self.send_request::<codex_app_server_protocol::RemoveConversationSubscriptionResponse>(
+        self.send_request::<rune_app_server_protocol::RemoveConversationSubscriptionResponse>(
             request,
             request_id,
             "removeConversationListener",
@@ -635,7 +635,7 @@ impl CodexClient {
         loop {
             let notification = self.next_notification()?;
 
-            if !notification.method.starts_with("codex/event/") {
+            if !notification.method.starts_with("rune/event/") {
                 continue;
             }
 
@@ -817,9 +817,9 @@ impl CodexClient {
             writeln!(stdin, "{request_json}")?;
             stdin
                 .flush()
-                .context("failed to flush request to codex app-server")?;
+                .context("failed to flush request to rune app-server")?;
         } else {
-            bail!("codex app-server stdin closed");
+            bail!("rune app-server stdin closed");
         }
 
         Ok(())
@@ -881,10 +881,10 @@ impl CodexClient {
             let bytes = self
                 .stdout
                 .read_line(&mut response_line)
-                .context("failed to read from codex app-server")?;
+                .context("failed to read from rune app-server")?;
 
             if bytes == 0 {
-                bail!("codex app-server closed stdout");
+                bail!("rune app-server closed stdout");
             }
 
             let trimmed = response_line.trim();
@@ -1021,11 +1021,11 @@ impl CodexClient {
             writeln!(stdin, "{payload}")?;
             stdin
                 .flush()
-                .context("failed to flush response to codex app-server")?;
+                .context("failed to flush response to rune app-server")?;
             return Ok(());
         }
 
-        bail!("codex app-server stdin closed")
+        bail!("rune app-server stdin closed")
     }
 }
 
@@ -1035,19 +1035,19 @@ fn print_multiline_with_prefix(prefix: &str, payload: &str) {
     }
 }
 
-impl Drop for CodexClient {
+impl Drop for RuneClient {
     fn drop(&mut self) {
         let _ = self.stdin.take();
 
         if let Ok(Some(status)) = self.child.try_wait() {
-            println!("[codex app-server exited: {status}]");
+            println!("[rune app-server exited: {status}]");
             return;
         }
 
         thread::sleep(Duration::from_millis(100));
 
         if let Ok(Some(status)) = self.child.try_wait() {
-            println!("[codex app-server exited: {status}]");
+            println!("[rune app-server exited: {status}]");
             return;
         }
 

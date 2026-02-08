@@ -1,7 +1,7 @@
 #![allow(clippy::expect_used, clippy::unwrap_used)]
 
 use anyhow::Result;
-use codex_core::features::Feature;
+use rune_core::features::Feature;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
@@ -10,7 +10,7 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 use serde_json::json;
@@ -21,13 +21,13 @@ async fn get_memory_tool_returns_persisted_thread_memory() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_rune().with_config(|config| {
         config.features.enable(Feature::Sqlite);
         config.features.enable(Feature::MemoryTool);
     });
     let test = builder.build(&server).await?;
 
-    let db = test.codex.state_db().expect("state db enabled");
+    let db = test.rune.state_db().expect("state db enabled");
     let thread_id = test.session_configured.session_id;
     let thread_id_string = thread_id.to_string();
 

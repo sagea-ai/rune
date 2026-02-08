@@ -1,12 +1,12 @@
 use chrono::DateTime;
 use chrono::Utc;
-use codex_core::models_manager::model_presets::all_model_presets;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::TruncationPolicyConfig;
-use codex_protocol::openai_models::default_input_modalities;
+use rune_core::models_manager::model_presets::all_model_presets;
+use rune_protocol::openai_models::ConfigShellToolType;
+use rune_protocol::openai_models::ModelInfo;
+use rune_protocol::openai_models::ModelPreset;
+use rune_protocol::openai_models::ModelVisibility;
+use rune_protocol::openai_models::TruncationPolicyConfig;
+use rune_protocol::openai_models::default_input_modalities;
 use serde_json::json;
 use std::path::Path;
 
@@ -43,11 +43,11 @@ fn preset_to_info(preset: &ModelPreset, priority: i32) -> ModelInfo {
     }
 }
 
-/// Write a models_cache.json file to the codex home directory.
+/// Write a models_cache.json file to the rune home directory.
 /// This prevents ModelsManager from making network requests to refresh models.
 /// The cache will be treated as fresh (within TTL) and used instead of fetching from the network.
 /// Uses the built-in model presets from ModelsManager, converted to ModelInfo format.
-pub fn write_models_cache(codex_home: &Path) -> std::io::Result<()> {
+pub fn write_models_cache(rune_home: &Path) -> std::io::Result<()> {
     // Get all presets and filter for show_in_picker (same as builtin_model_presets does)
     let presets: Vec<&ModelPreset> = all_model_presets()
         .iter()
@@ -65,19 +65,19 @@ pub fn write_models_cache(codex_home: &Path) -> std::io::Result<()> {
         })
         .collect();
 
-    write_models_cache_with_models(codex_home, models)
+    write_models_cache_with_models(rune_home, models)
 }
 
 /// Write a models_cache.json file with specific models.
 /// Useful when tests need specific models to be available.
 pub fn write_models_cache_with_models(
-    codex_home: &Path,
+    rune_home: &Path,
     models: Vec<ModelInfo>,
 ) -> std::io::Result<()> {
-    let cache_path = codex_home.join("models_cache.json");
+    let cache_path = rune_home.join("models_cache.json");
     // DateTime<Utc> serializes to RFC3339 format by default with serde
     let fetched_at: DateTime<Utc> = Utc::now();
-    let client_version = codex_core::models_manager::client_version_to_whole();
+    let client_version = rune_core::models_manager::client_version_to_whole();
     let cache = json!({
         "fetched_at": fetched_at,
         "etag": null,

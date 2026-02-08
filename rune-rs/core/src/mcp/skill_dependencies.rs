@@ -1,21 +1,21 @@
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::request_user_input::RequestUserInputArgs;
-use codex_protocol::request_user_input::RequestUserInputQuestion;
-use codex_protocol::request_user_input::RequestUserInputQuestionOption;
-use codex_protocol::request_user_input::RequestUserInputResponse;
-use codex_rmcp_client::perform_oauth_login;
+use rune_protocol::protocol::AskForApproval;
+use rune_protocol::protocol::SandboxPolicy;
+use rune_protocol::request_user_input::RequestUserInputArgs;
+use rune_protocol::request_user_input::RequestUserInputQuestion;
+use rune_protocol::request_user_input::RequestUserInputQuestionOption;
+use rune_protocol::request_user_input::RequestUserInputResponse;
+use rune_rmcp_client::perform_oauth_login;
 use tokio_util::sync::CancellationToken;
 use tracing::warn;
 
 use super::auth::McpOAuthLoginSupport;
 use super::auth::oauth_login_support;
 use super::effective_mcp_servers;
-use crate::codex::Session;
-use crate::codex::TurnContext;
+use crate::rune::Session;
+use crate::rune::TurnContext;
 use crate::config::Config;
 use crate::config::edit::ConfigEditsBuilder;
 use crate::config::load_global_mcp_servers;
@@ -177,14 +177,14 @@ pub(crate) async fn maybe_install_mcp_dependencies(
         return;
     }
 
-    let codex_home = config.codex_home.clone();
+    let rune_home = config.rune_home.clone();
     let installed = config.mcp_servers.get().clone();
     let missing = collect_missing_mcp_dependencies(mentioned_skills, &installed);
     if missing.is_empty() {
         return;
     }
 
-    let mut servers = match load_global_mcp_servers(&codex_home).await {
+    let mut servers = match load_global_mcp_servers(&rune_home).await {
         Ok(servers) => servers,
         Err(err) => {
             warn!("failed to load MCP servers while installing skill dependencies: {err}");
@@ -207,7 +207,7 @@ pub(crate) async fn maybe_install_mcp_dependencies(
         return;
     }
 
-    if let Err(err) = ConfigEditsBuilder::new(&codex_home)
+    if let Err(err) = ConfigEditsBuilder::new(&rune_home)
         .replace_mcp_servers(&servers)
         .apply()
         .await
@@ -420,7 +420,7 @@ fn mcp_dependency_to_server_config(
 mod tests {
     use super::*;
     use crate::skills::model::SkillDependencies;
-    use codex_protocol::protocol::SkillScope;
+    use rune_protocol::protocol::SkillScope;
     use pretty_assertions::assert_eq;
     use std::path::PathBuf;
 

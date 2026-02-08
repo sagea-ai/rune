@@ -16,10 +16,10 @@ use crate::model::datetime_to_epoch_seconds;
 use crate::paths::file_modified_time_utc;
 use chrono::DateTime;
 use chrono::Utc;
-use codex_otel::OtelManager;
-use codex_protocol::ThreadId;
-use codex_protocol::dynamic_tools::DynamicToolSpec;
-use codex_protocol::protocol::RolloutItem;
+use rune_otel::OtelManager;
+use rune_protocol::ThreadId;
+use rune_protocol::dynamic_tools::DynamicToolSpec;
+use rune_protocol::protocol::RolloutItem;
 use log::LevelFilter;
 use serde_json::Value;
 use sqlx::ConnectOptions;
@@ -40,27 +40,27 @@ use tracing::warn;
 pub const STATE_DB_FILENAME: &str = "state";
 pub const STATE_DB_VERSION: u32 = 4;
 
-const METRIC_DB_INIT: &str = "codex.db.init";
+const METRIC_DB_INIT: &str = "rune.db.init";
 
 #[derive(Clone)]
 pub struct StateRuntime {
-    codex_home: PathBuf,
+    rune_home: PathBuf,
     default_provider: String,
     pool: Arc<sqlx::SqlitePool>,
 }
 
 impl StateRuntime {
-    /// Initialize the state runtime using the provided Codex home and default provider.
+    /// Initialize the state runtime using the provided Rune home and default provider.
     ///
-    /// This opens (and migrates) the SQLite database at `codex_home/state.sqlite`.
+    /// This opens (and migrates) the SQLite database at `rune_home/state.sqlite`.
     pub async fn init(
-        codex_home: PathBuf,
+        rune_home: PathBuf,
         default_provider: String,
         otel: Option<OtelManager>,
     ) -> anyhow::Result<Arc<Self>> {
-        tokio::fs::create_dir_all(&codex_home).await?;
-        remove_legacy_state_files(&codex_home).await;
-        let state_path = state_db_path(codex_home.as_path());
+        tokio::fs::create_dir_all(&rune_home).await?;
+        remove_legacy_state_files(&rune_home).await;
+        let state_path = state_db_path(rune_home.as_path());
         let existed = tokio::fs::try_exists(&state_path).await.unwrap_or(false);
         let pool = match open_sqlite(&state_path).await {
             Ok(db) => Arc::new(db),
@@ -77,7 +77,7 @@ impl StateRuntime {
         }
         let runtime = Arc::new(Self {
             pool,
-            codex_home,
+            rune_home,
             default_provider,
         });
         if !existed && let Some(otel) = otel.as_ref() {
@@ -86,9 +86,9 @@ impl StateRuntime {
         Ok(runtime)
     }
 
-    /// Return the configured Codex home directory for this runtime.
-    pub fn codex_home(&self) -> &Path {
-        self.codex_home.as_path()
+    /// Return the configured Rune home directory for this runtime.
+    pub fn rune_home(&self) -> &Path {
+        self.rune_home.as_path()
     }
 
     /// Get persisted rollout metadata backfill state.
@@ -824,18 +824,18 @@ pub fn state_db_filename() -> String {
     format!("{STATE_DB_FILENAME}_{STATE_DB_VERSION}.sqlite")
 }
 
-pub fn state_db_path(codex_home: &Path) -> PathBuf {
-    codex_home.join(state_db_filename())
+pub fn state_db_path(rune_home: &Path) -> PathBuf {
+    rune_home.join(state_db_filename())
 }
 
-async fn remove_legacy_state_files(codex_home: &Path) {
+async fn remove_legacy_state_files(rune_home: &Path) {
     let current_name = state_db_filename();
-    let mut entries = match tokio::fs::read_dir(codex_home).await {
+    let mut entries = match tokio::fs::read_dir(rune_home).await {
         Ok(entries) => entries,
         Err(err) => {
             warn!(
-                "failed to read codex_home for state db cleanup {}: {err}",
-                codex_home.display()
+                "failed to read rune_home for state db cleanup {}: {err}",
+                rune_home.display()
             );
             return;
         }
@@ -969,9 +969,9 @@ mod tests {
     use super::state_db_filename;
     use chrono::DateTime;
     use chrono::Utc;
-    use codex_protocol::ThreadId;
-    use codex_protocol::protocol::AskForApproval;
-    use codex_protocol::protocol::SandboxPolicy;
+    use rune_protocol::ThreadId;
+    use rune_protocol::protocol::AskForApproval;
+    use rune_protocol::protocol::SandboxPolicy;
     use pretty_assertions::assert_eq;
     use sqlx::Row;
     use std::path::Path;
@@ -992,48 +992,48 @@ mod tests {
 
     #[tokio::test]
     async fn init_removes_legacy_state_db_files() {
-        let codex_home = unique_temp_dir();
-        tokio::fs::create_dir_all(&codex_home)
+        let rune_home = unique_temp_dir();
+        tokio::fs::create_dir_all(&rune_home)
             .await
-            .expect("create codex_home");
+            .expect("create rune_home");
 
         let current_name = state_db_filename();
         let previous_version = STATE_DB_VERSION.saturating_sub(1);
         let unversioned_name = format!("{STATE_DB_FILENAME}.sqlite");
         for suffix in ["", "-wal", "-shm", "-journal"] {
-            let path = codex_home.join(format!("{unversioned_name}{suffix}"));
+            let path = rune_home.join(format!("{unversioned_name}{suffix}"));
             tokio::fs::write(path, b"legacy")
                 .await
                 .expect("write legacy");
-            let old_version_path = codex_home.join(format!(
+            let old_version_path = rune_home.join(format!(
                 "{STATE_DB_FILENAME}_{previous_version}.sqlite{suffix}"
             ));
             tokio::fs::write(old_version_path, b"old_version")
                 .await
                 .expect("write old version");
         }
-        let unrelated_path = codex_home.join("state.sqlite_backup");
+        let unrelated_path = rune_home.join("state.sqlite_backup");
         tokio::fs::write(&unrelated_path, b"keep")
             .await
             .expect("write unrelated");
-        let numeric_path = codex_home.join("123");
+        let numeric_path = rune_home.join("123");
         tokio::fs::write(&numeric_path, b"keep")
             .await
             .expect("write numeric");
 
-        let _runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string(), None)
+        let _runtime = StateRuntime::init(rune_home.clone(), "test-provider".to_string(), None)
             .await
             .expect("initialize runtime");
 
         for suffix in ["", "-wal", "-shm", "-journal"] {
-            let legacy_path = codex_home.join(format!("{unversioned_name}{suffix}"));
+            let legacy_path = rune_home.join(format!("{unversioned_name}{suffix}"));
             assert_eq!(
                 tokio::fs::try_exists(&legacy_path)
                     .await
                     .expect("check legacy path"),
                 false
             );
-            let old_version_path = codex_home.join(format!(
+            let old_version_path = rune_home.join(format!(
                 "{STATE_DB_FILENAME}_{previous_version}.sqlite{suffix}"
             ));
             assert_eq!(
@@ -1044,7 +1044,7 @@ mod tests {
             );
         }
         assert_eq!(
-            tokio::fs::try_exists(codex_home.join(current_name))
+            tokio::fs::try_exists(rune_home.join(current_name))
                 .await
                 .expect("check new db path"),
             true
@@ -1062,13 +1062,13 @@ mod tests {
             true
         );
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(rune_home).await;
     }
 
     #[tokio::test]
     async fn backfill_state_persists_progress_and_completion() {
-        let codex_home = unique_temp_dir();
-        let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string(), None)
+        let rune_home = unique_temp_dir();
+        let runtime = StateRuntime::init(rune_home.clone(), "test-provider".to_string(), None)
             .await
             .expect("initialize runtime");
 
@@ -1115,18 +1115,18 @@ mod tests {
         );
         assert!(completed.last_success_at.is_some());
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(rune_home).await;
     }
 
     #[tokio::test]
     async fn upsert_and_get_thread_memory() {
-        let codex_home = unique_temp_dir();
-        let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string(), None)
+        let rune_home = unique_temp_dir();
+        let runtime = StateRuntime::init(rune_home.clone(), "test-provider".to_string(), None)
             .await
             .expect("initialize runtime");
 
         let thread_id = ThreadId::from_string(&Uuid::new_v4().to_string()).expect("thread id");
-        let metadata = test_thread_metadata(&codex_home, thread_id, codex_home.join("a"));
+        let metadata = test_thread_metadata(&rune_home, thread_id, rune_home.join("a"));
         runtime
             .upsert_thread(&metadata)
             .await
@@ -1160,31 +1160,31 @@ mod tests {
             "updated_at should not move backward"
         );
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(rune_home).await;
     }
 
     #[tokio::test]
     async fn get_last_n_thread_memories_for_cwd_matches_exactly() {
-        let codex_home = unique_temp_dir();
-        let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string(), None)
+        let rune_home = unique_temp_dir();
+        let runtime = StateRuntime::init(rune_home.clone(), "test-provider".to_string(), None)
             .await
             .expect("initialize runtime");
 
-        let cwd_a = codex_home.join("workspace-a");
-        let cwd_b = codex_home.join("workspace-b");
+        let cwd_a = rune_home.join("workspace-a");
+        let cwd_b = rune_home.join("workspace-b");
         let t1 = ThreadId::from_string(&Uuid::new_v4().to_string()).expect("thread id");
         let t2 = ThreadId::from_string(&Uuid::new_v4().to_string()).expect("thread id");
         let t3 = ThreadId::from_string(&Uuid::new_v4().to_string()).expect("thread id");
         runtime
-            .upsert_thread(&test_thread_metadata(&codex_home, t1, cwd_a.clone()))
+            .upsert_thread(&test_thread_metadata(&rune_home, t1, cwd_a.clone()))
             .await
             .expect("upsert thread t1");
         runtime
-            .upsert_thread(&test_thread_metadata(&codex_home, t2, cwd_a.clone()))
+            .upsert_thread(&test_thread_metadata(&rune_home, t2, cwd_a.clone()))
             .await
             .expect("upsert thread t2");
         runtime
-            .upsert_thread(&test_thread_metadata(&codex_home, t3, cwd_b.clone()))
+            .upsert_thread(&test_thread_metadata(&rune_home, t3, cwd_b.clone()))
             .await
             .expect("upsert thread t3");
 
@@ -1225,18 +1225,18 @@ mod tests {
         assert_eq!(cwd_b_memories[0].thread_id, t3);
 
         let none = runtime
-            .get_last_n_thread_memories_for_cwd(codex_home.join("missing").as_path(), 10)
+            .get_last_n_thread_memories_for_cwd(rune_home.join("missing").as_path(), 10)
             .await
             .expect("list missing cwd memories");
         assert_eq!(none, Vec::new());
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(rune_home).await;
     }
 
     #[tokio::test]
     async fn upsert_thread_memory_errors_for_unknown_thread() {
-        let codex_home = unique_temp_dir();
-        let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string(), None)
+        let rune_home = unique_temp_dir();
+        let runtime = StateRuntime::init(rune_home.clone(), "test-provider".to_string(), None)
             .await
             .expect("initialize runtime");
 
@@ -1251,20 +1251,20 @@ mod tests {
             "error should mention missing thread: {err}"
         );
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(rune_home).await;
     }
 
     #[tokio::test]
     async fn get_last_n_thread_memories_for_cwd_zero_returns_empty() {
-        let codex_home = unique_temp_dir();
-        let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string(), None)
+        let rune_home = unique_temp_dir();
+        let runtime = StateRuntime::init(rune_home.clone(), "test-provider".to_string(), None)
             .await
             .expect("initialize runtime");
 
         let thread_id = ThreadId::from_string(&Uuid::new_v4().to_string()).expect("thread id");
-        let cwd = codex_home.join("workspace");
+        let cwd = rune_home.join("workspace");
         runtime
-            .upsert_thread(&test_thread_metadata(&codex_home, thread_id, cwd.clone()))
+            .upsert_thread(&test_thread_metadata(&rune_home, thread_id, cwd.clone()))
             .await
             .expect("upsert thread");
         runtime
@@ -1278,23 +1278,23 @@ mod tests {
             .expect("query memories");
         assert_eq!(memories, Vec::new());
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(rune_home).await;
     }
 
     #[tokio::test]
     async fn get_last_n_thread_memories_for_cwd_does_not_prefix_match() {
-        let codex_home = unique_temp_dir();
-        let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string(), None)
+        let rune_home = unique_temp_dir();
+        let runtime = StateRuntime::init(rune_home.clone(), "test-provider".to_string(), None)
             .await
             .expect("initialize runtime");
 
-        let cwd_exact = codex_home.join("workspace");
-        let cwd_prefix = codex_home.join("workspace-child");
+        let cwd_exact = rune_home.join("workspace");
+        let cwd_prefix = rune_home.join("workspace-child");
         let t_exact = ThreadId::from_string(&Uuid::new_v4().to_string()).expect("thread id");
         let t_prefix = ThreadId::from_string(&Uuid::new_v4().to_string()).expect("thread id");
         runtime
             .upsert_thread(&test_thread_metadata(
-                &codex_home,
+                &rune_home,
                 t_exact,
                 cwd_exact.clone(),
             ))
@@ -1302,7 +1302,7 @@ mod tests {
             .expect("upsert exact thread");
         runtime
             .upsert_thread(&test_thread_metadata(
-                &codex_home,
+                &rune_home,
                 t_prefix,
                 cwd_prefix.clone(),
             ))
@@ -1325,20 +1325,20 @@ mod tests {
         assert_eq!(exact_only[0].thread_id, t_exact);
         assert_eq!(exact_only[0].memory_summary, "memory-exact");
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(rune_home).await;
     }
 
     #[tokio::test]
     async fn deleting_thread_cascades_thread_memory() {
-        let codex_home = unique_temp_dir();
-        let runtime = StateRuntime::init(codex_home.clone(), "test-provider".to_string(), None)
+        let rune_home = unique_temp_dir();
+        let runtime = StateRuntime::init(rune_home.clone(), "test-provider".to_string(), None)
             .await
             .expect("initialize runtime");
 
         let thread_id = ThreadId::from_string(&Uuid::new_v4().to_string()).expect("thread id");
-        let cwd = codex_home.join("workspace");
+        let cwd = rune_home.join("workspace");
         runtime
-            .upsert_thread(&test_thread_metadata(&codex_home, thread_id, cwd))
+            .upsert_thread(&test_thread_metadata(&rune_home, thread_id, cwd))
             .await
             .expect("upsert thread");
         runtime
@@ -1379,18 +1379,18 @@ mod tests {
             None
         );
 
-        let _ = tokio::fs::remove_dir_all(codex_home).await;
+        let _ = tokio::fs::remove_dir_all(rune_home).await;
     }
 
     fn test_thread_metadata(
-        codex_home: &Path,
+        rune_home: &Path,
         thread_id: ThreadId,
         cwd: PathBuf,
     ) -> ThreadMetadata {
         let now = DateTime::<Utc>::from_timestamp(1_700_000_000, 0).expect("timestamp");
         ThreadMetadata {
             id: thread_id,
-            rollout_path: codex_home.join(format!("rollout-{thread_id}.jsonl")),
+            rollout_path: rune_home.join(format!("rollout-{thread_id}.jsonl")),
             created_at: now,
             updated_at: now,
             source: "cli".to_string(),

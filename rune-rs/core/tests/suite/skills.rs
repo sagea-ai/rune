@@ -2,10 +2,10 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use anyhow::Result;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::user_input::UserInput;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
@@ -13,7 +13,7 @@ use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use std::fs;
 use std::path::Path;
 
@@ -40,12 +40,12 @@ async fn user_turn_includes_skill_instructions() -> Result<()> {
 
     let server = start_mock_server().await;
     let skill_body = "skill body";
-    let mut builder = test_codex().with_pre_build_hook(|home| {
+    let mut builder = test_rune().with_pre_build_hook(|home| {
         write_skill(home, "demo", "demo skill", skill_body);
     });
     let test = builder.build(&server).await?;
 
-    let skill_path = test.codex_home_path().join("skills/demo/SKILL.md");
+    let skill_path = test.rune_home_path().join("skills/demo/SKILL.md");
     let skill_path = std::fs::canonicalize(skill_path)?;
 
     let mock = mount_sse_once(
@@ -59,7 +59,7 @@ async fn user_turn_includes_skill_instructions() -> Result<()> {
     .await;
 
     let session_model = test.session_configured.model.clone();
-    test.codex
+    test.rune
         .submit(Op::UserTurn {
             items: vec![
                 UserInput::Text {
@@ -77,14 +77,14 @@ async fn user_turn_includes_skill_instructions() -> Result<()> {
             sandbox_policy: SandboxPolicy::DangerFullAccess,
             model: session_model,
             effort: None,
-            summary: codex_protocol::config_types::ReasoningSummary::Auto,
+            summary: rune_protocol::config_types::ReasoningSummary::Auto,
             collaboration_mode: None,
             personality: None,
         })
         .await?;
 
-    core_test_support::wait_for_event(test.codex.as_ref(), |event| {
-        matches!(event, codex_core::protocol::EventMsg::TurnComplete(_))
+    core_test_support::wait_for_event(test.rune.as_ref(), |event| {
+        matches!(event, rune_core::protocol::EventMsg::TurnComplete(_))
     })
     .await;
 
@@ -109,22 +109,22 @@ async fn skill_load_errors_surface_in_session_configured() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_pre_build_hook(|home| {
+    let mut builder = test_rune().with_pre_build_hook(|home| {
         let skill_dir = home.join("skills").join("broken");
         fs::create_dir_all(&skill_dir).unwrap();
         fs::write(skill_dir.join("SKILL.md"), "not yaml").unwrap();
     });
     let test = builder.build(&server).await?;
 
-    test.codex
+    test.rune
         .submit(Op::ListSkills {
             cwds: Vec::new(),
             force_reload: false,
         })
         .await?;
     let response =
-        core_test_support::wait_for_event_match(test.codex.as_ref(), |event| match event {
-            codex_core::protocol::EventMsg::ListSkillsResponse(response) => Some(response.clone()),
+        core_test_support::wait_for_event_match(test.rune.as_ref(), |event| match event {
+            rune_core::protocol::EventMsg::ListSkillsResponse(response) => Some(response.clone()),
             _ => None,
         })
         .await;
@@ -163,7 +163,7 @@ async fn list_skills_includes_system_cache_entries() -> Result<()> {
     const SYSTEM_SKILL_NAME: &str = "skill-creator";
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_pre_build_hook(|home| {
+    let mut builder = test_rune().with_pre_build_hook(|home| {
         let system_skill_path = system_skill_md_path(home, SYSTEM_SKILL_NAME);
         assert!(
             !system_skill_path.exists(),
@@ -172,7 +172,7 @@ async fn list_skills_includes_system_cache_entries() -> Result<()> {
     });
     let test = builder.build(&server).await?;
 
-    let system_skill_path = system_skill_md_path(test.codex_home_path(), SYSTEM_SKILL_NAME);
+    let system_skill_path = system_skill_md_path(test.rune_home_path(), SYSTEM_SKILL_NAME);
     assert!(
         system_skill_path.exists(),
         "expected embedded system skills installed to {system_skill_path:?}"
@@ -184,15 +184,15 @@ async fn list_skills_includes_system_cache_entries() -> Result<()> {
         "expected embedded system skill file, got:\n{system_skill_contents}"
     );
 
-    test.codex
+    test.rune
         .submit(Op::ListSkills {
             cwds: Vec::new(),
             force_reload: true,
         })
         .await?;
     let response =
-        core_test_support::wait_for_event_match(test.codex.as_ref(), |event| match event {
-            codex_core::protocol::EventMsg::ListSkillsResponse(response) => Some(response.clone()),
+        core_test_support::wait_for_event_match(test.rune.as_ref(), |event| match event {
+            rune_core::protocol::EventMsg::ListSkillsResponse(response) => Some(response.clone()),
             _ => None,
         })
         .await;
@@ -209,7 +209,7 @@ async fn list_skills_includes_system_cache_entries() -> Result<()> {
         .iter()
         .find(|skill| skill.name == SYSTEM_SKILL_NAME)
         .expect("expected system skill to be present");
-    assert_eq!(skill.scope, codex_protocol::protocol::SkillScope::System);
+    assert_eq!(skill.scope, rune_protocol::protocol::SkillScope::System);
     let path_str = skill.path.to_string_lossy().replace('\\', "/");
     let expected_path_suffix = format!("/skills/.system/{SYSTEM_SKILL_NAME}/SKILL.md");
     assert!(

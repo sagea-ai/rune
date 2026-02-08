@@ -13,36 +13,36 @@ pub mod exec_events;
 pub use cli::Cli;
 pub use cli::Command;
 pub use cli::ReviewArgs;
-use codex_cloud_requirements::cloud_requirements_loader;
-use codex_common::oss::ensure_oss_provider_ready;
-use codex_common::oss::get_default_model_for_oss_provider;
-use codex_core::AuthManager;
-use codex_core::LMSTUDIO_OSS_PROVIDER_ID;
-use codex_core::NewThread;
-use codex_core::OLLAMA_OSS_PROVIDER_ID;
-use codex_core::ThreadManager;
-use codex_core::auth::enforce_login_restrictions;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_core::config::ConfigOverrides;
-use codex_core::config::find_codex_home;
-use codex_core::config::load_config_as_toml_with_cli_overrides;
-use codex_core::config::resolve_oss_provider;
-use codex_core::config_loader::ConfigLoadError;
-use codex_core::config_loader::format_config_error_with_source;
-use codex_core::git_info::get_git_repo_root;
-use codex_core::models_manager::manager::RefreshStrategy;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::Event;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::ReviewRequest;
-use codex_core::protocol::ReviewTarget;
-use codex_core::protocol::SessionSource;
-use codex_protocol::approvals::ElicitationAction;
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_cloud_requirements::cloud_requirements_loader;
+use rune_common::oss::ensure_oss_provider_ready;
+use rune_common::oss::get_default_model_for_oss_provider;
+use rune_core::AuthManager;
+use rune_core::LMSTUDIO_OSS_PROVIDER_ID;
+use rune_core::NewThread;
+use rune_core::OLLAMA_OSS_PROVIDER_ID;
+use rune_core::ThreadManager;
+use rune_core::auth::enforce_login_restrictions;
+use rune_core::config::Config;
+use rune_core::config::ConfigBuilder;
+use rune_core::config::ConfigOverrides;
+use rune_core::config::find_rune_home;
+use rune_core::config::load_config_as_toml_with_cli_overrides;
+use rune_core::config::resolve_oss_provider;
+use rune_core::config_loader::ConfigLoadError;
+use rune_core::config_loader::format_config_error_with_source;
+use rune_core::git_info::get_git_repo_root;
+use rune_core::models_manager::manager::RefreshStrategy;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::Event;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::ReviewRequest;
+use rune_core::protocol::ReviewTarget;
+use rune_core::protocol::SessionSource;
+use rune_protocol::approvals::ElicitationAction;
+use rune_protocol::config_types::SandboxMode;
+use rune_protocol::user_input::UserInput;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use event_processor_with_human_output::EventProcessorWithHumanOutput;
 use event_processor_with_jsonl_output::EventProcessorWithJsonOutput;
 use serde_json::Value;
@@ -62,12 +62,12 @@ use tracing_subscriber::prelude::*;
 use uuid::Uuid;
 
 use crate::cli::Command as ExecCommand;
-use crate::event_processor::CodexStatus;
+use crate::event_processor::RuneStatus;
 use crate::event_processor::EventProcessor;
-use codex_core::default_client::set_default_client_residency_requirement;
-use codex_core::default_client::set_default_originator;
-use codex_core::find_thread_path_by_id_str;
-use codex_core::find_thread_path_by_name_str;
+use rune_core::default_client::set_default_client_residency_requirement;
+use rune_core::default_client::set_default_originator;
+use rune_core::find_thread_path_by_id_str;
+use rune_core::find_thread_path_by_name_str;
 
 enum InitialOperation {
     UserTurn {
@@ -81,14 +81,14 @@ enum InitialOperation {
 
 #[derive(Clone)]
 struct ThreadEventEnvelope {
-    thread_id: codex_protocol::ThreadId,
-    thread: Arc<codex_core::CodexThread>,
+    thread_id: rune_protocol::ThreadId,
+    thread: Arc<rune_core::RuneThread>,
     event: Event,
 }
 
-pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()> {
-    if let Err(err) = set_default_originator("codex_exec".to_string()) {
-        tracing::warn!(?err, "Failed to set codex exec originator override {err:?}");
+pub async fn run_main(cli: Cli, rune_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()> {
+    if let Err(err) = set_default_originator("rune_exec".to_string()) {
+        tracing::warn!(?err, "Failed to set rune exec originator override {err:?}");
     }
 
     let Cli {
@@ -161,17 +161,17 @@ pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> any
 
     // we load config.toml here to determine project state.
     #[allow(clippy::print_stderr)]
-    let codex_home = match find_codex_home() {
-        Ok(codex_home) => codex_home,
+    let rune_home = match find_rune_home() {
+        Ok(rune_home) => rune_home,
         Err(err) => {
-            eprintln!("Error finding codex home: {err}");
+            eprintln!("Error finding rune home: {err}");
             std::process::exit(1);
         }
     };
 
     #[allow(clippy::print_stderr)]
     let config_toml = match load_config_as_toml_with_cli_overrides(
-        &codex_home,
+        &rune_home,
         &config_cwd,
         cli_kv_overrides.clone(),
     )
@@ -196,7 +196,7 @@ pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> any
     };
 
     let cloud_auth_manager = AuthManager::shared(
-        codex_home.clone(),
+        rune_home.clone(),
         false,
         config_toml.cli_auth_credentials_store.unwrap_or_default(),
     );
@@ -247,7 +247,7 @@ pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> any
         sandbox_mode,
         cwd: resolved_cwd,
         model_provider: model_provider.clone(),
-        codex_linux_sandbox_exe,
+        rune_linux_sandbox_exe,
         base_instructions: None,
         developer_instructions: None,
         personality: None,
@@ -273,7 +273,7 @@ pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> any
     }
 
     let otel = match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        codex_core::otel_init::build_provider(&config, env!("CARGO_PKG_VERSION"), None, false)
+        rune_core::otel_init::build_provider(&config, env!("CARGO_PKG_VERSION"), None, false)
     })) {
         Ok(Ok(otel)) => otel,
         Ok(Err(e)) => {
@@ -346,12 +346,12 @@ pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> any
     }
 
     let auth_manager = AuthManager::shared(
-        config.codex_home.clone(),
+        config.rune_home.clone(),
         true,
         config.cli_auth_credentials_store_mode,
     );
     let thread_manager = Arc::new(ThreadManager::new(
-        config.codex_home.clone(),
+        config.rune_home.clone(),
         auth_manager.clone(),
         SessionSource::Exec,
     ));
@@ -381,7 +381,7 @@ pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> any
     let (initial_operation, prompt_summary) = match (command, prompt, images) {
         (Some(ExecCommand::Review(review_cli)), _, _) => {
             let review_request = build_review_request(review_cli)?;
-            let summary = codex_core::review_prompts::user_facing_hint(&review_request.target);
+            let summary = rune_core::review_prompts::user_facing_hint(&review_request.target);
             (InitialOperation::Review { review_request }, summary)
         }
         (Some(ExecCommand::Resume(args)), root_prompt, imgs) => {
@@ -438,11 +438,11 @@ pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> any
         }
     };
 
-    // Print the effective configuration and initial request so users can see what Codex
+    // Print the effective configuration and initial request so users can see what Rune
     // is using.
     event_processor.print_config_summary(&config, &prompt_summary, &session_configured);
 
-    info!("Codex initialized with event: {session_configured:?}");
+    info!("Rune initialized with event: {session_configured:?}");
 
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<ThreadEventEnvelope>();
     let attached_threads = Arc::new(Mutex::new(HashSet::from([primary_thread_id])));
@@ -453,7 +453,7 @@ pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> any
         tokio::spawn(async move {
             if tokio::signal::ctrl_c().await.is_ok() {
                 tracing::debug!("Keyboard interrupt");
-                // Immediately notify Codex to abort any in-flight task.
+                // Immediately notify Rune to abort any in-flight task.
                 thread.submit(Op::Interrupt).await.ok();
             }
         });
@@ -542,7 +542,7 @@ pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> any
         }
         if let EventMsg::McpStartupUpdate(update) = &event.msg
             && required_mcp_servers.contains(&update.server)
-            && let codex_core::protocol::McpStartupStatus::Failed { error } = &update.status
+            && let rune_core::protocol::McpStartupStatus::Failed { error } = &update.status
         {
             error_seen = true;
             eprintln!(
@@ -561,19 +561,19 @@ pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> any
             continue;
         }
         let shutdown = event_processor.process_event(event);
-        if thread_id != primary_thread_id && matches!(shutdown, CodexStatus::InitiateShutdown) {
+        if thread_id != primary_thread_id && matches!(shutdown, RuneStatus::InitiateShutdown) {
             continue;
         }
         match shutdown {
-            CodexStatus::Running => continue,
-            CodexStatus::InitiateShutdown => {
+            RuneStatus::Running => continue,
+            RuneStatus::InitiateShutdown => {
                 if !shutdown_requested {
                     thread.submit(Op::Shutdown).await?;
                     shutdown_requested = true;
                 }
             }
-            CodexStatus::Shutdown if thread_id == primary_thread_id => break,
-            CodexStatus::Shutdown => continue,
+            RuneStatus::Shutdown if thread_id == primary_thread_id => break,
+            RuneStatus::Shutdown => continue,
         }
     }
     event_processor.print_final_output();
@@ -585,8 +585,8 @@ pub async fn run_main(cli: Cli, codex_linux_sandbox_exe: Option<PathBuf>) -> any
 }
 
 fn spawn_thread_listener(
-    thread_id: codex_protocol::ThreadId,
-    thread: Arc<codex_core::CodexThread>,
+    thread_id: rune_protocol::ThreadId,
+    thread: Arc<rune_core::RuneThread>,
     tx: tokio::sync::mpsc::UnboundedSender<ThreadEventEnvelope>,
 ) {
     tokio::spawn(async move {
@@ -631,11 +631,11 @@ async fn resolve_resume_path(
         } else {
             Some(config.cwd.as_path())
         };
-        match codex_core::RolloutRecorder::find_latest_thread_path(
-            &config.codex_home,
+        match rune_core::RolloutRecorder::find_latest_thread_path(
+            &config.rune_home,
             1,
             None,
-            codex_core::ThreadSortKey::UpdatedAt,
+            rune_core::ThreadSortKey::UpdatedAt,
             &[],
             Some(default_provider_filter.as_slice()),
             &config.model_provider_id,
@@ -651,10 +651,10 @@ async fn resolve_resume_path(
         }
     } else if let Some(id_str) = args.session_id.as_deref() {
         if Uuid::parse_str(id_str).is_ok() {
-            let path = find_thread_path_by_id_str(&config.codex_home, id_str).await?;
+            let path = find_thread_path_by_id_str(&config.rune_home, id_str).await?;
             Ok(path)
         } else {
-            let path = find_thread_path_by_name_str(&config.codex_home, id_str).await?;
+            let path = find_thread_path_by_name_str(&config.rune_home, id_str).await?;
             Ok(path)
         }
     } else {

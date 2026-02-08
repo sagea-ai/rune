@@ -4,7 +4,7 @@ Runtime: unified exec
 Handles approval + sandbox orchestration for unified exec requests, delegating to
 the process manager to spawn PTYs once an ExecEnv is prepared.
 */
-use crate::error::CodexErr;
+use crate::error::RuneErr;
 use crate::error::SandboxErr;
 use crate::exec::ExecExpiration;
 use crate::features::Feature;
@@ -27,7 +27,7 @@ use crate::tools::sandboxing::with_cached_approval;
 use crate::unified_exec::UnifiedExecError;
 use crate::unified_exec::UnifiedExecProcess;
 use crate::unified_exec::UnifiedExecProcessManager;
-use codex_protocol::protocol::ReviewDecision;
+use rune_protocol::protocol::ReviewDecision;
 use futures::future::BoxFuture;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -192,13 +192,13 @@ impl<'a> ToolRuntime<UnifiedExecRequest, UnifiedExecProcess> for UnifiedExecRunt
         .map_err(|_| ToolError::Rejected("missing command line for PTY".to_string()))?;
         let exec_env = attempt
             .env_for(spec)
-            .map_err(|err| ToolError::Codex(err.into()))?;
+            .map_err(|err| ToolError::Rune(err.into()))?;
         self.manager
             .open_session_with_exec_env(&exec_env, req.tty)
             .await
             .map_err(|err| match err {
                 UnifiedExecError::SandboxDenied { output, .. } => {
-                    ToolError::Codex(CodexErr::Sandbox(SandboxErr::Denied {
+                    ToolError::Rune(RuneErr::Sandbox(SandboxErr::Denied {
                         output: Box::new(output),
                     }))
                 }

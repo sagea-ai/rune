@@ -1,40 +1,40 @@
-use codex_core::AuthManager;
-use codex_core::CodexAuth;
-use codex_core::ContentItem;
-use codex_core::LocalShellAction;
-use codex_core::LocalShellExecAction;
-use codex_core::LocalShellStatus;
-use codex_core::ModelClient;
-use codex_core::ModelProviderInfo;
-use codex_core::NewThread;
-use codex_core::Prompt;
-use codex_core::ResponseEvent;
-use codex_core::ResponseItem;
-use codex_core::ThreadManager;
-use codex_core::WireApi;
-use codex_core::auth::AuthCredentialsStoreMode;
-use codex_core::built_in_model_providers;
-use codex_core::default_client::originator;
-use codex_core::error::CodexErr;
-use codex_core::models_manager::manager::ModelsManager;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SessionSource;
-use codex_otel::OtelManager;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::Settings;
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::MessagePhase;
-use codex_protocol::models::ReasoningItemContent;
-use codex_protocol::models::ReasoningItemReasoningSummary;
-use codex_protocol::models::WebSearchAction;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::user_input::UserInput;
+use rune_core::AuthManager;
+use rune_core::RuneAuth;
+use rune_core::ContentItem;
+use rune_core::LocalShellAction;
+use rune_core::LocalShellExecAction;
+use rune_core::LocalShellStatus;
+use rune_core::ModelClient;
+use rune_core::ModelProviderInfo;
+use rune_core::NewThread;
+use rune_core::Prompt;
+use rune_core::ResponseEvent;
+use rune_core::ResponseItem;
+use rune_core::ThreadManager;
+use rune_core::WireApi;
+use rune_core::auth::AuthCredentialsStoreMode;
+use rune_core::built_in_model_providers;
+use rune_core::default_client::originator;
+use rune_core::error::RuneErr;
+use rune_core::models_manager::manager::ModelsManager;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SessionSource;
+use rune_otel::OtelManager;
+use rune_otel::TelemetryAuthMode;
+use rune_protocol::ThreadId;
+use rune_protocol::config_types::CollaborationMode;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::config_types::Settings;
+use rune_protocol::config_types::Verbosity;
+use rune_protocol::models::FunctionCallOutputPayload;
+use rune_protocol::models::MessagePhase;
+use rune_protocol::models::ReasoningItemContent;
+use rune_protocol::models::ReasoningItemReasoningSummary;
+use rune_protocol::models::WebSearchAction;
+use rune_protocol::openai_models::ReasoningEffort;
+use rune_protocol::user_input::UserInput;
 use core_test_support::load_default_config_for_test;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_completed_with_tokens;
@@ -45,8 +45,8 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::sse_failed;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRune;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use dunce::canonicalize as normalize_path;
 use futures::StreamExt;
@@ -106,11 +106,11 @@ fn assert_message_ends_with(request_body: &serde_json::Value, text: &str) {
     );
 }
 
-/// Writes an `auth.json` into the provided `codex_home` with the specified parameters.
+/// Writes an `auth.json` into the provided `rune_home` with the specified parameters.
 /// Returns the fake JWT string written to `tokens.id_token`.
 #[expect(clippy::unwrap_used)]
 fn write_auth_json(
-    codex_home: &TempDir,
+    rune_home: &TempDir,
     openai_api_key: Option<&str>,
     chatgpt_plan_type: &str,
     access_token: &str,
@@ -150,7 +150,7 @@ fn write_auth_json(
     });
 
     std::fs::write(
-        codex_home.path().join("auth.json"),
+        rune_home.path().join("auth.json"),
         serde_json::to_string_pretty(&auth_json).unwrap(),
     )
     .unwrap();
@@ -187,10 +187,10 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
     .unwrap();
 
     // Prior item: user message (should be delivered)
-    let prior_user = codex_protocol::models::ResponseItem::Message {
+    let prior_user = rune_protocol::models::ResponseItem::Message {
         id: None,
         role: "user".to_string(),
-        content: vec![codex_protocol::models::ContentItem::InputText {
+        content: vec![rune_protocol::models::ContentItem::InputText {
             text: "resumed user message".to_string(),
         }],
         end_turn: None,
@@ -209,10 +209,10 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
     .unwrap();
 
     // Prior item: system message (excluded from API history)
-    let prior_system = codex_protocol::models::ResponseItem::Message {
+    let prior_system = rune_protocol::models::ResponseItem::Message {
         id: None,
         role: "system".to_string(),
-        content: vec![codex_protocol::models::ContentItem::OutputText {
+        content: vec![rune_protocol::models::ContentItem::OutputText {
             text: "resumed system instruction".to_string(),
         }],
         end_turn: None,
@@ -231,10 +231,10 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
     .unwrap();
 
     // Prior item: assistant message
-    let prior_item = codex_protocol::models::ResponseItem::Message {
+    let prior_item = rune_protocol::models::ResponseItem::Message {
         id: None,
         role: "assistant".to_string(),
-        content: vec![codex_protocol::models::ContentItem::OutputText {
+        content: vec![rune_protocol::models::ContentItem::OutputText {
             text: "resumed assistant message".to_string(),
         }],
         end_turn: None,
@@ -261,19 +261,19 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
     )
     .await;
 
-    // Configure Codex to resume from our file
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let mut builder = test_codex()
-        .with_home(codex_home.clone())
+    // Configure Rune to resume from our file
+    let rune_home = Arc::new(TempDir::new().unwrap());
+    let mut builder = test_rune()
+        .with_home(rune_home.clone())
         .with_config(|config| {
             // Ensure user instructions are NOT delivered on resume.
             config.user_instructions = Some("be nice".to_string());
         });
     let test = builder
-        .resume(&server, codex_home, session_path.clone())
+        .resume(&server, rune_home, session_path.clone())
         .await
         .expect("resume conversation");
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let session_configured = test.session_configured;
 
     // 1) Assert initial_messages only includes existing EventMsg entries; response items are not converted
@@ -286,7 +286,7 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
     assert_eq!(initial_json, expected_initial_json);
 
     // 2) Submit new input; the request body must include the prior items, then initial context, then new user input.
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -296,7 +296,7 @@ async fn resume_includes_initial_messages_and_sends_prior_items() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -383,15 +383,15 @@ async fn includes_conversation_id_and_model_headers_in_request() {
     )
     .await;
 
-    let mut builder = test_codex().with_auth(CodexAuth::from_api_key("Test API Key"));
+    let mut builder = test_rune().with_auth(RuneAuth::from_api_key("Test API Key"));
     let test = builder
         .build(&server)
         .await
         .expect("create new conversation");
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let session_id = test.session_configured.session_id;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -402,7 +402,7 @@ async fn includes_conversation_id_and_model_headers_in_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     assert_eq!(request.path(), "/v1/responses");
@@ -428,18 +428,18 @@ async fn includes_base_instructions_override_in_request() {
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::from_api_key("Test API Key"))
+    let mut builder = test_rune()
+        .with_auth(RuneAuth::from_api_key("Test API Key"))
         .with_config(|config| {
             config.base_instructions = Some("test instructions".to_string());
         });
-    let codex = builder
+    let rune = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -450,7 +450,7 @@ async fn includes_base_instructions_override_in_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -477,9 +477,9 @@ async fn chatgpt_auth_sends_correct_request() {
     .await;
 
     let mut model_provider = built_in_model_providers()["openai"].clone();
-    model_provider.base_url = Some(format!("{}/api/codex", server.uri()));
-    let mut builder = test_codex()
-        .with_auth(create_dummy_codex_auth())
+    model_provider.base_url = Some(format!("{}/api/rune", server.uri()));
+    let mut builder = test_rune()
+        .with_auth(create_dummy_rune_auth())
         .with_config(move |config| {
             config.model_provider = model_provider;
         });
@@ -487,10 +487,10 @@ async fn chatgpt_auth_sends_correct_request() {
         .build(&server)
         .await
         .expect("create new conversation");
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let thread_id = test.session_configured.session_id;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -501,10 +501,10 @@ async fn chatgpt_auth_sends_correct_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
-    assert_eq!(request.path(), "/api/codex/responses");
+    assert_eq!(request.path(), "/api/rune/responses");
     let request_authorization = request
         .header("authorization")
         .expect("authorization header");
@@ -556,37 +556,37 @@ async fn prefers_apikey_when_config_prefers_apikey_even_with_chatgpt_tokens() {
     };
 
     // Init session
-    let codex_home = TempDir::new().unwrap();
+    let rune_home = TempDir::new().unwrap();
     // Write auth.json that contains both API key and ChatGPT tokens for a plan that should prefer ChatGPT,
     // but config will force API key preference.
     let _jwt = write_auth_json(
-        &codex_home,
+        &rune_home,
         Some("sk-test-key"),
         "pro",
         "Access-123",
         Some("acc-123"),
     );
 
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.model_provider = model_provider;
 
     let auth_manager =
-        match CodexAuth::from_auth_storage(codex_home.path(), AuthCredentialsStoreMode::File) {
-            Ok(Some(auth)) => codex_core::AuthManager::from_auth_for_testing(auth),
-            Ok(None) => panic!("No CodexAuth found in codex_home"),
-            Err(e) => panic!("Failed to load CodexAuth: {e}"),
+        match RuneAuth::from_auth_storage(rune_home.path(), AuthCredentialsStoreMode::File) {
+            Ok(Some(auth)) => rune_core::AuthManager::from_auth_for_testing(auth),
+            Ok(None) => panic!("No RuneAuth found in rune_home"),
+            Err(e) => panic!("Failed to load RuneAuth: {e}"),
         };
     let thread_manager = ThreadManager::new(
-        codex_home.path().to_path_buf(),
+        rune_home.path().to_path_buf(),
         auth_manager,
         SessionSource::Exec,
     );
-    let NewThread { thread: codex, .. } = thread_manager
+    let NewThread { thread: rune, .. } = thread_manager
         .start_thread(config)
         .await
         .expect("create new conversation");
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -597,7 +597,7 @@ async fn prefers_apikey_when_config_prefers_apikey_even_with_chatgpt_tokens() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -611,18 +611,18 @@ async fn includes_user_instructions_message_in_request() {
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::from_api_key("Test API Key"))
+    let mut builder = test_rune()
+        .with_auth(RuneAuth::from_api_key("Test API Key"))
         .with_config(|config| {
             config.user_instructions = Some("be nice".to_string());
         });
-    let codex = builder
+    let rune = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -633,7 +633,7 @@ async fn includes_user_instructions_message_in_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -677,8 +677,8 @@ async fn skills_append_to_instructions() {
     )
     .await;
 
-    let codex_home = Arc::new(TempDir::new().unwrap());
-    let skill_dir = codex_home.path().join("skills/demo");
+    let rune_home = Arc::new(TempDir::new().unwrap());
+    let skill_dir = rune_home.path().join("skills/demo");
     std::fs::create_dir_all(&skill_dir).expect("create skill dir");
     std::fs::write(
         skill_dir.join("SKILL.md"),
@@ -686,20 +686,20 @@ async fn skills_append_to_instructions() {
     )
     .expect("write skill");
 
-    let codex_home_path = codex_home.path().to_path_buf();
-    let mut builder = test_codex()
-        .with_home(codex_home.clone())
-        .with_auth(CodexAuth::from_api_key("Test API Key"))
+    let rune_home_path = rune_home.path().to_path_buf();
+    let mut builder = test_rune()
+        .with_home(rune_home.clone())
+        .with_auth(RuneAuth::from_api_key("Test API Key"))
         .with_config(move |config| {
-            config.cwd = codex_home_path;
+            config.cwd = rune_home_path;
         });
-    let codex = builder
+    let rune = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -710,7 +710,7 @@ async fn skills_append_to_instructions() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -735,7 +735,7 @@ async fn skills_append_to_instructions() {
         instructions_text.contains(&expected_path_str),
         "expected path {expected_path_str} in instructions"
     );
-    let _codex_home_guard = codex_home;
+    let _rune_home_guard = rune_home;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -748,15 +748,15 @@ async fn includes_configured_effort_in_request() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
-        .with_model("gpt-5.1-codex")
+    let TestRune { rune, .. } = test_rune()
+        .with_model("gpt-5.1-rune")
         .with_config(|config| {
             config.model_reasoning_effort = Some(ReasoningEffort::Medium);
         })
         .build(&server)
         .await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -767,7 +767,7 @@ async fn includes_configured_effort_in_request() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -793,12 +793,12 @@ async fn includes_no_effort_in_request() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
-        .with_model("gpt-5.1-codex")
+    let TestRune { rune, .. } = test_rune()
+        .with_model("gpt-5.1-rune")
         .build(&server)
         .await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -809,7 +809,7 @@ async fn includes_no_effort_in_request() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -836,9 +836,9 @@ async fn includes_default_reasoning_effort_in_request_when_defined_by_model_info
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex().with_model("gpt-5.1").build(&server).await?;
+    let TestRune { rune, .. } = test_rune().with_model("gpt-5.1").build(&server).await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -849,7 +849,7 @@ async fn includes_default_reasoning_effort_in_request_when_defined_by_model_info
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -875,13 +875,13 @@ async fn user_turn_collaboration_mode_overrides_model_and_effort() -> anyhow::Re
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         config,
         session_configured,
         ..
-    } = test_codex()
-        .with_model("gpt-5.1-codex")
+    } = test_rune()
+        .with_model("gpt-5.1-rune")
         .build(&server)
         .await?;
 
@@ -894,7 +894,7 @@ async fn user_turn_collaboration_mode_overrides_model_and_effort() -> anyhow::Re
         },
     };
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -912,7 +912,7 @@ async fn user_turn_collaboration_mode_overrides_model_and_effort() -> anyhow::Re
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request_body = resp_mock.single_request().body_json();
     assert_eq!(request_body["model"].as_str(), Some("gpt-5.1"));
@@ -937,14 +937,14 @@ async fn configured_reasoning_summary_is_sent() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestRune { rune, .. } = test_rune()
         .with_config(|config| {
             config.model_reasoning_summary = ReasoningSummary::Concise;
         })
         .build(&server)
         .await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -955,7 +955,7 @@ async fn configured_reasoning_summary_is_sent() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -981,14 +981,14 @@ async fn reasoning_summary_is_omitted_when_disabled() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestRune { rune, .. } = test_rune()
         .with_config(|config| {
             config.model_reasoning_summary = ReasoningSummary::None;
         })
         .build(&server)
         .await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -999,7 +999,7 @@ async fn reasoning_summary_is_omitted_when_disabled() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -1024,9 +1024,9 @@ async fn includes_default_verbosity_in_request() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex().with_model("gpt-5.1").build(&server).await?;
+    let TestRune { rune, .. } = test_rune().with_model("gpt-5.1").build(&server).await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1037,7 +1037,7 @@ async fn includes_default_verbosity_in_request() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -1063,15 +1063,15 @@ async fn configured_verbosity_not_sent_for_models_without_support() -> anyhow::R
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
-        .with_model("gpt-5.1-codex")
+    let TestRune { rune, .. } = test_rune()
+        .with_model("gpt-5.1-rune")
         .with_config(|config| {
             config.model_verbosity = Some(Verbosity::High);
         })
         .build(&server)
         .await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1082,7 +1082,7 @@ async fn configured_verbosity_not_sent_for_models_without_support() -> anyhow::R
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -1107,7 +1107,7 @@ async fn configured_verbosity_is_sent() -> anyhow::Result<()> {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let TestCodex { codex, .. } = test_codex()
+    let TestRune { rune, .. } = test_rune()
         .with_model("gpt-5.1")
         .with_config(|config| {
             config.model_verbosity = Some(Verbosity::High);
@@ -1115,7 +1115,7 @@ async fn configured_verbosity_is_sent() -> anyhow::Result<()> {
         .build(&server)
         .await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1126,7 +1126,7 @@ async fn configured_verbosity_is_sent() -> anyhow::Result<()> {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -1152,19 +1152,19 @@ async fn includes_developer_instructions_message_in_request() {
         sse(vec![ev_response_created("resp1"), ev_completed("resp1")]),
     )
     .await;
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::from_api_key("Test API Key"))
+    let mut builder = test_rune()
+        .with_auth(RuneAuth::from_api_key("Test API Key"))
         .with_config(|config| {
             config.user_instructions = Some("be nice".to_string());
             config.developer_instructions = Some("be useful".to_string());
         });
-    let codex = builder
+    let rune = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1175,7 +1175,7 @@ async fn includes_developer_instructions_message_in_request() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let request = resp_mock.single_request();
     let request_body = request.body_json();
@@ -1240,8 +1240,8 @@ async fn azure_responses_request_includes_store_and_reasoning_ids() {
         supports_websockets: false,
     };
 
-    let codex_home = TempDir::new().unwrap();
-    let mut config = load_default_config_for_test(&codex_home).await;
+    let rune_home = TempDir::new().unwrap();
+    let mut config = load_default_config_for_test(&rune_home).await;
     config.model_provider_id = provider.name.clone();
     config.model_provider = provider.clone();
     let effort = config.model_reasoning_effort;
@@ -1251,7 +1251,7 @@ async fn azure_responses_request_includes_store_and_reasoning_ids() {
     let config = Arc::new(config);
     let model_info = ModelsManager::construct_model_info_offline(model.as_str(), &config);
     let conversation_id = ThreadId::new();
-    let auth_manager = AuthManager::from_auth_for_testing(CodexAuth::from_api_key("Test API Key"));
+    let auth_manager = AuthManager::from_auth_for_testing(RuneAuth::from_api_key("Test API Key"));
     let otel_manager = OtelManager::new(
         conversation_id,
         model.as_str(),
@@ -1402,18 +1402,18 @@ async fn token_count_includes_rate_limits_snapshot() {
     let mut provider = built_in_model_providers()["openai"].clone();
     provider.base_url = Some(format!("{}/v1", server.uri()));
 
-    let mut builder = test_codex()
-        .with_auth(CodexAuth::from_api_key("test"))
+    let mut builder = test_rune()
+        .with_auth(RuneAuth::from_api_key("test"))
         .with_config(move |config| {
             config.model_provider = provider;
         });
-    let codex = builder
+    let rune = builder
         .build(&server)
         .await
         .expect("create conversation")
-        .codex;
+        .rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1425,7 +1425,7 @@ async fn token_count_includes_rate_limits_snapshot() {
         .unwrap();
 
     let first_token_event =
-        wait_for_event(&codex, |msg| matches!(msg, EventMsg::TokenCount(_))).await;
+        wait_for_event(&rune, |msg| matches!(msg, EventMsg::TokenCount(_))).await;
     let rate_limit_only = match first_token_event {
         EventMsg::TokenCount(ev) => ev,
         _ => unreachable!(),
@@ -1454,7 +1454,7 @@ async fn token_count_includes_rate_limits_snapshot() {
     );
 
     let token_event = wait_for_event(
-        &codex,
+        &rune,
         |msg| matches!(msg, EventMsg::TokenCount(ev) if ev.info.is_some()),
     )
     .await;
@@ -1523,7 +1523,7 @@ async fn token_count_includes_rate_limits_snapshot() {
         Some(1704069000)
     );
 
-    wait_for_event(&codex, |msg| matches!(msg, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |msg| matches!(msg, EventMsg::TurnComplete(_))).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -1553,9 +1553,9 @@ async fn usage_limit_error_emits_rate_limit_event() -> anyhow::Result<()> {
         .mount(&server)
         .await;
 
-    let mut builder = test_codex();
-    let codex_fixture = builder.build(&server).await?;
-    let codex = codex_fixture.codex.clone();
+    let mut builder = test_rune();
+    let rune_fixture = builder.build(&server).await?;
+    let rune = rune_fixture.rune.clone();
 
     let expected_limits = json!({
         "primary": {
@@ -1572,7 +1572,7 @@ async fn usage_limit_error_emits_rate_limit_event() -> anyhow::Result<()> {
         "plan_type": null
     });
 
-    let submission_id = codex
+    let submission_id = rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1583,7 +1583,7 @@ async fn usage_limit_error_emits_rate_limit_event() -> anyhow::Result<()> {
         .await
         .expect("submission should succeed while emitting usage limit error events");
 
-    let token_event = wait_for_event(&codex, |msg| matches!(msg, EventMsg::TokenCount(_))).await;
+    let token_event = wait_for_event(&rune, |msg| matches!(msg, EventMsg::TokenCount(_))).await;
     let EventMsg::TokenCount(event) = token_event else {
         unreachable!();
     };
@@ -1597,7 +1597,7 @@ async fn usage_limit_error_emits_rate_limit_event() -> anyhow::Result<()> {
         })
     );
 
-    let error_event = wait_for_event(&codex, |msg| matches!(msg, EventMsg::Error(_))).await;
+    let error_event = wait_for_event(&rune, |msg| matches!(msg, EventMsg::Error(_))).await;
     let EventMsg::Error(error_event) = error_event else {
         unreachable!();
     };
@@ -1638,7 +1638,7 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestRune { rune, .. } = test_rune()
         .with_config(|config| {
             config.model = Some("gpt-5.1".to_string());
             config.model_context_window = Some(272_000);
@@ -1646,7 +1646,7 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
         .build(&server)
         .await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "seed turn".into(),
@@ -1656,9 +1656,9 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "trigger context window".into(),
@@ -1668,7 +1668,7 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
         })
         .await?;
 
-    let token_event = wait_for_event(&codex, |event| {
+    let token_event = wait_for_event(&rune, |event| {
         matches!(
             event,
             EventMsg::TokenCount(payload)
@@ -1694,8 +1694,8 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
         EFFECTIVE_CONTEXT_WINDOW
     );
 
-    let error_event = wait_for_event(&codex, |ev| matches!(ev, EventMsg::Error(_))).await;
-    let expected_context_window_message = CodexErr::ContextWindowExceeded.to_string();
+    let error_event = wait_for_event(&rune, |ev| matches!(ev, EventMsg::Error(_))).await;
+    let expected_context_window_message = RuneErr::ContextWindowExceeded.to_string();
     assert!(
         matches!(
             error_event,
@@ -1704,7 +1704,7 @@ async fn context_window_error_sets_total_tokens_to_model_window() -> anyhow::Res
         "expected context window error; got {error_event:?}"
     );
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     Ok(())
 }
@@ -1768,18 +1768,18 @@ async fn azure_overrides_assign_properties_used_for_responses_url() {
     };
 
     // Init session
-    let mut builder = test_codex()
-        .with_auth(create_dummy_codex_auth())
+    let mut builder = test_rune()
+        .with_auth(create_dummy_rune_auth())
         .with_config(move |config| {
             config.model_provider = provider;
         });
-    let codex = builder
+    let rune = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1790,7 +1790,7 @@ async fn azure_overrides_assign_properties_used_for_responses_url() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -1852,18 +1852,18 @@ async fn env_var_overrides_loaded_auth() {
     };
 
     // Init session
-    let mut builder = test_codex()
-        .with_auth(create_dummy_codex_auth())
+    let mut builder = test_rune()
+        .with_auth(create_dummy_rune_auth())
         .with_config(move |config| {
             config.model_provider = provider;
         });
-    let codex = builder
+    let rune = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -1874,11 +1874,11 @@ async fn env_var_overrides_loaded_auth() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
-fn create_dummy_codex_auth() -> CodexAuth {
-    CodexAuth::create_dummy_chatgpt_auth_for_testing()
+fn create_dummy_rune_auth() -> RuneAuth {
+    RuneAuth::create_dummy_chatgpt_auth_for_testing()
 }
 
 /// Scenario:
@@ -1889,7 +1889,7 @@ fn create_dummy_codex_auth() -> CodexAuth {
 /// We assert that the `input` sent on each turn contains the expected conversation history
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn history_dedupes_streamed_and_final_messages_across_turns() {
-    // Skip under Codex sandbox network restrictions (mirrors other tests).
+    // Skip under Rune sandbox network restrictions (mirrors other tests).
     skip_if_no_network!();
 
     // Mock server that will receive three sequential requests and return the same SSE stream
@@ -1916,15 +1916,15 @@ async fn history_dedupes_streamed_and_final_messages_across_turns() {
 
     let request_log = mount_sse_sequence(&server, vec![sse1.clone(), sse1.clone(), sse1]).await;
 
-    let mut builder = test_codex().with_auth(CodexAuth::from_api_key("Test API Key"));
-    let codex = builder
+    let mut builder = test_rune().with_auth(RuneAuth::from_api_key("Test API Key"));
+    let rune = builder
         .build(&server)
         .await
         .expect("create new conversation")
-        .codex;
+        .rune;
 
     // Turn 1: user sends U1; wait for completion.
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "U1".into(),
@@ -1934,10 +1934,10 @@ async fn history_dedupes_streamed_and_final_messages_across_turns() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Turn 2: user sends U2; wait for completion.
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "U2".into(),
@@ -1947,10 +1947,10 @@ async fn history_dedupes_streamed_and_final_messages_across_turns() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Turn 3: user sends U3; wait for completion.
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "U3".into(),
@@ -1960,7 +1960,7 @@ async fn history_dedupes_streamed_and_final_messages_across_turns() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Inspect the three captured requests.
     let requests = request_log.requests();

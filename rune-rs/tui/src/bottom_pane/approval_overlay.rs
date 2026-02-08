@@ -16,13 +16,13 @@ use crate::key_hint::KeyBinding;
 use crate::render::highlight::highlight_bash_to_lines;
 use crate::render::renderable::ColumnRenderable;
 use crate::render::renderable::Renderable;
-use codex_core::features::Features;
-use codex_core::protocol::ElicitationAction;
-use codex_core::protocol::ExecPolicyAmendment;
-use codex_core::protocol::FileChange;
-use codex_core::protocol::Op;
-use codex_core::protocol::ReviewDecision;
-use codex_protocol::mcp::RequestId;
+use rune_core::features::Features;
+use rune_core::protocol::ElicitationAction;
+use rune_core::protocol::ExecPolicyAmendment;
+use rune_core::protocol::FileChange;
+use rune_core::protocol::Op;
+use rune_core::protocol::ReviewDecision;
+use rune_protocol::mcp::RequestId;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -193,14 +193,14 @@ impl ApprovalOverlay {
     fn handle_exec_decision(&self, id: &str, command: &[String], decision: ReviewDecision) {
         let cell = history_cell::new_approval_decision_cell(command.to_vec(), decision.clone());
         self.app_event_tx.send(AppEvent::InsertHistoryCell(cell));
-        self.app_event_tx.send(AppEvent::CodexOp(Op::ExecApproval {
+        self.app_event_tx.send(AppEvent::RuneOp(Op::ExecApproval {
             id: id.to_string(),
             decision,
         }));
     }
 
     fn handle_patch_decision(&self, id: &str, decision: ReviewDecision) {
-        self.app_event_tx.send(AppEvent::CodexOp(Op::PatchApproval {
+        self.app_event_tx.send(AppEvent::RuneOp(Op::PatchApproval {
             id: id.to_string(),
             decision,
         }));
@@ -213,7 +213,7 @@ impl ApprovalOverlay {
         decision: ElicitationAction,
     ) {
         self.app_event_tx
-            .send(AppEvent::CodexOp(Op::ResolveElicitation {
+            .send(AppEvent::RuneOp(Op::ResolveElicitation {
                 server_name: server_name.to_string(),
                 request_id: request_id.clone(),
                 decision,
@@ -472,7 +472,7 @@ fn exec_options(proposed_execpolicy_amendment: Option<ExecPolicyAmendment>) -> V
         })
     }))
     .chain([ApprovalOption {
-        label: "No, and tell Codex what to do differently".to_string(),
+        label: "No, and tell Rune what to do differently".to_string(),
         decision: ApprovalDecision::Review(ReviewDecision::Abort),
         display_shortcut: Some(key_hint::plain(KeyCode::Esc)),
         additional_shortcuts: vec![key_hint::plain(KeyCode::Char('n'))],
@@ -495,7 +495,7 @@ fn patch_options() -> Vec<ApprovalOption> {
             additional_shortcuts: vec![key_hint::plain(KeyCode::Char('a'))],
         },
         ApprovalOption {
-            label: "No, and tell Codex what to do differently".to_string(),
+            label: "No, and tell Rune what to do differently".to_string(),
             decision: ApprovalDecision::Review(ReviewDecision::Abort),
             display_shortcut: Some(key_hint::plain(KeyCode::Esc)),
             additional_shortcuts: vec![key_hint::plain(KeyCode::Char('n'))],
@@ -560,10 +560,10 @@ mod tests {
         let mut view = ApprovalOverlay::new(make_exec_request(), tx, Features::with_defaults());
         assert!(!view.is_complete());
         view.handle_key_event(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
-        // We expect at least one CodexOp message in the queue.
+        // We expect at least one RuneOp message in the queue.
         let mut saw_op = false;
         while let Ok(ev) = rx.try_recv() {
-            if matches!(ev, AppEvent::CodexOp(_)) {
+            if matches!(ev, AppEvent::RuneOp(_)) {
                 saw_op = true;
                 break;
             }
@@ -590,7 +590,7 @@ mod tests {
         view.handle_key_event(KeyEvent::new(KeyCode::Char('p'), KeyModifiers::NONE));
         let mut saw_op = false;
         while let Ok(ev) = rx.try_recv() {
-            if let AppEvent::CodexOp(Op::ExecApproval { decision, .. }) = ev {
+            if let AppEvent::RuneOp(Op::ExecApproval { decision, .. }) = ev {
                 assert_eq!(
                     decision,
                     ReviewDecision::ApprovedExecpolicyAmendment {
@@ -659,7 +659,7 @@ mod tests {
             })
             .collect();
         let expected = vec![
-            "✔ You approved codex to run".to_string(),
+            "✔ You approved rune to run".to_string(),
             "  git add tui/src/render/".to_string(),
             "  mod.rs tui/src/render/".to_string(),
             "  renderable.rs this time".to_string(),
@@ -681,7 +681,7 @@ mod tests {
 
         let mut decision = None;
         while let Ok(ev) = rx.try_recv() {
-            if let AppEvent::CodexOp(Op::ExecApproval { decision: d, .. }) = ev {
+            if let AppEvent::RuneOp(Op::ExecApproval { decision: d, .. }) = ev {
                 decision = Some(d);
                 break;
             }

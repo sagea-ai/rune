@@ -1,12 +1,12 @@
 #![allow(clippy::unwrap_used)]
 
-use codex_core::features::Feature;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::WebSearchMode;
+use rune_core::features::Feature;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::WebSearchMode;
 use core_test_support::responses;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
 
@@ -31,8 +31,8 @@ async fn web_search_mode_cached_sets_external_web_access_false() {
     ]);
     let resp_mock = responses::mount_sse_once(&server, sse).await;
 
-    let mut builder = test_codex()
-        .with_model("gpt-5-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5-rune")
         .with_config(|config| {
             config
                 .web_search_mode
@@ -42,7 +42,7 @@ async fn web_search_mode_cached_sets_external_web_access_false() {
     let test = builder
         .build(&server)
         .await
-        .expect("create test Codex conversation");
+        .expect("create test Rune conversation");
 
     test.submit_turn_with_policy("hello cached web search", SandboxPolicy::ReadOnly)
         .await
@@ -68,8 +68,8 @@ async fn web_search_mode_takes_precedence_over_legacy_flags() {
     ]);
     let resp_mock = responses::mount_sse_once(&server, sse).await;
 
-    let mut builder = test_codex()
-        .with_model("gpt-5-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5-rune")
         .with_config(|config| {
             config.features.enable(Feature::WebSearchRequest);
             config
@@ -80,7 +80,7 @@ async fn web_search_mode_takes_precedence_over_legacy_flags() {
     let test = builder
         .build(&server)
         .await
-        .expect("create test Codex conversation");
+        .expect("create test Rune conversation");
 
     test.submit_turn_with_policy("hello cached+live flags", SandboxPolicy::ReadOnly)
         .await
@@ -106,8 +106,8 @@ async fn web_search_mode_defaults_to_cached_when_features_disabled() {
     ]);
     let resp_mock = responses::mount_sse_once(&server, sse).await;
 
-    let mut builder = test_codex()
-        .with_model("gpt-5-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5-rune")
         .with_config(|config| {
             config
                 .web_search_mode
@@ -119,7 +119,7 @@ async fn web_search_mode_defaults_to_cached_when_features_disabled() {
     let test = builder
         .build(&server)
         .await
-        .expect("create test Codex conversation");
+        .expect("create test Rune conversation");
 
     test.submit_turn_with_policy("hello default cached web search", SandboxPolicy::ReadOnly)
         .await
@@ -154,8 +154,8 @@ async fn web_search_mode_updates_between_turns_with_sandbox_policy() {
     )
     .await;
 
-    let mut builder = test_codex()
-        .with_model("gpt-5-codex")
+    let mut builder = test_rune()
+        .with_model("gpt-5-rune")
         .with_config(|config| {
             config
                 .web_search_mode
@@ -167,7 +167,7 @@ async fn web_search_mode_updates_between_turns_with_sandbox_policy() {
     let test = builder
         .build(&server)
         .await
-        .expect("create test Codex conversation");
+        .expect("create test Rune conversation");
 
     test.submit_turn_with_policy("hello cached", SandboxPolicy::ReadOnly)
         .await

@@ -1,6 +1,6 @@
 use crate::client_common::tools::ToolSpec;
-use crate::codex::Session;
-use crate::codex::TurnContext;
+use crate::rune::Session;
+use crate::rune::TurnContext;
 use crate::function_tool::FunctionCallError;
 use crate::sandboxing::SandboxPermissions;
 use crate::tools::context::SharedTurnDiffTracker;
@@ -10,12 +10,12 @@ use crate::tools::registry::ConfiguredToolSpec;
 use crate::tools::registry::ToolRegistry;
 use crate::tools::spec::ToolsConfig;
 use crate::tools::spec::build_specs;
-use codex_protocol::dynamic_tools::DynamicToolSpec;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::LocalShellAction;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::models::ShellToolCallParams;
+use rune_protocol::dynamic_tools::DynamicToolSpec;
+use rune_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::LocalShellAction;
+use rune_protocol::models::ResponseInputItem;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::models::ShellToolCallParams;
 use rmcp::model::Tool;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -181,7 +181,7 @@ impl ToolRouter {
         } else {
             ResponseInputItem::FunctionCallOutput {
                 call_id,
-                output: codex_protocol::models::FunctionCallOutputPayload {
+                output: rune_protocol::models::FunctionCallOutputPayload {
                     body: FunctionCallOutputBody::Text(message),
                     success: Some(false),
                 },

@@ -4,10 +4,10 @@
 //! interpreting them via `event_mapping::parse_turn_item(...)`.
 
 use crate::event_mapping;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::RolloutItem;
+use rune_protocol::items::TurnItem;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::protocol::EventMsg;
+use rune_protocol::protocol::RolloutItem;
 
 /// Return the indices of user message boundaries in a rollout.
 ///
@@ -71,11 +71,11 @@ pub(crate) fn truncate_rollout_before_nth_user_message_from_start(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codex::make_session_and_context;
+    use crate::rune::make_session_and_context;
     use assert_matches::assert_matches;
-    use codex_protocol::models::ContentItem;
-    use codex_protocol::models::ReasoningItemReasoningSummary;
-    use codex_protocol::protocol::ThreadRolledBackEvent;
+    use rune_protocol::models::ContentItem;
+    use rune_protocol::models::ReasoningItemReasoningSummary;
+    use rune_protocol::protocol::ThreadRolledBackEvent;
     use pretty_assertions::assert_eq;
 
     fn user_msg(text: &str) -> ResponseItem {

@@ -1,9 +1,9 @@
 use crate::agent::AgentStatus;
 use crate::agent::exceeds_thread_spawn_depth_limit;
-use crate::codex::Session;
-use crate::codex::TurnContext;
+use crate::rune::Session;
+use crate::rune::TurnContext;
 use crate::config::Config;
-use crate::error::CodexErr;
+use crate::error::RuneErr;
 use crate::features::Feature;
 use crate::function_tool::FunctionCallError;
 use crate::tools::context::ToolInvocation;
@@ -13,21 +13,21 @@ use crate::tools::handlers::parse_arguments;
 use crate::tools::registry::ToolHandler;
 use crate::tools::registry::ToolKind;
 use async_trait::async_trait;
-use codex_protocol::ThreadId;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::protocol::CollabAgentInteractionBeginEvent;
-use codex_protocol::protocol::CollabAgentInteractionEndEvent;
-use codex_protocol::protocol::CollabAgentSpawnBeginEvent;
-use codex_protocol::protocol::CollabAgentSpawnEndEvent;
-use codex_protocol::protocol::CollabCloseBeginEvent;
-use codex_protocol::protocol::CollabCloseEndEvent;
-use codex_protocol::protocol::CollabResumeBeginEvent;
-use codex_protocol::protocol::CollabResumeEndEvent;
-use codex_protocol::protocol::CollabWaitingBeginEvent;
-use codex_protocol::protocol::CollabWaitingEndEvent;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::SubAgentSource;
+use rune_protocol::ThreadId;
+use rune_protocol::models::BaseInstructions;
+use rune_protocol::models::FunctionCallOutputBody;
+use rune_protocol::protocol::CollabAgentInteractionBeginEvent;
+use rune_protocol::protocol::CollabAgentInteractionEndEvent;
+use rune_protocol::protocol::CollabAgentSpawnBeginEvent;
+use rune_protocol::protocol::CollabAgentSpawnEndEvent;
+use rune_protocol::protocol::CollabCloseBeginEvent;
+use rune_protocol::protocol::CollabCloseEndEvent;
+use rune_protocol::protocol::CollabResumeBeginEvent;
+use rune_protocol::protocol::CollabResumeEndEvent;
+use rune_protocol::protocol::CollabWaitingBeginEvent;
+use rune_protocol::protocol::CollabWaitingEndEvent;
+use rune_protocol::protocol::SessionSource;
+use rune_protocol::protocol::SubAgentSource;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -390,7 +390,7 @@ mod resume_agent {
         child_depth: i32,
     ) -> Result<AgentStatus, FunctionCallError> {
         let rollout_path = find_thread_path_by_id_str(
-            turn.config.codex_home.as_path(),
+            turn.config.rune_home.as_path(),
             receiver_id,
         )
         .await
@@ -505,7 +505,7 @@ mod wait {
                     }
                     status_rxs.push((*id, rx));
                 }
-                Err(CodexErr::ThreadNotFound(_)) => {
+                Err(RuneErr::ThreadNotFound(_)) => {
                     initial_final_statuses.push((*id, AgentStatus::NotFound));
                 }
                 Err(err) => {
@@ -707,24 +707,24 @@ fn agent_id(id: &str) -> Result<ThreadId, FunctionCallError> {
         .map_err(|e| FunctionCallError::RespondToModel(format!("invalid agent id {id}: {e:?}")))
 }
 
-fn collab_spawn_error(err: CodexErr) -> FunctionCallError {
+fn collab_spawn_error(err: RuneErr) -> FunctionCallError {
     match err {
-        CodexErr::UnsupportedOperation(_) => {
+        RuneErr::UnsupportedOperation(_) => {
             FunctionCallError::RespondToModel("collab manager unavailable".to_string())
         }
         err => FunctionCallError::RespondToModel(format!("collab spawn failed: {err}")),
     }
 }
 
-fn collab_agent_error(agent_id: ThreadId, err: CodexErr) -> FunctionCallError {
+fn collab_agent_error(agent_id: ThreadId, err: RuneErr) -> FunctionCallError {
     match err {
-        CodexErr::ThreadNotFound(id) => {
+        RuneErr::ThreadNotFound(id) => {
             FunctionCallError::RespondToModel(format!("agent with id {id} not found"))
         }
-        CodexErr::InternalAgentDied => {
+        RuneErr::InternalAgentDied => {
             FunctionCallError::RespondToModel(format!("agent with id {agent_id} is closed"))
         }
-        CodexErr::UnsupportedOperation(_) => {
+        RuneErr::UnsupportedOperation(_) => {
             FunctionCallError::RespondToModel("collab manager unavailable".to_string())
         }
         err => FunctionCallError::RespondToModel(format!("collab tool failed: {err}")),
@@ -771,7 +771,7 @@ fn build_agent_shared_config(
     config.developer_instructions = turn.developer_instructions.clone();
     config.compact_prompt = turn.compact_prompt.clone();
     config.shell_environment_policy = turn.shell_environment_policy.clone();
-    config.codex_linux_sandbox_exe = turn.codex_linux_sandbox_exe.clone();
+    config.rune_linux_sandbox_exe = turn.rune_linux_sandbox_exe.clone();
     config.cwd = turn.cwd.clone();
     config
         .approval_policy
@@ -798,11 +798,11 @@ fn build_agent_shared_config(
 mod tests {
     use super::*;
     use crate::AuthManager;
-    use crate::CodexAuth;
+    use crate::RuneAuth;
     use crate::ThreadManager;
     use crate::agent::MAX_THREAD_SPAWN_DEPTH;
     use crate::built_in_model_providers;
-    use crate::codex::make_session_and_context;
+    use crate::rune::make_session_and_context;
     use crate::config::types::ShellEnvironmentPolicy;
     use crate::function_tool::FunctionCallError;
     use crate::protocol::AskForApproval;
@@ -811,11 +811,11 @@ mod tests {
     use crate::protocol::SessionSource;
     use crate::protocol::SubAgentSource;
     use crate::turn_diff_tracker::TurnDiffTracker;
-    use codex_protocol::ThreadId;
-    use codex_protocol::models::ContentItem;
-    use codex_protocol::models::ResponseItem;
-    use codex_protocol::protocol::InitialHistory;
-    use codex_protocol::protocol::RolloutItem;
+    use rune_protocol::ThreadId;
+    use rune_protocol::models::ContentItem;
+    use rune_protocol::models::ResponseItem;
+    use rune_protocol::protocol::InitialHistory;
+    use rune_protocol::protocol::RolloutItem;
     use pretty_assertions::assert_eq;
     use serde::Deserialize;
     use serde_json::json;
@@ -827,7 +827,7 @@ mod tests {
     use tokio::time::timeout;
 
     fn invocation(
-        session: Arc<crate::codex::Session>,
+        session: Arc<crate::rune::Session>,
         turn: Arc<TurnContext>,
         tool_name: &str,
         payload: ToolPayload,
@@ -850,7 +850,7 @@ mod tests {
 
     fn thread_manager() -> ThreadManager {
         ThreadManager::with_models_provider(
-            CodexAuth::from_api_key("dummy"),
+            RuneAuth::from_api_key("dummy"),
             built_in_model_providers()["openai"].clone(),
         )
     }
@@ -1159,7 +1159,7 @@ mod tests {
                     end_turn: None,
                     phase: None,
                 })]),
-                AuthManager::from_auth_for_testing(CodexAuth::from_api_key("dummy")),
+                AuthManager::from_auth_for_testing(RuneAuth::from_api_key("dummy")),
             )
             .await
             .expect("start thread");
@@ -1589,7 +1589,7 @@ mod tests {
         };
         let temp_dir = tempfile::tempdir().expect("temp dir");
         turn.cwd = temp_dir.path().to_path_buf();
-        turn.codex_linux_sandbox_exe = Some(PathBuf::from("/bin/echo"));
+        turn.rune_linux_sandbox_exe = Some(PathBuf::from("/bin/echo"));
         turn.approval_policy = pick_allowed_approval_policy(
             &turn.config.approval_policy,
             *turn.config.approval_policy.get(),
@@ -1609,7 +1609,7 @@ mod tests {
         expected.developer_instructions = turn.developer_instructions.clone();
         expected.compact_prompt = turn.compact_prompt.clone();
         expected.shell_environment_policy = turn.shell_environment_policy.clone();
-        expected.codex_linux_sandbox_exe = turn.codex_linux_sandbox_exe.clone();
+        expected.rune_linux_sandbox_exe = turn.rune_linux_sandbox_exe.clone();
         expected.cwd = turn.cwd.clone();
         expected
             .approval_policy
@@ -1656,7 +1656,7 @@ mod tests {
         expected.developer_instructions = turn.developer_instructions.clone();
         expected.compact_prompt = turn.compact_prompt.clone();
         expected.shell_environment_policy = turn.shell_environment_policy.clone();
-        expected.codex_linux_sandbox_exe = turn.codex_linux_sandbox_exe.clone();
+        expected.rune_linux_sandbox_exe = turn.rune_linux_sandbox_exe.clone();
         expected.cwd = turn.cwd.clone();
         expected
             .approval_policy

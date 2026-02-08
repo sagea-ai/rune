@@ -2,18 +2,18 @@
 
 use std::collections::HashMap;
 
-use codex_core::features::Feature;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::Settings;
-use codex_protocol::request_user_input::RequestUserInputAnswer;
-use codex_protocol::request_user_input::RequestUserInputResponse;
-use codex_protocol::user_input::UserInput;
+use rune_core::features::Feature;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::CollaborationMode;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::config_types::Settings;
+use rune_protocol::request_user_input::RequestUserInputAnswer;
+use rune_protocol::request_user_input::RequestUserInputResponse;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses;
 use core_test_support::responses::ResponsesRequest;
 use core_test_support::responses::ev_assistant_message;
@@ -23,8 +23,8 @@ use core_test_support::responses::ev_response_created;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRune;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
 use pretty_assertions::assert_eq;
@@ -79,9 +79,9 @@ async fn request_user_input_round_trip_for_mode(mode: ModeKind) -> anyhow::Resul
 
     let server = start_mock_server().await;
 
-    let builder = test_codex();
-    let TestCodex {
-        codex,
+    let builder = test_rune();
+    let TestRune {
+        rune,
         cwd,
         session_configured,
         ..
@@ -124,7 +124,7 @@ async fn request_user_input_round_trip_for_mode(mode: ModeKind) -> anyhow::Resul
 
     let session_model = session_configured.model.clone();
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "please confirm".into(),
@@ -149,7 +149,7 @@ async fn request_user_input_round_trip_for_mode(mode: ModeKind) -> anyhow::Resul
         })
         .await?;
 
-    let request = wait_for_event_match(&codex, |event| match event {
+    let request = wait_for_event_match(&rune, |event| match event {
         EventMsg::RequestUserInput(request) => Some(request.clone()),
         _ => None,
     })
@@ -166,14 +166,14 @@ async fn request_user_input_round_trip_for_mode(mode: ModeKind) -> anyhow::Resul
         },
     );
     let response = RequestUserInputResponse { answers };
-    codex
+    rune
         .submit(Op::UserInputAnswer {
             id: request.turn_id.clone(),
             response,
         })
         .await?;
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let req = second_mock.single_request();
     let output_text = call_output(&req, call_id);
@@ -198,9 +198,9 @@ where
 
     let server = start_mock_server().await;
 
-    let builder = test_codex();
-    let TestCodex {
-        codex,
+    let builder = test_rune();
+    let TestRune {
+        rune,
         cwd,
         session_configured,
         ..
@@ -245,7 +245,7 @@ where
     let session_model = session_configured.model.clone();
     let collaboration_mode = build_mode(session_model.clone());
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "please confirm".into(),
@@ -263,7 +263,7 @@ where
         })
         .await?;
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let req = second_mock.single_request();
     let (output, success) = call_output_content_and_success(&req, &call_id);

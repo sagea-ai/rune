@@ -39,7 +39,7 @@ pub async fn autodetect_environment_id(
                 )
             } else {
                 format!(
-                    "{}/api/codex/environments/by-repo/{}/{}/{}",
+                    "{}/api/rune/environments/by-repo/{}/{}/{}",
                     base_url, "github", owner, repo
                 )
             };
@@ -69,7 +69,7 @@ pub async fn autodetect_environment_id(
     let list_url = if base_url.contains("/backend-api") {
         format!("{base_url}/wham/environments")
     } else {
-        format!("{base_url}/api/codex/environments")
+        format!("{base_url}/api/rune/environments")
     };
     crate::append_error_log(format!("env: GET {list_url}"));
     // Fetch and log the full environments JSON for debugging
@@ -269,7 +269,7 @@ pub async fn list_environments(
                 )
             } else {
                 format!(
-                    "{}/api/codex/environments/by-repo/{}/{}/{}",
+                    "{}/api/rune/environments/by-repo/{}/{}/{}",
                     base_url, "github", owner, repo
                 )
             };
@@ -309,7 +309,7 @@ pub async fn list_environments(
     let list_url = if base_url.contains("/backend-api") {
         format!("{base_url}/wham/environments")
     } else {
-        format!("{base_url}/api/codex/environments")
+        format!("{base_url}/api/rune/environments")
     };
     match get_json::<Vec<CodeEnvironment>>(&list_url, headers).await {
         Ok(list) => {

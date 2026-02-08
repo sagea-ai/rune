@@ -1,6 +1,6 @@
-use codex_git::merge_base_with_head;
-use codex_protocol::protocol::ReviewRequest;
-use codex_protocol::protocol::ReviewTarget;
+use rune_git::merge_base_with_head;
+use rune_protocol::protocol::ReviewRequest;
+use rune_protocol::protocol::ReviewTarget;
 use std::path::Path;
 
 #[derive(Clone, Debug, PartialEq)]

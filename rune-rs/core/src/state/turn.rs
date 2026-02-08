@@ -8,12 +8,12 @@ use tokio::sync::Notify;
 use tokio_util::sync::CancellationToken;
 use tokio_util::task::AbortOnDropHandle;
 
-use codex_protocol::dynamic_tools::DynamicToolResponse;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::request_user_input::RequestUserInputResponse;
+use rune_protocol::dynamic_tools::DynamicToolResponse;
+use rune_protocol::models::ResponseInputItem;
+use rune_protocol::request_user_input::RequestUserInputResponse;
 use tokio::sync::oneshot;
 
-use crate::codex::TurnContext;
+use crate::rune::TurnContext;
 use crate::protocol::ReviewDecision;
 use crate::tasks::SessionTask;
 
@@ -47,7 +47,7 @@ pub(crate) struct RunningTask {
     pub(crate) handle: Arc<AbortOnDropHandle<()>>,
     pub(crate) turn_context: Arc<TurnContext>,
     // Timer recorded when the task drops to capture the full turn duration.
-    pub(crate) _timer: Option<codex_otel::Timer>,
+    pub(crate) _timer: Option<rune_otel::Timer>,
 }
 
 impl ActiveTurn {

@@ -4,7 +4,7 @@
 use std::time::Duration;
 use std::time::Instant;
 
-use codex_core::protocol::Op;
+use rune_core::protocol::Op;
 use crossterm::event::KeyCode;
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
@@ -82,7 +82,7 @@ impl StatusIndicatorWidget {
     }
 
     pub(crate) fn interrupt(&self) {
-        self.app_event_tx.send(AppEvent::CodexOp(Op::Interrupt));
+        self.app_event_tx.send(AppEvent::RuneOp(Op::Interrupt));
     }
 
     /// Update the animated header label (left of the brackets).

@@ -1,7 +1,7 @@
 #![cfg(unix)]
-use codex_core::protocol::SandboxPolicy;
-use codex_core::spawn::StdioPolicy;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_core::protocol::SandboxPolicy;
+use rune_core::spawn::StdioPolicy;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use std::collections::HashMap;
 use std::future::Future;
 use std::io;
@@ -20,7 +20,7 @@ async fn spawn_command_under_sandbox(
     stdio_policy: StdioPolicy,
     env: HashMap<String, String>,
 ) -> std::io::Result<Child> {
-    use codex_core::seatbelt::spawn_command_under_seatbelt;
+    use rune_core::seatbelt::spawn_command_under_seatbelt;
     spawn_command_under_seatbelt(
         command,
         command_cwd,
@@ -41,11 +41,11 @@ async fn spawn_command_under_sandbox(
     stdio_policy: StdioPolicy,
     env: HashMap<String, String>,
 ) -> std::io::Result<Child> {
-    use codex_core::landlock::spawn_command_under_linux_sandbox;
-    let codex_linux_sandbox_exe = codex_utils_cargo_bin::cargo_bin("rune-exec")
+    use rune_core::landlock::spawn_command_under_linux_sandbox;
+    let rune_linux_sandbox_exe = rune_utils_cargo_bin::cargo_bin("rune-exec")
         .map_err(|err| io::Error::new(io::ErrorKind::NotFound, err))?;
     spawn_command_under_linux_sandbox(
-        codex_linux_sandbox_exe,
+        rune_linux_sandbox_exe,
         command,
         command_cwd,
         sandbox_policy,

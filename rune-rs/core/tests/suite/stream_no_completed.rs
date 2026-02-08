@@ -1,18 +1,18 @@
 //! Verifies that the agent retries when the SSE stream terminates before
 //! delivering a `response.completed` event.
 
-use codex_core::ModelProviderInfo;
-use codex_core::WireApi;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use rune_core::ModelProviderInfo;
+use rune_core::WireApi;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_protocol::user_input::UserInput;
 use core_test_support::load_sse_fixture;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRune;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use wiremock::Mock;
 use wiremock::MockServer;
@@ -88,7 +88,7 @@ async fn retries_on_early_close() {
         supports_websockets: false,
     };
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestRune { rune, .. } = test_rune()
         .with_config(move |config| {
             config.model_provider = model_provider;
         })
@@ -96,7 +96,7 @@ async fn retries_on_early_close() {
         .await
         .unwrap();
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello".into(),
@@ -108,5 +108,5 @@ async fn retries_on_early_close() {
         .unwrap();
 
     // Wait until TurnComplete (should succeed after retry).
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 }

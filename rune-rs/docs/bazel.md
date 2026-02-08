@@ -12,11 +12,11 @@ As of 1/9/2026, this setup is still experimental as we stabilize it.
 - `rules_rs` imports third-party crates from `rune-rs/Cargo.toml` and
   `rune-rs/Cargo.lock` via `crate.from_cargo(...)` and exposes them under
   `@crates`.
-- `../defs.bzl` provides `codex_rust_crate`, which wraps `rust_library`,
+- `../defs.bzl` provides `rune_rust_crate`, which wraps `rust_library`,
   `rust_binary`, and `rust_test` so Bazel targets line up with Cargo conventions.
   It provides a sane set of defaults that work for most first-party crates, but may
   need tweaks in some cases.
-- Each crate in `rune-rs/*/BUILD.bazel` typically uses `codex_rust_crate` and
+- Each crate in `rune-rs/*/BUILD.bazel` typically uses `rune_rust_crate` and
   makes some adjustments if the crate needs additional compile-time or runtime data,
   or other customizations.
 
@@ -32,11 +32,11 @@ feel free to ping zbarsky or mbolin.
 When you add a new crate or binary:
 
 1. Add it to the Cargo workspace as usual.
-2. Create a `BUILD.bazel` that calls `codex_rust_crate` (see nearby crates for
+2. Create a `BUILD.bazel` that calls `rune_rust_crate` (see nearby crates for
    examples).
 3. If a dependency needs special handling (compile/runtime data, additional binaries
    for integration tests, env vars, etc) you may need to adjust the parameters to
-   `codex_rust_crate` to configure it.
+   `rune_rust_crate` to configure it.
    One common customization is setting `test_tags = ["no-sandbox]` to run the test
    unsandboxed. Prefer to avoid it, but it is necessary in some cases such as when the
    test itself uses Seatbelt (the sandbox does as well, and it cannot be nested).

@@ -5,29 +5,29 @@ use anyhow::Result;
 use chrono::DateTime;
 use chrono::TimeZone;
 use chrono::Utc;
-use codex_core::CodexAuth;
-use codex_core::features::Feature;
-use codex_core::models_manager::manager::RefreshStrategy;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::openai_models::ConfigShellToolType;
-use codex_protocol::openai_models::ModelInfo;
-use codex_protocol::openai_models::ModelVisibility;
-use codex_protocol::openai_models::ModelsResponse;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::openai_models::ReasoningEffortPreset;
-use codex_protocol::openai_models::TruncationPolicyConfig;
-use codex_protocol::openai_models::default_input_modalities;
-use codex_protocol::user_input::UserInput;
+use rune_core::RuneAuth;
+use rune_core::features::Feature;
+use rune_core::models_manager::manager::RefreshStrategy;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::openai_models::ConfigShellToolType;
+use rune_protocol::openai_models::ModelInfo;
+use rune_protocol::openai_models::ModelVisibility;
+use rune_protocol::openai_models::ModelsResponse;
+use rune_protocol::openai_models::ReasoningEffort;
+use rune_protocol::openai_models::ReasoningEffortPreset;
+use rune_protocol::openai_models::TruncationPolicyConfig;
+use rune_protocol::openai_models::default_input_modalities;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::sse;
 use core_test_support::responses::sse_response;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde::Deserialize;
@@ -55,7 +55,7 @@ async fn renews_cache_ttl_on_matching_models_etag() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+    let mut builder = test_rune().with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing());
     builder = builder.with_config(|config| {
         config.features.enable(Feature::RemoteModels);
         config.model = Some("gpt-5".to_string());
@@ -64,7 +64,7 @@ async fn renews_cache_ttl_on_matching_models_etag() -> Result<()> {
     });
 
     let test = builder.build(&server).await?;
-    let codex = Arc::clone(&test.codex);
+    let rune = Arc::clone(&test.rune);
     let config = test.config.clone();
 
     // Populate cache via initial refresh.
@@ -73,7 +73,7 @@ async fn renews_cache_ttl_on_matching_models_etag() -> Result<()> {
         .list_models(&config, RefreshStrategy::OnlineIfUncached)
         .await;
 
-    let cache_path = config.codex_home.join(CACHE_FILE);
+    let cache_path = config.rune_home.join(CACHE_FILE);
     let stale_time = Utc.timestamp_opt(0, 0).single().expect("valid epoch");
     rewrite_cache_timestamp(&cache_path, stale_time).await?;
 
@@ -89,7 +89,7 @@ async fn renews_cache_ttl_on_matching_models_etag() -> Result<()> {
     )
     .await;
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hi".into(),
@@ -97,7 +97,7 @@ async fn renews_cache_ttl_on_matching_models_etag() -> Result<()> {
             }],
             final_output_json_schema: None,
             cwd: test.cwd_path().to_path_buf(),
-            approval_policy: codex_core::protocol::AskForApproval::Never,
+            approval_policy: rune_core::protocol::AskForApproval::Never,
             sandbox_policy: SandboxPolicy::DangerFullAccess,
             model: test.session_configured.model.clone(),
             effort: None,
@@ -107,7 +107,7 @@ async fn renews_cache_ttl_on_matching_models_etag() -> Result<()> {
         })
         .await?;
 
-    let _ = wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    let _ = wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let refreshed_cache = read_cache(&cache_path).await?;
     assert!(
@@ -147,13 +147,13 @@ async fn uses_cache_when_version_matches() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+    let mut builder = test_rune().with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing());
     builder = builder
         .with_pre_build_hook(move |home| {
             let cache = ModelsCache {
                 fetched_at: Utc::now(),
                 etag: None,
-                client_version: Some(codex_core::models_manager::client_version_to_whole()),
+                client_version: Some(rune_core::models_manager::client_version_to_whole()),
                 models: vec![cached_model],
             };
             let cache_path = home.join(CACHE_FILE);
@@ -195,7 +195,7 @@ async fn refreshes_when_cache_version_missing() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+    let mut builder = test_rune().with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing());
     builder = builder
         .with_pre_build_hook(move |home| {
             let cache = ModelsCache {
@@ -243,10 +243,10 @@ async fn refreshes_when_cache_version_differs() -> Result<()> {
     )
     .await;
 
-    let mut builder = test_codex().with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing());
+    let mut builder = test_rune().with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing());
     builder = builder
         .with_pre_build_hook(move |home| {
-            let client_version = codex_core::models_manager::client_version_to_whole();
+            let client_version = rune_core::models_manager::client_version_to_whole();
             let cache = ModelsCache {
                 fetched_at: Utc::now(),
                 etag: None,

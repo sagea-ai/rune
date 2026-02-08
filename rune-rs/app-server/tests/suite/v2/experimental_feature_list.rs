@@ -3,14 +3,14 @@ use std::time::Duration;
 use anyhow::Result;
 use app_test_support::McpProcess;
 use app_test_support::to_response;
-use codex_app_server_protocol::ExperimentalFeature;
-use codex_app_server_protocol::ExperimentalFeatureListParams;
-use codex_app_server_protocol::ExperimentalFeatureListResponse;
-use codex_app_server_protocol::ExperimentalFeatureStage;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::RequestId;
-use codex_core::features::FEATURES;
-use codex_core::features::Stage;
+use rune_app_server_protocol::ExperimentalFeature;
+use rune_app_server_protocol::ExperimentalFeatureListParams;
+use rune_app_server_protocol::ExperimentalFeatureListResponse;
+use rune_app_server_protocol::ExperimentalFeatureStage;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::RequestId;
+use rune_core::features::FEATURES;
+use rune_core::features::Stage;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 use tokio::time::timeout;
@@ -19,8 +19,8 @@ const DEFAULT_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[tokio::test]
 async fn experimental_feature_list_returns_feature_metadata_with_stage() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let rune_home = TempDir::new()?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
 
     timeout(DEFAULT_TIMEOUT, mcp.initialize()).await??;
 

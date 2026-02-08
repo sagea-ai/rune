@@ -48,7 +48,7 @@ struct TestToolServer {
     resource_templates: Arc<Vec<ResourceTemplate>>,
 }
 
-const MEMO_URI: &str = "memo://codex/example-note";
+const MEMO_URI: &str = "memo://rune/example-note";
 const MEMO_CONTENT: &str = "This is a sample MCP resource served by the rmcp test server.";
 
 impl TestToolServer {
@@ -99,11 +99,11 @@ impl TestToolServer {
 
     fn memo_template() -> ResourceTemplate {
         let raw = RawResourceTemplate {
-            uri_template: "memo://codex/{slug}".to_string(),
+            uri_template: "memo://rune/{slug}".to_string(),
             name: "rune-memo".to_string(),
-            title: Some("Codex Memo".to_string()),
+            title: Some("Rune Memo".to_string()),
             description: Some(
-                "Template for memo://codex/{slug} resources used in tests.".to_string(),
+                "Template for memo://rune/{slug} resources used in tests.".to_string(),
             ),
             mime_type: Some("text/plain".to_string()),
         };

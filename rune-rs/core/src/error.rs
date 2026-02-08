@@ -7,11 +7,11 @@ use chrono::DateTime;
 use chrono::Datelike;
 use chrono::Local;
 use chrono::Utc;
-use codex_async_utils::CancelErr;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::CodexErrorInfo;
-use codex_protocol::protocol::ErrorEvent;
-use codex_protocol::protocol::RateLimitSnapshot;
+use rune_async_utils::CancelErr;
+use rune_protocol::ThreadId;
+use rune_protocol::protocol::RuneErrorInfo;
+use rune_protocol::protocol::ErrorEvent;
+use rune_protocol::protocol::RateLimitSnapshot;
 use reqwest::StatusCode;
 use serde_json;
 use std::io;
@@ -19,7 +19,7 @@ use std::time::Duration;
 use thiserror::Error;
 use tokio::task::JoinError;
 
-pub type Result<T> = std::result::Result<T, CodexErr>;
+pub type Result<T> = std::result::Result<T, RuneErr>;
 
 /// Limit UI error messages to a reasonable size while keeping useful context.
 const ERROR_MESSAGE_UI_MAX_BYTES: usize = 2 * 1024; // 2 KiB
@@ -57,7 +57,7 @@ pub enum SandboxErr {
 }
 
 #[derive(Error, Debug)]
-pub enum CodexErr {
+pub enum RuneErr {
     #[error("turn aborted. Something went wrong? Hit `/feedback` to report the issue.")]
     TurnAborted,
 
@@ -71,7 +71,7 @@ pub enum CodexErr {
     Stream(String, Option<Duration>),
 
     #[error(
-        "Codex ran out of room in the model's context window. Start a new thread or clear earlier history before retrying."
+        "Rune ran out of room in the model's context window. Start a new thread or clear earlier history before retrying."
     )]
     ContextWindowExceeded,
 
@@ -89,7 +89,7 @@ pub enum CodexErr {
     Timeout,
 
     /// Returned by run_command_stream when the child could not be spawned (its stdout/stderr pipes
-    /// could not be captured). Analogous to the previous `CodexError::Spawn` variant.
+    /// could not be captured). Analogous to the previous `RuneError::Spawn` variant.
     #[error("spawn failed: child stdout/stderr not captured")]
     Spawn,
 
@@ -126,7 +126,7 @@ pub enum CodexErr {
     QuotaExceeded,
 
     #[error(
-        "To use Codex with your ChatGPT plan, upgrade to Plus: https://chatgpt.com/explore/plus."
+        "To use Rune with your ChatGPT plan, upgrade to Plus: https://chatgpt.com/explore/plus."
     )]
     UsageNotIncluded,
 
@@ -181,47 +181,47 @@ pub enum CodexErr {
     EnvVar(EnvVarError),
 }
 
-impl From<CancelErr> for CodexErr {
+impl From<CancelErr> for RuneErr {
     fn from(_: CancelErr) -> Self {
-        CodexErr::TurnAborted
+        RuneErr::TurnAborted
     }
 }
 
-impl CodexErr {
+impl RuneErr {
     pub fn is_retryable(&self) -> bool {
         match self {
-            CodexErr::TurnAborted
-            | CodexErr::Interrupted
-            | CodexErr::EnvVar(_)
-            | CodexErr::Fatal(_)
-            | CodexErr::UsageNotIncluded
-            | CodexErr::QuotaExceeded
-            | CodexErr::InvalidImageRequest()
-            | CodexErr::InvalidRequest(_)
-            | CodexErr::RefreshTokenFailed(_)
-            | CodexErr::UnsupportedOperation(_)
-            | CodexErr::Sandbox(_)
-            | CodexErr::LandlockSandboxExecutableNotProvided
-            | CodexErr::RetryLimit(_)
-            | CodexErr::ContextWindowExceeded
-            | CodexErr::ThreadNotFound(_)
-            | CodexErr::AgentLimitReached { .. }
-            | CodexErr::Spawn
-            | CodexErr::SessionConfiguredNotFirstEvent
-            | CodexErr::UsageLimitReached(_)
-            | CodexErr::ModelCap(_) => false,
-            CodexErr::Stream(..)
-            | CodexErr::Timeout
-            | CodexErr::UnexpectedStatus(_)
-            | CodexErr::ResponseStreamFailed(_)
-            | CodexErr::ConnectionFailed(_)
-            | CodexErr::InternalServerError
-            | CodexErr::InternalAgentDied
-            | CodexErr::Io(_)
-            | CodexErr::Json(_)
-            | CodexErr::TokioJoin(_) => true,
+            RuneErr::TurnAborted
+            | RuneErr::Interrupted
+            | RuneErr::EnvVar(_)
+            | RuneErr::Fatal(_)
+            | RuneErr::UsageNotIncluded
+            | RuneErr::QuotaExceeded
+            | RuneErr::InvalidImageRequest()
+            | RuneErr::InvalidRequest(_)
+            | RuneErr::RefreshTokenFailed(_)
+            | RuneErr::UnsupportedOperation(_)
+            | RuneErr::Sandbox(_)
+            | RuneErr::LandlockSandboxExecutableNotProvided
+            | RuneErr::RetryLimit(_)
+            | RuneErr::ContextWindowExceeded
+            | RuneErr::ThreadNotFound(_)
+            | RuneErr::AgentLimitReached { .. }
+            | RuneErr::Spawn
+            | RuneErr::SessionConfiguredNotFirstEvent
+            | RuneErr::UsageLimitReached(_)
+            | RuneErr::ModelCap(_) => false,
+            RuneErr::Stream(..)
+            | RuneErr::Timeout
+            | RuneErr::UnexpectedStatus(_)
+            | RuneErr::ResponseStreamFailed(_)
+            | RuneErr::ConnectionFailed(_)
+            | RuneErr::InternalServerError
+            | RuneErr::InternalAgentDied
+            | RuneErr::Io(_)
+            | RuneErr::Json(_)
+            | RuneErr::TokioJoin(_) => true,
             #[cfg(target_os = "linux")]
-            CodexErr::LandlockRuleset(_) | CodexErr::LandlockPathFd(_) => false,
+            RuneErr::LandlockRuleset(_) | RuneErr::LandlockPathFd(_) => false,
         }
     }
 }
@@ -425,7 +425,7 @@ impl std::fmt::Display for UsageLimitReachedError {
 
         let message = match self.plan_type.as_ref() {
             Some(PlanType::Known(KnownPlan::Plus)) => format!(
-                "You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits{}",
+                "You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/rune/settings/usage to purchase more credits{}",
                 retry_suffix_after_or(self.resets_at.as_ref())
             ),
             Some(PlanType::Known(KnownPlan::Team)) | Some(PlanType::Known(KnownPlan::Business)) => {
@@ -436,12 +436,12 @@ impl std::fmt::Display for UsageLimitReachedError {
             }
             Some(PlanType::Known(KnownPlan::Free)) | Some(PlanType::Known(KnownPlan::Go)) => {
                 format!(
-                    "You've hit your usage limit. Upgrade to Plus to continue using Codex (https://chatgpt.com/explore/plus),{}",
+                    "You've hit your usage limit. Upgrade to Plus to continue using Rune (https://chatgpt.com/explore/plus),{}",
                     retry_suffix_after_or(self.resets_at.as_ref())
                 )
             }
             Some(PlanType::Known(KnownPlan::Pro)) => format!(
-                "You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits{}",
+                "You've hit your usage limit. Visit https://chatgpt.com/rune/settings/usage to purchase more credits{}",
                 retry_suffix_after_or(self.resets_at.as_ref())
             ),
             Some(PlanType::Known(KnownPlan::Enterprise))
@@ -574,8 +574,8 @@ impl std::fmt::Display for EnvVarError {
     }
 }
 
-impl CodexErr {
-    /// Minimal shim so that existing `e.downcast_ref::<CodexErr>()` checks continue to compile
+impl RuneErr {
+    /// Minimal shim so that existing `e.downcast_ref::<RuneErr>()` checks continue to compile
     /// after replacing `anyhow::Error` in the return signature. This mirrors the behavior of
     /// `anyhow::Error::downcast_ref` but works directly on our concrete enum.
     pub fn downcast_ref<T: std::any::Any>(&self) -> Option<&T> {
@@ -583,34 +583,34 @@ impl CodexErr {
     }
 
     /// Translate core error to client-facing protocol error.
-    pub fn to_codex_protocol_error(&self) -> CodexErrorInfo {
+    pub fn to_rune_protocol_error(&self) -> RuneErrorInfo {
         match self {
-            CodexErr::ContextWindowExceeded => CodexErrorInfo::ContextWindowExceeded,
-            CodexErr::UsageLimitReached(_)
-            | CodexErr::QuotaExceeded
-            | CodexErr::UsageNotIncluded => CodexErrorInfo::UsageLimitExceeded,
-            CodexErr::ModelCap(err) => CodexErrorInfo::ModelCap {
+            RuneErr::ContextWindowExceeded => RuneErrorInfo::ContextWindowExceeded,
+            RuneErr::UsageLimitReached(_)
+            | RuneErr::QuotaExceeded
+            | RuneErr::UsageNotIncluded => RuneErrorInfo::UsageLimitExceeded,
+            RuneErr::ModelCap(err) => RuneErrorInfo::ModelCap {
                 model: err.model.clone(),
                 reset_after_seconds: err.reset_after_seconds,
             },
-            CodexErr::RetryLimit(_) => CodexErrorInfo::ResponseTooManyFailedAttempts {
+            RuneErr::RetryLimit(_) => RuneErrorInfo::ResponseTooManyFailedAttempts {
                 http_status_code: self.http_status_code_value(),
             },
-            CodexErr::ConnectionFailed(_) => CodexErrorInfo::HttpConnectionFailed {
+            RuneErr::ConnectionFailed(_) => RuneErrorInfo::HttpConnectionFailed {
                 http_status_code: self.http_status_code_value(),
             },
-            CodexErr::ResponseStreamFailed(_) => CodexErrorInfo::ResponseStreamConnectionFailed {
+            RuneErr::ResponseStreamFailed(_) => RuneErrorInfo::ResponseStreamConnectionFailed {
                 http_status_code: self.http_status_code_value(),
             },
-            CodexErr::RefreshTokenFailed(_) => CodexErrorInfo::Unauthorized,
-            CodexErr::SessionConfiguredNotFirstEvent
-            | CodexErr::InternalServerError
-            | CodexErr::InternalAgentDied => CodexErrorInfo::InternalServerError,
-            CodexErr::UnsupportedOperation(_)
-            | CodexErr::ThreadNotFound(_)
-            | CodexErr::AgentLimitReached { .. } => CodexErrorInfo::BadRequest,
-            CodexErr::Sandbox(_) => CodexErrorInfo::SandboxError,
-            _ => CodexErrorInfo::Other,
+            RuneErr::RefreshTokenFailed(_) => RuneErrorInfo::Unauthorized,
+            RuneErr::SessionConfiguredNotFirstEvent
+            | RuneErr::InternalServerError
+            | RuneErr::InternalAgentDied => RuneErrorInfo::InternalServerError,
+            RuneErr::UnsupportedOperation(_)
+            | RuneErr::ThreadNotFound(_)
+            | RuneErr::AgentLimitReached { .. } => RuneErrorInfo::BadRequest,
+            RuneErr::Sandbox(_) => RuneErrorInfo::SandboxError,
+            _ => RuneErrorInfo::Other,
         }
     }
 
@@ -622,25 +622,25 @@ impl CodexErr {
         };
         ErrorEvent {
             message,
-            codex_error_info: Some(self.to_codex_protocol_error()),
+            rune_error_info: Some(self.to_rune_protocol_error()),
         }
     }
 
     pub fn http_status_code_value(&self) -> Option<u16> {
         let http_status_code = match self {
-            CodexErr::RetryLimit(err) => Some(err.status),
-            CodexErr::UnexpectedStatus(err) => Some(err.status),
-            CodexErr::ConnectionFailed(err) => err.source.status(),
-            CodexErr::ResponseStreamFailed(err) => err.source.status(),
+            RuneErr::RetryLimit(err) => Some(err.status),
+            RuneErr::UnexpectedStatus(err) => Some(err.status),
+            RuneErr::ConnectionFailed(err) => err.source.status(),
+            RuneErr::ResponseStreamFailed(err) => err.source.status(),
             _ => None,
         };
         http_status_code.as_ref().map(StatusCode::as_u16)
     }
 }
 
-pub fn get_error_message_ui(e: &CodexErr) -> String {
+pub fn get_error_message_ui(e: &RuneErr) -> String {
     let message = match e {
-        CodexErr::Sandbox(SandboxErr::Denied { output }) => {
+        RuneErr::Sandbox(SandboxErr::Denied { output }) => {
             let aggregated = output.aggregated_output.text.trim();
             if !aggregated.is_empty() {
                 output.aggregated_output.text.clone()
@@ -659,7 +659,7 @@ pub fn get_error_message_ui(e: &CodexErr) -> String {
             }
         }
         // Timeouts are not sandbox errors from a UX perspective; present them plainly
-        CodexErr::Sandbox(SandboxErr::Timeout { output }) => {
+        RuneErr::Sandbox(SandboxErr::Timeout { output }) => {
             format!(
                 "error: command timed out after {} ms",
                 output.duration.as_millis()
@@ -682,7 +682,7 @@ mod tests {
     use chrono::Duration as ChronoDuration;
     use chrono::TimeZone;
     use chrono::Utc;
-    use codex_protocol::protocol::RateLimitWindow;
+    use rune_protocol::protocol::RateLimitWindow;
     use pretty_assertions::assert_eq;
     use reqwest::Response;
     use reqwest::ResponseBuilderExt;
@@ -733,7 +733,7 @@ mod tests {
         };
         assert_eq!(
             err.to_string(),
-            "You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again later."
+            "You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/rune/settings/usage to purchase more credits or try again later."
         );
     }
 
@@ -763,13 +763,13 @@ mod tests {
 
     #[test]
     fn model_cap_error_maps_to_protocol() {
-        let err = CodexErr::ModelCap(ModelCapError {
+        let err = RuneErr::ModelCap(ModelCapError {
             model: "boomslang".to_string(),
             reset_after_seconds: Some(30),
         });
         assert_eq!(
-            err.to_codex_protocol_error(),
-            CodexErrorInfo::ModelCap {
+            err.to_rune_protocol_error(),
+            RuneErrorInfo::ModelCap {
                 model: "boomslang".to_string(),
                 reset_after_seconds: Some(30),
             }
@@ -786,7 +786,7 @@ mod tests {
             duration: Duration::from_millis(10),
             timed_out: false,
         };
-        let err = CodexErr::Sandbox(SandboxErr::Denied {
+        let err = RuneErr::Sandbox(SandboxErr::Denied {
             output: Box::new(output),
         });
         assert_eq!(get_error_message_ui(&err), "aggregate detail");
@@ -802,7 +802,7 @@ mod tests {
             duration: Duration::from_millis(10),
             timed_out: false,
         };
-        let err = CodexErr::Sandbox(SandboxErr::Denied {
+        let err = RuneErr::Sandbox(SandboxErr::Denied {
             output: Box::new(output),
         });
         assert_eq!(get_error_message_ui(&err), "stderr detail\nstdout detail");
@@ -818,7 +818,7 @@ mod tests {
             duration: Duration::from_millis(8),
             timed_out: false,
         };
-        let err = CodexErr::Sandbox(SandboxErr::Denied {
+        let err = RuneErr::Sandbox(SandboxErr::Denied {
             output: Box::new(output),
         });
         assert_eq!(get_error_message_ui(&err), "stdout only");
@@ -832,7 +832,7 @@ mod tests {
             .body("")
             .unwrap();
         let source = Response::from(response).error_for_status_ref().unwrap_err();
-        let err = CodexErr::ResponseStreamFailed(ResponseStreamFailed {
+        let err = RuneErr::ResponseStreamFailed(ResponseStreamFailed {
             source,
             request_id: Some("req-123".to_string()),
         });
@@ -844,8 +844,8 @@ mod tests {
             "prefix: Error while reading the server response: HTTP status client error (429 Too Many Requests) for url (http://example.com/), request id: req-123"
         );
         assert_eq!(
-            event.codex_error_info,
-            Some(CodexErrorInfo::ResponseStreamConnectionFailed {
+            event.rune_error_info,
+            Some(RuneErrorInfo::ResponseStreamConnectionFailed {
                 http_status_code: Some(429)
             })
         );
@@ -861,7 +861,7 @@ mod tests {
             duration: Duration::from_millis(5),
             timed_out: false,
         };
-        let err = CodexErr::Sandbox(SandboxErr::Denied {
+        let err = RuneErr::Sandbox(SandboxErr::Denied {
             output: Box::new(output),
         });
         assert_eq!(
@@ -880,7 +880,7 @@ mod tests {
         };
         assert_eq!(
             err.to_string(),
-            "You've hit your usage limit. Upgrade to Plus to continue using Codex (https://chatgpt.com/explore/plus), or try again later."
+            "You've hit your usage limit. Upgrade to Plus to continue using Rune (https://chatgpt.com/explore/plus), or try again later."
         );
     }
 
@@ -894,7 +894,7 @@ mod tests {
         };
         assert_eq!(
             err.to_string(),
-            "You've hit your usage limit. Upgrade to Plus to continue using Codex (https://chatgpt.com/explore/plus), or try again later."
+            "You've hit your usage limit. Upgrade to Plus to continue using Rune (https://chatgpt.com/explore/plus), or try again later."
         );
     }
 
@@ -972,7 +972,7 @@ mod tests {
                 promo_message: None,
             };
             let expected = format!(
-                "You've hit your usage limit. Visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at {expected_time}."
+                "You've hit your usage limit. Visit https://chatgpt.com/rune/settings/usage to purchase more credits or try again at {expected_time}."
             );
             assert_eq!(err.to_string(), expected);
         });
@@ -1036,7 +1036,7 @@ mod tests {
             status: StatusCode::UNAUTHORIZED,
             body: r#"{"error":{"message":"Workspace is not authorized in this region."},"status":401}"#
                 .to_string(),
-            url: Some("https://chatgpt.com/backend-api/codex/responses".to_string()),
+            url: Some("https://chatgpt.com/backend-api/rune/responses".to_string()),
             cf_ray: None,
             request_id: Some("req-123".to_string()),
         };
@@ -1044,7 +1044,7 @@ mod tests {
         assert_eq!(
             err.to_string(),
             format!(
-                "unexpected status {status}: Workspace is not authorized in this region., url: https://chatgpt.com/backend-api/codex/responses, request id: req-123"
+                "unexpected status {status}: Workspace is not authorized in this region., url: https://chatgpt.com/backend-api/rune/responses, request id: req-123"
             )
         );
     }
@@ -1074,7 +1074,7 @@ mod tests {
         let err = UnexpectedResponseError {
             status: StatusCode::UNAUTHORIZED,
             body: "plain text error".to_string(),
-            url: Some("https://chatgpt.com/backend-api/codex/responses".to_string()),
+            url: Some("https://chatgpt.com/backend-api/rune/responses".to_string()),
             cf_ray: Some("9c81f9f18f2fa49d-LHR".to_string()),
             request_id: Some("req-xyz".to_string()),
         };
@@ -1082,7 +1082,7 @@ mod tests {
         assert_eq!(
             err.to_string(),
             format!(
-                "unexpected status {status}: plain text error, url: https://chatgpt.com/backend-api/codex/responses, cf-ray: 9c81f9f18f2fa49d-LHR, request id: req-xyz"
+                "unexpected status {status}: plain text error, url: https://chatgpt.com/backend-api/rune/responses, cf-ray: 9c81f9f18f2fa49d-LHR, request id: req-xyz"
             )
         );
     }
@@ -1100,7 +1100,7 @@ mod tests {
                 promo_message: None,
             };
             let expected = format!(
-                "You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/codex/settings/usage to purchase more credits or try again at {expected_time}."
+                "You've hit your usage limit. Upgrade to Pro (https://chatgpt.com/explore/pro), visit https://chatgpt.com/rune/settings/usage to purchase more credits or try again at {expected_time}."
             );
             assert_eq!(err.to_string(), expected);
         });
@@ -1152,11 +1152,11 @@ mod tests {
                 resets_at: Some(resets_at),
                 rate_limits: Some(rate_limit_snapshot()),
                 promo_message: Some(
-                    "To continue using Codex, start a free trial of <PLAN> today".to_string(),
+                    "To continue using Rune, start a free trial of <PLAN> today".to_string(),
                 ),
             };
             let expected = format!(
-                "You've hit your usage limit. To continue using Codex, start a free trial of <PLAN> today, or try again at {expected_time}."
+                "You've hit your usage limit. To continue using Rune, start a free trial of <PLAN> today, or try again at {expected_time}."
             );
             assert_eq!(err.to_string(), expected);
         });

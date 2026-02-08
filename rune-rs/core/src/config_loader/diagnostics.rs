@@ -3,8 +3,8 @@
 
 use crate::config::CONFIG_TOML_FILE;
 use crate::config::ConfigToml;
-use codex_app_server_protocol::ConfigLayerSource;
-use codex_utils_absolute_path::AbsolutePathBufGuard;
+use rune_app_server_protocol::ConfigLayerSource;
+use rune_utils_absolute_path::AbsolutePathBufGuard;
 use serde_path_to_error::Path as SerdePath;
 use serde_path_to_error::Segment as SerdeSegment;
 use std::fmt;
@@ -186,8 +186,8 @@ fn config_path_for_layer(layer: &ConfigLayerEntry) -> Option<PathBuf> {
     match &layer.name {
         ConfigLayerSource::System { file } => Some(file.to_path_buf()),
         ConfigLayerSource::User { file } => Some(file.to_path_buf()),
-        ConfigLayerSource::Project { dot_codex_folder } => {
-            Some(dot_codex_folder.as_path().join(CONFIG_TOML_FILE))
+        ConfigLayerSource::Project { dot_rune_folder } => {
+            Some(dot_rune_folder.as_path().join(CONFIG_TOML_FILE))
         }
         ConfigLayerSource::LegacyManagedConfigTomlFromFile { file } => Some(file.to_path_buf()),
         ConfigLayerSource::Mdm { .. }

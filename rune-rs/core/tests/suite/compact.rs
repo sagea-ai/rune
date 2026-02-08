@@ -1,26 +1,26 @@
 #![allow(clippy::expect_used)]
-use codex_core::CodexAuth;
-use codex_core::ModelProviderInfo;
-use codex_core::built_in_model_providers;
-use codex_core::compact::SUMMARIZATION_PROMPT;
-use codex_core::compact::SUMMARY_PREFIX;
-use codex_core::config::Config;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::ItemCompletedEvent;
-use codex_core::protocol::ItemStartedEvent;
-use codex_core::protocol::Op;
-use codex_core::protocol::RolloutItem;
-use codex_core::protocol::RolloutLine;
-use codex_core::protocol::SandboxPolicy;
-use codex_core::protocol::WarningEvent;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::items::TurnItem;
-use codex_protocol::user_input::UserInput;
+use rune_core::RuneAuth;
+use rune_core::ModelProviderInfo;
+use rune_core::built_in_model_providers;
+use rune_core::compact::SUMMARIZATION_PROMPT;
+use rune_core::compact::SUMMARY_PREFIX;
+use rune_core::config::Config;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::ItemCompletedEvent;
+use rune_core::protocol::ItemStartedEvent;
+use rune_core::protocol::Op;
+use rune_core::protocol::RolloutItem;
+use rune_core::protocol::RolloutLine;
+use rune_core::protocol::SandboxPolicy;
+use rune_core::protocol::WarningEvent;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::items::TurnItem;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses::ev_local_shell_call;
 use core_test_support::responses::ev_reasoning_item;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use core_test_support::wait_for_event_match;
 use std::collections::VecDeque;
@@ -136,19 +136,19 @@ async fn summarize_context_three_requests_and_instructions() {
     // inspect them without relying on specific prompt markers.
     let request_log = mount_sse_sequence(&server, vec![sse1, sse2, sse3]).await;
 
-    // Build config pointing to the mock server and spawn Codex.
+    // Build config pointing to the mock server and spawn Rune.
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
     let test = builder.build(&server).await.unwrap();
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let rollout_path = test.session_configured.rollout_path.expect("rollout path");
 
     // 1) Normal user input – should hit server once.
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello world".into(),
@@ -158,19 +158,19 @@ async fn summarize_context_three_requests_and_instructions() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // 2) Summarize – second hit should include the summarization prompt.
-    codex.submit(Op::Compact).await.unwrap();
-    let warning_event = wait_for_event(&codex, |ev| matches!(ev, EventMsg::Warning(_))).await;
+    rune.submit(Op::Compact).await.unwrap();
+    let warning_event = wait_for_event(&rune, |ev| matches!(ev, EventMsg::Warning(_))).await;
     let EventMsg::Warning(WarningEvent { message }) = warning_event else {
         panic!("expected warning event after compact");
     };
     assert_eq!(message, COMPACT_WARNING_MESSAGE);
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // 3) Next user input – third hit; history should include only the summary.
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: THIRD_USER_MSG.into(),
@@ -180,7 +180,7 @@ async fn summarize_context_three_requests_and_instructions() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Inspect the three captured requests.
     let requests = request_log.requests();
@@ -273,9 +273,9 @@ async fn summarize_context_three_requests_and_instructions() {
         "third request should not include the summarize trigger"
     );
 
-    // Shut down Codex to flush rollout entries before inspecting the file.
-    codex.submit(Op::Shutdown).await.unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    // Shut down Rune to flush rollout entries before inspecting the file.
+    rune.submit(Op::Shutdown).await.unwrap();
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
     // Verify rollout contains APITurn entries for each API call and a Compacted entry.
     println!("rollout path: {}", rollout_path.display());
@@ -329,23 +329,23 @@ async fn manual_compact_uses_custom_prompt() {
     let custom_prompt = "Use this compact prompt instead";
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         config.compact_prompt = Some(custom_prompt.to_string());
     });
-    let codex = builder
+    let rune = builder
         .build(&server)
         .await
         .expect("create conversation")
-        .codex;
+        .rune;
 
-    codex.submit(Op::Compact).await.expect("trigger compact");
-    let warning_event = wait_for_event(&codex, |ev| matches!(ev, EventMsg::Warning(_))).await;
+    rune.submit(Op::Compact).await.expect("trigger compact");
+    let warning_event = wait_for_event(&rune, |ev| matches!(ev, EventMsg::Warning(_))).await;
     let EventMsg::Warning(WarningEvent { message }) = warning_event else {
         panic!("expected warning event after compact");
     };
     assert_eq!(message, COMPACT_WARNING_MESSAGE);
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let body = response_mock.single_request().body_json();
 
@@ -400,17 +400,17 @@ async fn manual_compact_emits_api_and_local_token_usage_events() {
     mount_sse_once(&server, sse_compact).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let rune = builder.build(&server).await.unwrap().rune;
 
     // Trigger manual compact and collect TokenCount events for the compact turn.
-    codex.submit(Op::Compact).await.unwrap();
+    rune.submit(Op::Compact).await.unwrap();
 
     // First TokenCount: from the compact API call (usage.total_tokens = 0).
-    let first = wait_for_event_match(&codex, |ev| match ev {
+    let first = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::TokenCount(tc) => tc
             .info
             .as_ref()
@@ -420,7 +420,7 @@ async fn manual_compact_emits_api_and_local_token_usage_events() {
     .await;
 
     // Second TokenCount: from the local post-compaction estimate.
-    let last = wait_for_event_match(&codex, |ev| match ev {
+    let last = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::TokenCount(tc) => tc
             .info
             .as_ref()
@@ -430,7 +430,7 @@ async fn manual_compact_emits_api_and_local_token_usage_events() {
     .await;
 
     // Ensure the compact task itself completes.
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     assert_eq!(
         first, 0,
@@ -459,13 +459,13 @@ async fn manual_compact_emits_context_compaction_items() {
     mount_sse_sequence(&server, vec![sse1, sse2]).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let rune = builder.build(&server).await.unwrap().rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "manual compact".into(),
@@ -475,9 +475,9 @@ async fn manual_compact_emits_context_compaction_items() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.unwrap();
+    rune.submit(Op::Compact).await.unwrap();
 
     let mut started_item = None;
     let mut completed_item = None;
@@ -486,7 +486,7 @@ async fn manual_compact_emits_context_compaction_items() {
 
     while !saw_turn_complete || started_item.is_none() || completed_item.is_none() || !legacy_event
     {
-        let event = codex.next_event().await.unwrap();
+        let event = rune.next_event().await.unwrap();
         match event.msg {
             EventMsg::ItemStarted(ItemStartedEvent {
                 item: TurnItem::ContextCompaction(item),
@@ -523,14 +523,14 @@ async fn multiple_auto_compact_per_task_runs_after_token_limit_hit() {
     let server = start_mock_server().await;
 
     let non_openai_provider_name = non_openai_model_provider(&server).name;
-    let codex = test_codex()
+    let rune = test_rune()
         .with_config(move |config| {
             config.model_provider.name = non_openai_provider_name;
         })
         .build(&server)
         .await
-        .expect("build codex")
-        .codex;
+        .expect("build rune")
+        .rune;
 
     // user message
     let user_message = "create an app";
@@ -628,7 +628,7 @@ async fn multiple_auto_compact_per_task_runs_after_token_limit_hit() {
     let request_log = mount_sse_sequence(&server, bodies).await;
 
     // Start the conversation with the user message
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: user_message.into(),
@@ -638,7 +638,7 @@ async fn multiple_auto_compact_per_task_runs_after_token_limit_hit() {
         })
         .await
         .expect("submit user input");
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // collect the requests payloads from the model
     let requests_payloads = request_log.requests();
@@ -1094,14 +1094,14 @@ async fn auto_compact_runs_after_token_limit_hit() {
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let rune = builder.build(&server).await.unwrap().rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: FIRST_AUTO_MSG.into(),
@@ -1112,9 +1112,9 @@ async fn auto_compact_runs_after_token_limit_hit() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: SECOND_AUTO_MSG.into(),
@@ -1125,9 +1125,9 @@ async fn auto_compact_runs_after_token_limit_hit() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: POST_AUTO_USER_MSG.into(),
@@ -1138,7 +1138,7 @@ async fn auto_compact_runs_after_token_limit_hit() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = request_log.requests();
     let request_bodies: Vec<String> = requests
@@ -1283,19 +1283,19 @@ async fn auto_compact_emits_context_compaction_items() {
     mount_sse_sequence(&server, vec![sse1, sse2, sse3, sse4]).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let rune = builder.build(&server).await.unwrap().rune;
 
     let mut started_item = None;
     let mut completed_item = None;
     let mut legacy_event = false;
 
     for user in [FIRST_AUTO_MSG, SECOND_AUTO_MSG, POST_AUTO_USER_MSG] {
-        codex
+        rune
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: user.into(),
@@ -1307,7 +1307,7 @@ async fn auto_compact_emits_context_compaction_items() {
             .unwrap();
 
         loop {
-            let event = codex.next_event().await.unwrap();
+            let event = rune.next_event().await.unwrap();
             match event.msg {
                 EventMsg::ItemStarted(ItemStartedEvent {
                     item: TurnItem::ContextCompaction(item),
@@ -1366,14 +1366,14 @@ async fn auto_compact_starts_after_turn_started() {
     mount_sse_sequence(&server, vec![sse1, sse2, sse3, sse4]).await;
 
     let model_provider = non_openai_model_provider(&server);
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let rune = builder.build(&server).await.unwrap().rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: FIRST_AUTO_MSG.into(),
@@ -1383,9 +1383,9 @@ async fn auto_compact_starts_after_turn_started() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: SECOND_AUTO_MSG.into(),
@@ -1395,9 +1395,9 @@ async fn auto_compact_starts_after_turn_started() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: POST_AUTO_USER_MSG.into(),
@@ -1408,7 +1408,7 @@ async fn auto_compact_starts_after_turn_started() {
         .await
         .unwrap();
 
-    let first = wait_for_event_match(&codex, |ev| match ev {
+    let first = wait_for_event_match(&rune, |ev| match ev {
         EventMsg::TurnStarted(_) => Some("turn"),
         EventMsg::ItemStarted(ItemStartedEvent {
             item: TurnItem::ContextCompaction(_),
@@ -1419,7 +1419,7 @@ async fn auto_compact_starts_after_turn_started() {
     .await;
     assert_eq!(first, "turn", "compaction started before turn started");
 
-    wait_for_event(&codex, |ev| {
+    wait_for_event(&rune, |ev| {
         matches!(
             ev,
             EventMsg::ItemStarted(ItemStartedEvent {
@@ -1430,7 +1430,7 @@ async fn auto_compact_starts_after_turn_started() {
     })
     .await;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -1444,23 +1444,23 @@ async fn auto_compact_runs_after_resume_when_token_usage_is_over_limit() {
     let remote_summary = "REMOTE_COMPACT_SUMMARY";
 
     let compacted_history = vec![
-        codex_protocol::models::ResponseItem::Message {
+        rune_protocol::models::ResponseItem::Message {
             id: None,
             role: "assistant".to_string(),
-            content: vec![codex_protocol::models::ContentItem::OutputText {
+            content: vec![rune_protocol::models::ContentItem::OutputText {
                 text: remote_summary.to_string(),
             }],
             end_turn: None,
             phase: None,
         },
-        codex_protocol::models::ResponseItem::Compaction {
+        rune_protocol::models::ResponseItem::Compaction {
             encrypted_content: "ENCRYPTED_COMPACTION_SUMMARY".to_string(),
         },
     ];
     let compact_mock =
         mount_compact_json_once(&server, serde_json::json!({ "output": compacted_history })).await;
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(limit);
     });
@@ -1488,7 +1488,7 @@ async fn auto_compact_runs_after_resume_when_token_usage_is_over_limit() {
         "remote compaction should not run before the next user message"
     );
 
-    let mut resume_builder = test_codex().with_config(move |config| {
+    let mut resume_builder = test_rune().with_config(move |config| {
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(limit);
     });
@@ -1510,7 +1510,7 @@ async fn auto_compact_runs_after_resume_when_token_usage_is_over_limit() {
     mount_sse_once_match(&server, follow_up_matcher, sse_follow_up).await;
 
     resumed
-        .codex
+        .rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: follow_up_user.into(),
@@ -1529,11 +1529,11 @@ async fn auto_compact_runs_after_resume_when_token_usage_is_over_limit() {
         .await
         .unwrap();
 
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.rune, |event| {
         matches!(event, EventMsg::ContextCompacted(_))
     })
     .await;
-    wait_for_event(&resumed.codex, |event| {
+    wait_for_event(&resumed.rune, |event| {
         matches!(event, EventMsg::TurnComplete(_))
     })
     .await;
@@ -1607,16 +1607,16 @@ async fn auto_compact_persists_rollout_entries() {
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
     let test = builder.build(&server).await.unwrap();
-    let codex = test.codex.clone();
+    let rune = test.rune.clone();
     let session_configured = test.session_configured;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: FIRST_AUTO_MSG.into(),
@@ -1626,9 +1626,9 @@ async fn auto_compact_persists_rollout_entries() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: SECOND_AUTO_MSG.into(),
@@ -1638,9 +1638,9 @@ async fn auto_compact_persists_rollout_entries() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: POST_AUTO_USER_MSG.into(),
@@ -1650,10 +1650,10 @@ async fn auto_compact_persists_rollout_entries() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Shutdown).await.unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
+    rune.submit(Op::Shutdown).await.unwrap();
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::ShutdownComplete)).await;
 
     let rollout_path = session_configured.rollout_path.expect("rollout path");
     let text = std::fs::read_to_string(&rollout_path).unwrap_or_else(|e| {
@@ -1719,14 +1719,14 @@ async fn manual_compact_retries_after_context_window_error() {
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200_000);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let rune = builder.build(&server).await.unwrap().rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first turn".into(),
@@ -1736,11 +1736,11 @@ async fn manual_compact_retries_after_context_window_error() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.unwrap();
+    rune.submit(Op::Compact).await.unwrap();
     let EventMsg::BackgroundEvent(event) =
-        wait_for_event(&codex, |ev| matches!(ev, EventMsg::BackgroundEvent(_))).await
+        wait_for_event(&rune, |ev| matches!(ev, EventMsg::BackgroundEvent(_))).await
     else {
         panic!("expected background event after compact retry");
     };
@@ -1749,12 +1749,12 @@ async fn manual_compact_retries_after_context_window_error() {
         "background event should mention trimmed item count: {}",
         event.message
     );
-    let warning_event = wait_for_event(&codex, |ev| matches!(ev, EventMsg::Warning(_))).await;
+    let warning_event = wait_for_event(&rune, |ev| matches!(ev, EventMsg::Warning(_))).await;
     let EventMsg::Warning(WarningEvent { message }) = warning_event else {
         panic!("expected warning event after compact retry");
     };
     assert_eq!(message, COMPACT_WARNING_MESSAGE);
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = request_log.requests();
     assert_eq!(
@@ -1847,13 +1847,13 @@ async fn manual_compact_twice_preserves_latest_user_messages() {
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let rune = builder.build(&server).await.unwrap().rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: first_user_message.into(),
@@ -1863,12 +1863,12 @@ async fn manual_compact_twice_preserves_latest_user_messages() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    rune.submit(Op::Compact).await.unwrap();
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: second_user_message.into(),
@@ -1878,12 +1878,12 @@ async fn manual_compact_twice_preserves_latest_user_messages() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex.submit(Op::Compact).await.unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    rune.submit(Op::Compact).await.unwrap();
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: final_user_message.into(),
@@ -1893,7 +1893,7 @@ async fn manual_compact_twice_preserves_latest_user_messages() {
         })
         .await
         .unwrap();
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let requests = responses_mock.requests();
     assert_eq!(
@@ -2050,16 +2050,16 @@ async fn auto_compact_allows_multiple_attempts_when_interleaved_with_other_turn_
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_auto_compact_token_limit = Some(200);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let rune = builder.build(&server).await.unwrap().rune;
 
     let mut auto_compact_lifecycle_events = Vec::new();
     for user in [MULTI_AUTO_MSG, follow_up_user, final_user] {
-        codex
+        rune
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: user.into(),
@@ -2071,7 +2071,7 @@ async fn auto_compact_allows_multiple_attempts_when_interleaved_with_other_turn_
             .unwrap();
 
         loop {
-            let event = codex.next_event().await.unwrap();
+            let event = rune.next_event().await.unwrap();
             if event.id.starts_with("auto-compact-")
                 && matches!(
                     event.msg,
@@ -2157,15 +2157,15 @@ async fn auto_compact_triggers_after_function_call_over_95_percent_usage() {
 
     let model_provider = non_openai_model_provider(&server);
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         config.model_provider = model_provider;
         set_test_compact_prompt(config);
         config.model_context_window = Some(context_window);
         config.model_auto_compact_token_limit = Some(limit);
     });
-    let codex = builder.build(&server).await.unwrap().codex;
+    let rune = builder.build(&server).await.unwrap().rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: FUNCTION_CALL_LIMIT_MSG.into(),
@@ -2176,9 +2176,9 @@ async fn auto_compact_triggers_after_function_call_over_95_percent_usage() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |msg| matches!(msg, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |msg| matches!(msg, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: follow_up_user.into(),
@@ -2189,7 +2189,7 @@ async fn auto_compact_triggers_after_function_call_over_95_percent_usage() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |msg| matches!(msg, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |msg| matches!(msg, EventMsg::TurnComplete(_))).await;
 
     // Assert first request captured expected user message that triggers function call.
     let first_request = first_turn_mock.single_request().input();
@@ -2266,38 +2266,38 @@ async fn auto_compact_counts_encrypted_reasoning_before_last_user() {
     .await;
 
     let compacted_history = vec![
-        codex_protocol::models::ResponseItem::Message {
+        rune_protocol::models::ResponseItem::Message {
             id: None,
             role: "assistant".to_string(),
-            content: vec![codex_protocol::models::ContentItem::OutputText {
+            content: vec![rune_protocol::models::ContentItem::OutputText {
                 text: "REMOTE_COMPACT_SUMMARY".to_string(),
             }],
             end_turn: None,
             phase: None,
         },
-        codex_protocol::models::ResponseItem::Compaction {
+        rune_protocol::models::ResponseItem::Compaction {
             encrypted_content: "ENCRYPTED_COMPACTION_SUMMARY".to_string(),
         },
     ];
     let compact_mock =
         mount_compact_json_once(&server, serde_json::json!({ "output": compacted_history })).await;
 
-    let codex = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let rune = test_rune()
+        .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             set_test_compact_prompt(config);
             config.model_auto_compact_token_limit = Some(300);
         })
         .build(&server)
         .await
-        .expect("build codex")
-        .codex;
+        .expect("build rune")
+        .rune;
 
     for (idx, user) in [first_user, second_user, third_user]
         .into_iter()
         .enumerate()
     {
-        codex
+        rune
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: user.into(),
@@ -2307,7 +2307,7 @@ async fn auto_compact_counts_encrypted_reasoning_before_last_user() {
             })
             .await
             .unwrap();
-        wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+        wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
         if idx < 2 {
             assert!(
@@ -2386,35 +2386,35 @@ async fn auto_compact_runs_when_reasoning_header_clears_between_turns() {
     mount_response_sequence(&server, responses).await;
 
     let compacted_history = vec![
-        codex_protocol::models::ResponseItem::Message {
+        rune_protocol::models::ResponseItem::Message {
             id: None,
             role: "assistant".to_string(),
-            content: vec![codex_protocol::models::ContentItem::OutputText {
+            content: vec![rune_protocol::models::ContentItem::OutputText {
                 text: "REMOTE_COMPACT_SUMMARY".to_string(),
             }],
             end_turn: None,
             phase: None,
         },
-        codex_protocol::models::ResponseItem::Compaction {
+        rune_protocol::models::ResponseItem::Compaction {
             encrypted_content: "ENCRYPTED_COMPACTION_SUMMARY".to_string(),
         },
     ];
     let compact_mock =
         mount_compact_json_once(&server, serde_json::json!({ "output": compacted_history })).await;
 
-    let codex = test_codex()
-        .with_auth(CodexAuth::create_dummy_chatgpt_auth_for_testing())
+    let rune = test_rune()
+        .with_auth(RuneAuth::create_dummy_chatgpt_auth_for_testing())
         .with_config(|config| {
             set_test_compact_prompt(config);
             config.model_auto_compact_token_limit = Some(300);
         })
         .build(&server)
         .await
-        .expect("build codex")
-        .codex;
+        .expect("build rune")
+        .rune;
 
     for user in [first_user, second_user, third_user] {
-        codex
+        rune
             .submit(Op::UserInput {
                 items: vec![UserInput::Text {
                     text: user.into(),
@@ -2424,7 +2424,7 @@ async fn auto_compact_runs_when_reasoning_header_clears_between_turns() {
             })
             .await
             .unwrap();
-        wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+        wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
     }
 
     let compact_requests = compact_mock.requests();

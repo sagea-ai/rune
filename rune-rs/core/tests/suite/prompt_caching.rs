@@ -1,31 +1,31 @@
 #![allow(clippy::unwrap_used)]
 
-use codex_apply_patch::APPLY_PATCH_TOOL_INSTRUCTIONS;
-use codex_core::features::Feature;
-use codex_core::models_manager::model_info::BASE_INSTRUCTIONS;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_core::protocol_config_types::ReasoningSummary;
-use codex_core::shell::Shell;
-use codex_core::shell::default_user_shell;
-use codex_protocol::config_types::CollaborationMode;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::Settings;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::openai_models::ReasoningEffort;
-use codex_protocol::user_input::UserInput;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_apply_patch::APPLY_PATCH_TOOL_INSTRUCTIONS;
+use rune_core::features::Feature;
+use rune_core::models_manager::model_info::BASE_INSTRUCTIONS;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_core::protocol_config_types::ReasoningSummary;
+use rune_core::shell::Shell;
+use rune_core::shell::default_user_shell;
+use rune_protocol::config_types::CollaborationMode;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::config_types::Settings;
+use rune_protocol::config_types::WebSearchMode;
+use rune_protocol::openai_models::ReasoningEffort;
+use rune_protocol::user_input::UserInput;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_response_created;
 use core_test_support::responses::mount_sse_once;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRune;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
@@ -87,12 +87,12 @@ async fn prompt_tools_are_consistent_across_requests() -> anyhow::Result<()> {
     )
     .await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         config,
         thread_manager,
         ..
-    } = test_codex()
+    } = test_rune()
         .with_config(|config| {
             config.user_instructions = Some("be consistent and helpful".to_string());
             config.model = Some("gpt-5.1-rune-max".to_string());
@@ -117,7 +117,7 @@ async fn prompt_tools_are_consistent_across_requests() -> anyhow::Result<()> {
         .await
         .base_instructions;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -126,9 +126,9 @@ async fn prompt_tools_are_consistent_across_requests() -> anyhow::Result<()> {
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -137,7 +137,7 @@ async fn prompt_tools_are_consistent_across_requests() -> anyhow::Result<()> {
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let mut expected_tools_names = if cfg!(windows) {
         vec!["shell_command"]
@@ -179,7 +179,7 @@ async fn prompt_tools_are_consistent_across_requests() -> anyhow::Result<()> {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-async fn codex_mini_latest_tools() -> anyhow::Result<()> {
+async fn rune_mini_latest_tools() -> anyhow::Result<()> {
     skip_if_no_network!(Ok(()));
     use pretty_assertions::assert_eq;
 
@@ -195,7 +195,7 @@ async fn codex_mini_latest_tools() -> anyhow::Result<()> {
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestRune { rune, .. } = test_rune()
         .with_config(|config| {
             config.user_instructions = Some("be consistent and helpful".to_string());
             config.features.disable(Feature::ApplyPatchFreeform);
@@ -205,7 +205,7 @@ async fn codex_mini_latest_tools() -> anyhow::Result<()> {
         .build(&server)
         .await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -215,8 +215,8 @@ async fn codex_mini_latest_tools() -> anyhow::Result<()> {
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
-    codex
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -226,7 +226,7 @@ async fn codex_mini_latest_tools() -> anyhow::Result<()> {
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let expected_instructions = [BASE_INSTRUCTIONS, APPLY_PATCH_TOOL_INSTRUCTIONS].join("\n");
 
@@ -269,7 +269,7 @@ async fn prefixes_context_and_instructions_once_and_consistently_across_requests
     )
     .await;
 
-    let TestCodex { codex, config, .. } = test_codex()
+    let TestRune { rune, config, .. } = test_rune()
         .with_config(|config| {
             config.user_instructions = Some("be consistent and helpful".to_string());
             config.features.enable(Feature::CollaborationModes);
@@ -277,7 +277,7 @@ async fn prefixes_context_and_instructions_once_and_consistently_across_requests
         .build(&server)
         .await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -286,9 +286,9 @@ async fn prefixes_context_and_instructions_once_and_consistently_across_requests
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -297,7 +297,7 @@ async fn prefixes_context_and_instructions_once_and_consistently_across_requests
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let body1 = req1.single_request().body_json();
     let input1 = body1["input"].as_array().expect("input array");
@@ -354,7 +354,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestRune { rune, .. } = test_rune()
         .with_config(|config| {
             config.user_instructions = Some("be consistent and helpful".to_string());
             config.features.enable(Feature::CollaborationModes);
@@ -363,7 +363,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
         .await?;
 
     // First turn
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -372,7 +372,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let writable = TempDir::new().unwrap();
     let new_policy = SandboxPolicy::WorkspaceWrite {
@@ -381,7 +381,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
         exclude_tmpdir_env_var: true,
         exclude_slash_tmp: true,
     };
-    codex
+    rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: Some(AskForApproval::Never),
@@ -396,7 +396,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
         .await?;
 
     // Second turn after overrides
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -405,7 +405,7 @@ async fn overrides_turn_context_but_keeps_cached_prefix_and_key_constant() -> an
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let body1 = req1.single_request().body_json();
     let body2 = req2.single_request().body_json();
@@ -449,7 +449,7 @@ async fn override_before_first_turn_emits_environment_context() -> anyhow::Resul
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex().build(&server).await?;
+    let TestRune { rune, .. } = test_rune().build(&server).await?;
 
     let collaboration_mode = CollaborationMode {
         mode: ModeKind::Default,
@@ -460,13 +460,13 @@ async fn override_before_first_turn_emits_environment_context() -> anyhow::Resul
         },
     };
 
-    codex
+    rune
         .submit(Op::OverrideTurnContext {
             cwd: None,
             approval_policy: Some(AskForApproval::Never),
             sandbox_policy: None,
             windows_sandbox_level: None,
-            model: Some("gpt-5.1-codex".to_string()),
+            model: Some("gpt-5.1-rune".to_string()),
             effort: Some(Some(ReasoningEffort::Low)),
             summary: None,
             collaboration_mode: Some(collaboration_mode),
@@ -474,7 +474,7 @@ async fn override_before_first_turn_emits_environment_context() -> anyhow::Resul
         })
         .await?;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first message".into(),
@@ -484,7 +484,7 @@ async fn override_before_first_turn_emits_environment_context() -> anyhow::Resul
         })
         .await?;
 
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let body = req.single_request().body_json();
     assert_eq!(body["model"].as_str(), Some("gpt-5.1"));
@@ -593,7 +593,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
     )
     .await;
 
-    let TestCodex { codex, .. } = test_codex()
+    let TestRune { rune, .. } = test_rune()
         .with_config(|config| {
             config.user_instructions = Some("be consistent and helpful".to_string());
             config.features.enable(Feature::CollaborationModes);
@@ -602,7 +602,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
         .await?;
 
     // First turn
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -611,7 +611,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
             final_output_json_schema: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     // Second turn using per-turn overrides via UserTurn
     let new_cwd = TempDir::new().unwrap();
@@ -622,7 +622,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
         exclude_tmpdir_env_var: true,
         exclude_slash_tmp: true,
     };
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -639,7 +639,7 @@ async fn per_turn_overrides_keep_cached_prefix_and_key_constant() -> anyhow::Res
             personality: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let body1 = req1.single_request().body_json();
     let body2 = req2.single_request().body_json();
@@ -717,12 +717,12 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
     )
     .await;
 
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         config,
         session_configured,
         ..
-    } = test_codex()
+    } = test_rune()
         .with_config(|config| {
             config.user_instructions = Some("be consistent and helpful".to_string());
             config.features.enable(Feature::CollaborationModes);
@@ -737,7 +737,7 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
     let default_effort = config.model_reasoning_effort;
     let default_summary = config.model_reasoning_summary;
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -754,9 +754,9 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
             personality: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -773,7 +773,7 @@ async fn send_user_turn_with_no_changes_does_not_send_environment_context() -> a
             personality: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let body1 = req1.single_request().body_json();
     let body2 = req2.single_request().body_json();
@@ -825,12 +825,12 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
         sse(vec![ev_response_created("resp-2"), ev_completed("resp-2")]),
     )
     .await;
-    let TestCodex {
-        codex,
+    let TestRune {
+        rune,
         config,
         session_configured,
         ..
-    } = test_codex()
+    } = test_rune()
         .with_config(|config| {
             config.user_instructions = Some("be consistent and helpful".to_string());
             config.features.enable(Feature::CollaborationModes);
@@ -845,7 +845,7 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
     let default_effort = config.model_reasoning_effort;
     let default_summary = config.model_reasoning_summary;
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello 1".into(),
@@ -862,9 +862,9 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
             personality: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
-    codex
+    rune
         .submit(Op::UserTurn {
             items: vec![UserInput::Text {
                 text: "hello 2".into(),
@@ -881,7 +881,7 @@ async fn send_user_turn_with_changes_sends_environment_context() -> anyhow::Resu
             personality: None,
         })
         .await?;
-    wait_for_event(&codex, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |ev| matches!(ev, EventMsg::TurnComplete(_))).await;
 
     let body1 = req1.single_request().body_json();
     let body2 = req2.single_request().body_json();

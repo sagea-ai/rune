@@ -1,14 +1,14 @@
 use anyhow::Result;
-use codex_core::config::ConfigBuilder;
-use codex_core::config::types::OtelExporterKind;
-use codex_core::config::types::OtelHttpProtocol;
+use rune_core::config::ConfigBuilder;
+use rune_core::config::types::OtelExporterKind;
+use rune_core::config::types::OtelHttpProtocol;
 use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 use tempfile::TempDir;
 
 const SERVICE_VERSION: &str = "0.0.0-test";
 
-fn set_metrics_exporter(config: &mut codex_core::config::Config) {
+fn set_metrics_exporter(config: &mut rune_core::config::Config) {
     config.otel.metrics_exporter = OtelExporterKind::OtlpHttp {
         endpoint: "http://localhost:4318".to_string(),
         headers: HashMap::new(),
@@ -19,18 +19,18 @@ fn set_metrics_exporter(config: &mut codex_core::config::Config) {
 
 #[tokio::test]
 async fn app_server_default_analytics_disabled_without_flag() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
     let mut config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .rune_home(rune_home.path().to_path_buf())
         .build()
         .await?;
     set_metrics_exporter(&mut config);
     config.analytics_enabled = None;
 
-    let provider = codex_core::otel_init::build_provider(
+    let provider = rune_core::otel_init::build_provider(
         &config,
         SERVICE_VERSION,
-        Some("codex_app_server"),
+        Some("rune_app_server"),
         false,
     )
     .map_err(|err| anyhow::anyhow!(err.to_string()))?;
@@ -43,18 +43,18 @@ async fn app_server_default_analytics_disabled_without_flag() -> Result<()> {
 
 #[tokio::test]
 async fn app_server_default_analytics_enabled_with_flag() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
     let mut config = ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .rune_home(rune_home.path().to_path_buf())
         .build()
         .await?;
     set_metrics_exporter(&mut config);
     config.analytics_enabled = None;
 
-    let provider = codex_core::otel_init::build_provider(
+    let provider = rune_core::otel_init::build_provider(
         &config,
         SERVICE_VERSION,
-        Some("codex_app_server"),
+        Some("rune_app_server"),
         true,
     )
     .map_err(|err| anyhow::anyhow!(err.to_string()))?;

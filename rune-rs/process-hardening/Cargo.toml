@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "codex_process_hardening"
+name = "rune_process_hardening"
 path = "src/lib.rs"
 
 [lints]

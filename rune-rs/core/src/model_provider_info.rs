@@ -1,14 +1,14 @@
-//! Registry of model providers supported by Codex.
+//! Registry of model providers supported by Rune.
 //!
 //! Providers can be defined in two places:
-//!   1. Built-in defaults compiled into the binary so Codex works out-of-the-box.
+//!   1. Built-in defaults compiled into the binary so Rune works out-of-the-box.
 //!   2. User-defined entries inside `~/.rune/rune.toml` under the `model_providers`
 //!      key. These override or extend the defaults at runtime.
 
 use crate::auth::AuthMode;
 use crate::error::EnvVarError;
-use codex_api::Provider as ApiProvider;
-use codex_api::provider::RetryConfig as ApiRetryConfig;
+use rune_api::Provider as ApiProvider;
+use rune_api::provider::RetryConfig as ApiRetryConfig;
 use http::HeaderMap;
 use http::header::HeaderName;
 use http::header::HeaderValue;
@@ -28,9 +28,9 @@ const MAX_STREAM_MAX_RETRIES: u64 = 100;
 const MAX_REQUEST_MAX_RETRIES: u64 = 100;
 
 const OPENAI_PROVIDER_NAME: &str = "OpenAI";
-const CHAT_WIRE_API_REMOVED_ERROR: &str = "`wire_api = \"chat\"` is no longer supported.\nHow to fix: set `wire_api = \"responses\"` in your provider config.\nMore info: https://github.com/openai/codex/discussions/7782";
+const CHAT_WIRE_API_REMOVED_ERROR: &str = "`wire_api = \"chat\"` is no longer supported.\nHow to fix: set `wire_api = \"responses\"` in your provider config.\nMore info: https://github.com/openai/rune/discussions/7782";
 pub(crate) const LEGACY_OLLAMA_CHAT_PROVIDER_ID: &str = "ollama-chat";
-pub(crate) const OLLAMA_CHAT_PROVIDER_REMOVED_ERROR: &str = "`ollama-chat` is no longer supported.\nHow to fix: replace `ollama-chat` with `ollama` in `model_provider`, `oss_provider`, or `--local-provider`.\nMore info: https://github.com/openai/codex/discussions/7782";
+pub(crate) const OLLAMA_CHAT_PROVIDER_REMOVED_ERROR: &str = "`ollama-chat` is no longer supported.\nHow to fix: replace `ollama-chat` with `ollama` in `model_provider`, `oss_provider`, or `--local-provider`.\nMore info: https://github.com/openai/rune/discussions/7782";
 
 /// Wire protocol that the provider speaks.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, JsonSchema)]
@@ -145,7 +145,7 @@ impl ModelProviderInfo {
         auth_mode: Option<AuthMode>,
     ) -> crate::error::Result<ApiProvider> {
         let default_base_url = if matches!(auth_mode, Some(AuthMode::Chatgpt)) {
-            "https://chatgpt.com/backend-api/codex"
+            "https://chatgpt.com/backend-api/rune"
         } else {
             "https://api.openai.com/v1"
         };
@@ -189,7 +189,7 @@ impl ModelProviderInfo {
                         }
                     })
                     .map_err(|_| {
-                        crate::error::CodexErr::EnvVar(EnvVarError {
+                        crate::error::RuneErr::EnvVar(EnvVarError {
                             var: env_key.clone(),
                             instructions: self.env_key_instructions.clone(),
                         })
@@ -224,7 +224,7 @@ impl ModelProviderInfo {
             name: OPENAI_PROVIDER_NAME.into(),
             // Allow users to override the default OpenAI endpoint by
             // exporting `OPENAI_BASE_URL`. This is useful when pointing
-            // Codex at a proxy, mock server, or Azure-style deployment
+            // Rune at a proxy, mock server, or Azure-style deployment
             // without requiring a full TOML override for the built-in
             // OpenAI provider.
             base_url: std::env::var("OPENAI_BASE_URL")
@@ -276,7 +276,7 @@ pub fn built_in_model_providers() -> HashMap<String, ModelProviderInfo> {
     use ModelProviderInfo as P;
 
     // We do not want to be in the business of adjucating which third-party
-    // providers are bundled with Codex CLI, so we only include the OpenAI and
+    // providers are bundled with Rune CLI, so we only include the OpenAI and
     // provider. Users are encouraged to add to
     // `model_providers` in rune.toml to add their own providers.
     [

@@ -1,19 +1,19 @@
 #![cfg(not(target_os = "windows"))]
 
 use anyhow::Ok;
-use codex_app_server_protocol::ConfigLayerSource;
-use codex_core::config_loader::ConfigLayerEntry;
-use codex_core::config_loader::ConfigLayerStack;
-use codex_core::config_loader::ConfigRequirements;
-use codex_core::config_loader::ConfigRequirementsToml;
-use codex_core::features::Feature;
-use codex_core::protocol::DeprecationNoticeEvent;
-use codex_core::protocol::EventMsg;
+use rune_app_server_protocol::ConfigLayerSource;
+use rune_core::config_loader::ConfigLayerEntry;
+use rune_core::config_loader::ConfigLayerStack;
+use rune_core::config_loader::ConfigRequirements;
+use rune_core::config_loader::ConfigRequirementsToml;
+use rune_core::features::Feature;
+use rune_core::protocol::DeprecationNoticeEvent;
+use rune_core::protocol::EventMsg;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
 use core_test_support::test_absolute_path;
-use core_test_support::test_codex::TestCodex;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRune;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event_match;
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
@@ -25,7 +25,7 @@ async fn emits_deprecation_notice_for_legacy_feature_flag() -> anyhow::Result<()
 
     let server = start_mock_server().await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_rune().with_config(|config| {
         config.features.enable(Feature::UnifiedExec);
         config
             .features
@@ -33,9 +33,9 @@ async fn emits_deprecation_notice_for_legacy_feature_flag() -> anyhow::Result<()
         config.use_experimental_unified_exec_tool = true;
     });
 
-    let TestCodex { codex, .. } = builder.build(&server).await?;
+    let TestRune { rune, .. } = builder.build(&server).await?;
 
-    let notice = wait_for_event_match(&codex, |event| match event {
+    let notice = wait_for_event_match(&rune, |event| match event {
         EventMsg::DeprecationNotice(ev) => Some(ev.clone()),
         _ => None,
     })
@@ -50,7 +50,7 @@ async fn emits_deprecation_notice_for_legacy_feature_flag() -> anyhow::Result<()
     assert_eq!(
         details.as_deref(),
         Some(
-            "Enable it with `--enable unified_exec` or `[features].unified_exec` in config.toml. See https://github.com/openai/codex/blob/main/docs/config.md#feature-flags for details."
+            "Enable it with `--enable unified_exec` or `[features].unified_exec` in config.toml. See https://github.com/openai/rune/blob/main/docs/config.md#feature-flags for details."
         ),
     );
 
@@ -63,7 +63,7 @@ async fn emits_deprecation_notice_for_experimental_instructions_file() -> anyhow
 
     let server = start_mock_server().await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_rune().with_config(|config| {
         let mut table = toml::map::Map::new();
         table.insert(
             "experimental_instructions_file".to_string(),
@@ -84,9 +84,9 @@ async fn emits_deprecation_notice_for_experimental_instructions_file() -> anyhow
         config.config_layer_stack = config_layer_stack;
     });
 
-    let TestCodex { codex, .. } = builder.build(&server).await?;
+    let TestRune { rune, .. } = builder.build(&server).await?;
 
-    let notice = wait_for_event_match(&codex, |event| match event {
+    let notice = wait_for_event_match(&rune, |event| match event {
         EventMsg::DeprecationNotice(ev)
             if ev.summary.contains("experimental_instructions_file") =>
         {
@@ -118,15 +118,15 @@ async fn emits_deprecation_notice_for_web_search_feature_flags() -> anyhow::Resu
 
     let server = start_mock_server().await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_rune().with_config(|config| {
         let mut entries = BTreeMap::new();
         entries.insert("web_search_request".to_string(), true);
         config.features.apply_map(&entries);
     });
 
-    let TestCodex { codex, .. } = builder.build(&server).await?;
+    let TestRune { rune, .. } = builder.build(&server).await?;
 
-    let notice = wait_for_event_match(&codex, |event| match event {
+    let notice = wait_for_event_match(&rune, |event| match event {
         EventMsg::DeprecationNotice(ev) if ev.summary.contains("[features].web_search_request") => {
             Some(ev.clone())
         }
@@ -155,15 +155,15 @@ async fn emits_deprecation_notice_for_disabled_web_search_feature_flag() -> anyh
 
     let server = start_mock_server().await;
 
-    let mut builder = test_codex().with_config(|config| {
+    let mut builder = test_rune().with_config(|config| {
         let mut entries = BTreeMap::new();
         entries.insert("web_search_request".to_string(), false);
         config.features.apply_map(&entries);
     });
 
-    let TestCodex { codex, .. } = builder.build(&server).await?;
+    let TestRune { rune, .. } = builder.build(&server).await?;
 
-    let notice = wait_for_event_match(&codex, |event| match event {
+    let notice = wait_for_event_match(&rune, |event| match event {
         EventMsg::DeprecationNotice(ev) if ev.summary.contains("[features].web_search_request") => {
             Some(ev.clone())
         }

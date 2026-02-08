@@ -14,8 +14,8 @@ use anyhow::Context;
 use anyhow::Result;
 use anyhow::anyhow;
 use anyhow::bail;
-use codex_otel::OtelManager;
-use codex_protocol::ThreadId;
+use rune_otel::OtelManager;
+use rune_protocol::ThreadId;
 use tokio::fs;
 use tokio::process::Command;
 use tokio::sync::watch;
@@ -35,7 +35,7 @@ const EXCLUDED_EXPORT_VARS: &[&str] = &["PWD", "OLDPWD"];
 
 impl ShellSnapshot {
     pub fn start_snapshotting(
-        codex_home: PathBuf,
+        rune_home: PathBuf,
         session_id: ThreadId,
         shell: &mut Shell,
         otel_manager: OtelManager,
@@ -48,35 +48,35 @@ impl ShellSnapshot {
         let snapshot_span = info_span!("shell_snapshot", thread_id = %snapshot_session_id);
         tokio::spawn(
             async move {
-                let timer = otel_manager.start_timer("codex.shell_snapshot.duration_ms", &[]);
+                let timer = otel_manager.start_timer("rune.shell_snapshot.duration_ms", &[]);
                 let snapshot =
-                    ShellSnapshot::try_new(&codex_home, snapshot_session_id, &snapshot_shell)
+                    ShellSnapshot::try_new(&rune_home, snapshot_session_id, &snapshot_shell)
                         .await
                         .map(Arc::new);
                 let success = if snapshot.is_some() { "true" } else { "false" };
                 let _ = timer.map(|timer| timer.record(&[("success", success)]));
-                otel_manager.counter("codex.shell_snapshot", 1, &[("success", success)]);
+                otel_manager.counter("rune.shell_snapshot", 1, &[("success", success)]);
                 let _ = shell_snapshot_tx.send(snapshot);
             }
             .instrument(snapshot_span),
         );
     }
 
-    async fn try_new(codex_home: &Path, session_id: ThreadId, shell: &Shell) -> Option<Self> {
+    async fn try_new(rune_home: &Path, session_id: ThreadId, shell: &Shell) -> Option<Self> {
         // File to store the snapshot
         let extension = match shell.shell_type {
             ShellType::PowerShell => "ps1",
             _ => "sh",
         };
-        let path = codex_home
+        let path = rune_home
             .join(SNAPSHOT_DIR)
             .join(format!("{session_id}.{extension}"));
 
         // Clean the (unlikely) leaked snapshot files.
-        let codex_home = codex_home.to_path_buf();
+        let rune_home = rune_home.to_path_buf();
         let cleanup_session_id = session_id;
         tokio::spawn(async move {
-            if let Err(err) = cleanup_stale_snapshots(&codex_home, cleanup_session_id).await {
+            if let Err(err) = cleanup_stale_snapshots(&rune_home, cleanup_session_id).await {
                 tracing::warn!("Failed to clean up shell snapshots: {err:?}");
             }
         });
@@ -192,7 +192,7 @@ async fn run_script_with_timeout(
     #[cfg(unix)]
     unsafe {
         handler.pre_exec(|| {
-            codex_utils_pty::process_group::detach_from_tty()?;
+            rune_utils_pty::process_group::detach_from_tty()?;
             Ok(())
         });
     }
@@ -399,8 +399,8 @@ $envVars | ForEach-Object {
 /// Removes shell snapshots that either lack a matching session rollout file or
 /// whose rollouts have not been updated within the retention window.
 /// The active session id is exempt from cleanup.
-pub async fn cleanup_stale_snapshots(codex_home: &Path, active_session_id: ThreadId) -> Result<()> {
-    let snapshot_dir = codex_home.join(SNAPSHOT_DIR);
+pub async fn cleanup_stale_snapshots(rune_home: &Path, active_session_id: ThreadId) -> Result<()> {
+    let snapshot_dir = rune_home.join(SNAPSHOT_DIR);
 
     let mut entries = match fs::read_dir(&snapshot_dir).await {
         Ok(entries) => entries,
@@ -431,7 +431,7 @@ pub async fn cleanup_stale_snapshots(codex_home: &Path, active_session_id: Threa
             continue;
         }
 
-        let rollout_path = find_thread_path_by_id_str(codex_home, session_id).await?;
+        let rollout_path = find_thread_path_by_id_str(rune_home, session_id).await?;
         let Some(rollout_path) = rollout_path else {
             remove_snapshot_file(&path).await;
             continue;
@@ -734,8 +734,8 @@ mod tests {
         Ok(())
     }
 
-    async fn write_rollout_stub(codex_home: &Path, session_id: ThreadId) -> Result<PathBuf> {
-        let dir = codex_home
+    async fn write_rollout_stub(rune_home: &Path, session_id: ThreadId) -> Result<PathBuf> {
+        let dir = rune_home
             .join("sessions")
             .join("2025")
             .join("01")
@@ -749,8 +749,8 @@ mod tests {
     #[tokio::test]
     async fn cleanup_stale_snapshots_removes_orphans_and_keeps_live() -> Result<()> {
         let dir = tempdir()?;
-        let codex_home = dir.path();
-        let snapshot_dir = codex_home.join(SNAPSHOT_DIR);
+        let rune_home = dir.path();
+        let snapshot_dir = rune_home.join(SNAPSHOT_DIR);
         fs::create_dir_all(&snapshot_dir).await?;
 
         let live_session = ThreadId::new();
@@ -759,12 +759,12 @@ mod tests {
         let orphan_snapshot = snapshot_dir.join(format!("{orphan_session}.sh"));
         let invalid_snapshot = snapshot_dir.join("not-a-snapshot.txt");
 
-        write_rollout_stub(codex_home, live_session).await?;
+        write_rollout_stub(rune_home, live_session).await?;
         fs::write(&live_snapshot, "live").await?;
         fs::write(&orphan_snapshot, "orphan").await?;
         fs::write(&invalid_snapshot, "invalid").await?;
 
-        cleanup_stale_snapshots(codex_home, ThreadId::new()).await?;
+        cleanup_stale_snapshots(rune_home, ThreadId::new()).await?;
 
         assert_eq!(live_snapshot.exists(), true);
         assert_eq!(orphan_snapshot.exists(), false);
@@ -776,18 +776,18 @@ mod tests {
     #[tokio::test]
     async fn cleanup_stale_snapshots_removes_stale_rollouts() -> Result<()> {
         let dir = tempdir()?;
-        let codex_home = dir.path();
-        let snapshot_dir = codex_home.join(SNAPSHOT_DIR);
+        let rune_home = dir.path();
+        let snapshot_dir = rune_home.join(SNAPSHOT_DIR);
         fs::create_dir_all(&snapshot_dir).await?;
 
         let stale_session = ThreadId::new();
         let stale_snapshot = snapshot_dir.join(format!("{stale_session}.sh"));
-        let rollout_path = write_rollout_stub(codex_home, stale_session).await?;
+        let rollout_path = write_rollout_stub(rune_home, stale_session).await?;
         fs::write(&stale_snapshot, "stale").await?;
 
         set_file_mtime(&rollout_path, SNAPSHOT_RETENTION + Duration::from_secs(60))?;
 
-        cleanup_stale_snapshots(codex_home, ThreadId::new()).await?;
+        cleanup_stale_snapshots(rune_home, ThreadId::new()).await?;
 
         assert_eq!(stale_snapshot.exists(), false);
         Ok(())
@@ -797,18 +797,18 @@ mod tests {
     #[tokio::test]
     async fn cleanup_stale_snapshots_skips_active_session() -> Result<()> {
         let dir = tempdir()?;
-        let codex_home = dir.path();
-        let snapshot_dir = codex_home.join(SNAPSHOT_DIR);
+        let rune_home = dir.path();
+        let snapshot_dir = rune_home.join(SNAPSHOT_DIR);
         fs::create_dir_all(&snapshot_dir).await?;
 
         let active_session = ThreadId::new();
         let active_snapshot = snapshot_dir.join(format!("{active_session}.sh"));
-        let rollout_path = write_rollout_stub(codex_home, active_session).await?;
+        let rollout_path = write_rollout_stub(rune_home, active_session).await?;
         fs::write(&active_snapshot, "active").await?;
 
         set_file_mtime(&rollout_path, SNAPSHOT_RETENTION + Duration::from_secs(60))?;
 
-        cleanup_stale_snapshots(codex_home, active_session).await?;
+        cleanup_stale_snapshots(rune_home, active_session).await?;
 
         assert_eq!(active_snapshot.exists(), true);
         Ok(())

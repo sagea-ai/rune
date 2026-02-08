@@ -4,7 +4,7 @@ use std::sync::Arc;
 use chrono::DateTime;
 use chrono::SecondsFormat;
 use chrono::Utc;
-use codex_protocol::ThreadId;
+use rune_protocol::ThreadId;
 use futures::future::BoxFuture;
 use serde::Serialize;
 use serde::Serializer;
@@ -79,7 +79,7 @@ mod tests {
 
     use chrono::TimeZone;
     use chrono::Utc;
-    use codex_protocol::ThreadId;
+    use rune_protocol::ThreadId;
     use pretty_assertions::assert_eq;
     use serde_json::json;
 

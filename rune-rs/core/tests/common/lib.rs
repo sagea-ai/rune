@@ -1,21 +1,21 @@
 #![expect(clippy::expect_used)]
 
-use codex_utils_cargo_bin::CargoBinError;
+use rune_utils_cargo_bin::CargoBinError;
 use tempfile::TempDir;
 
-use codex_core::CodexThread;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_core::config::ConfigOverrides;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_core::RuneThread;
+use rune_core::config::Config;
+use rune_core::config::ConfigBuilder;
+use rune_core::config::ConfigOverrides;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use regex_lite::Regex;
 use std::path::PathBuf;
 
 pub mod process;
 pub mod responses;
 pub mod streaming_sse;
-pub mod test_codex;
-pub mod test_codex_exec;
+pub mod test_rune;
+pub mod test_rune_exec;
 
 #[track_caller]
 pub fn assert_regex_match<'s>(pattern: &str, actual: &'s str) -> regex_lite::Captures<'s> {
@@ -63,7 +63,7 @@ pub fn test_absolute_path(unix_path: &str) -> AbsolutePathBuf {
 }
 
 pub fn test_tmp_path() -> AbsolutePathBuf {
-    test_absolute_path_with_windows("/tmp", Some(r"C:\Users\codex\AppData\Local\Temp"))
+    test_absolute_path_with_windows("/tmp", Some(r"C:\Users\rune\AppData\Local\Temp"))
 }
 
 pub fn test_tmp_path_buf() -> PathBuf {
@@ -72,10 +72,10 @@ pub fn test_tmp_path_buf() -> PathBuf {
 
 /// Returns a default `Config` whose on-disk state is confined to the provided
 /// temporary directory. Using a per-test directory keeps tests hermetic and
-/// avoids clobbering a developer’s real `~/.codex`.
-pub async fn load_default_config_for_test(codex_home: &TempDir) -> Config {
+/// avoids clobbering a developer’s real `~/.rune`.
+pub async fn load_default_config_for_test(rune_home: &TempDir) -> Config {
     ConfigBuilder::default()
-        .codex_home(codex_home.path().to_path_buf())
+        .rune_home(rune_home.path().to_path_buf())
         .harness_overrides(default_test_overrides())
         .build()
         .await
@@ -85,8 +85,8 @@ pub async fn load_default_config_for_test(codex_home: &TempDir) -> Config {
 #[cfg(target_os = "linux")]
 fn default_test_overrides() -> ConfigOverrides {
     ConfigOverrides {
-        codex_linux_sandbox_exe: Some(
-            codex_utils_cargo_bin::cargo_bin("rune-linux-sandbox")
+        rune_linux_sandbox_exe: Some(
+            rune_utils_cargo_bin::cargo_bin("rune-linux-sandbox")
                 .expect("should find binary for rune-linux-sandbox"),
         ),
         ..ConfigOverrides::default()
@@ -146,35 +146,35 @@ pub fn load_sse_fixture_with_id_from_str(raw: &str, id: &str) -> String {
         .collect()
 }
 
-pub async fn wait_for_event<F>(codex: &CodexThread, predicate: F) -> codex_core::protocol::EventMsg
+pub async fn wait_for_event<F>(rune: &RuneThread, predicate: F) -> rune_core::protocol::EventMsg
 where
-    F: FnMut(&codex_core::protocol::EventMsg) -> bool,
+    F: FnMut(&rune_core::protocol::EventMsg) -> bool,
 {
     use tokio::time::Duration;
-    wait_for_event_with_timeout(codex, predicate, Duration::from_secs(1)).await
+    wait_for_event_with_timeout(rune, predicate, Duration::from_secs(1)).await
 }
 
-pub async fn wait_for_event_match<T, F>(codex: &CodexThread, matcher: F) -> T
+pub async fn wait_for_event_match<T, F>(rune: &RuneThread, matcher: F) -> T
 where
-    F: Fn(&codex_core::protocol::EventMsg) -> Option<T>,
+    F: Fn(&rune_core::protocol::EventMsg) -> Option<T>,
 {
-    let ev = wait_for_event(codex, |ev| matcher(ev).is_some()).await;
+    let ev = wait_for_event(rune, |ev| matcher(ev).is_some()).await;
     matcher(&ev).unwrap()
 }
 
 pub async fn wait_for_event_with_timeout<F>(
-    codex: &CodexThread,
+    rune: &RuneThread,
     mut predicate: F,
     wait_time: tokio::time::Duration,
-) -> codex_core::protocol::EventMsg
+) -> rune_core::protocol::EventMsg
 where
-    F: FnMut(&codex_core::protocol::EventMsg) -> bool,
+    F: FnMut(&rune_core::protocol::EventMsg) -> bool,
 {
     use tokio::time::Duration;
     use tokio::time::timeout;
     loop {
         // Allow a bit more time to accommodate async startup work (e.g. config IO, tool discovery)
-        let ev = timeout(wait_time.max(Duration::from_secs(10)), codex.next_event())
+        let ev = timeout(wait_time.max(Duration::from_secs(10)), rune.next_event())
             .await
             .expect("timeout waiting for event")
             .expect("stream ended unexpectedly");
@@ -185,15 +185,15 @@ where
 }
 
 pub fn sandbox_env_var() -> &'static str {
-    codex_core::spawn::CODEX_SANDBOX_ENV_VAR
+    rune_core::spawn::RUNE_SANDBOX_ENV_VAR
 }
 
 pub fn sandbox_network_env_var() -> &'static str {
-    codex_core::spawn::CODEX_SANDBOX_NETWORK_DISABLED_ENV_VAR
+    rune_core::spawn::RUNE_SANDBOX_NETWORK_DISABLED_ENV_VAR
 }
 
 pub fn format_with_current_shell(command: &str) -> Vec<String> {
-    codex_core::shell::default_user_shell().derive_exec_args(command, true)
+    rune_core::shell::default_user_shell().derive_exec_args(command, true)
 }
 
 pub fn format_with_current_shell_display(command: &str) -> String {
@@ -202,7 +202,7 @@ pub fn format_with_current_shell_display(command: &str) -> String {
 }
 
 pub fn format_with_current_shell_non_login(command: &str) -> Vec<String> {
-    codex_core::shell::default_user_shell().derive_exec_args(command, false)
+    rune_core::shell::default_user_shell().derive_exec_args(command, false)
 }
 
 pub fn format_with_current_shell_display_non_login(command: &str) -> String {
@@ -212,7 +212,7 @@ pub fn format_with_current_shell_display_non_login(command: &str) -> String {
 }
 
 pub fn stdio_server_bin() -> Result<String, CargoBinError> {
-    codex_utils_cargo_bin::cargo_bin("test_stdio_server").map(|p| p.to_string_lossy().to_string())
+    rune_utils_cargo_bin::cargo_bin("test_stdio_server").map(|p| p.to_string_lossy().to_string())
 }
 
 pub mod fs_wait {
@@ -389,7 +389,7 @@ macro_rules! skip_if_no_network {
     () => {{
         if ::std::env::var($crate::sandbox_network_env_var()).is_ok() {
             println!(
-                "Skipping test because it cannot execute when network is disabled in a Codex sandbox."
+                "Skipping test because it cannot execute when network is disabled in a Rune sandbox."
             );
             return;
         }
@@ -397,7 +397,7 @@ macro_rules! skip_if_no_network {
     ($return_value:expr $(,)?) => {{
         if ::std::env::var($crate::sandbox_network_env_var()).is_ok() {
             println!(
-                "Skipping test because it cannot execute when network is disabled in a Codex sandbox."
+                "Skipping test because it cannot execute when network is disabled in a Rune sandbox."
             );
             return $return_value;
         }

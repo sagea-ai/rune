@@ -31,8 +31,8 @@ use rand::Rng;
 use rand::rng;
 use tokio::sync::Mutex;
 
-use crate::codex::Session;
-use crate::codex::TurnContext;
+use crate::rune::Session;
+use crate::rune::TurnContext;
 use crate::sandboxing::SandboxPermissions;
 
 mod async_watcher;
@@ -161,9 +161,9 @@ pub(crate) fn generate_chunk_id() -> String {
 mod tests {
     use super::head_tail_buffer::HeadTailBuffer;
     use super::*;
-    use crate::codex::Session;
-    use crate::codex::TurnContext;
-    use crate::codex::make_session_and_context;
+    use crate::rune::Session;
+    use crate::rune::TurnContext;
+    use crate::rune::make_session_and_context;
     use crate::protocol::AskForApproval;
     use crate::protocol::SandboxPolicy;
     use crate::unified_exec::ExecCommandRequest;
@@ -280,7 +280,7 @@ mod tests {
         write_stdin(
             &session,
             process_id,
-            "export CODEX_INTERACTIVE_SHELL_VAR=codex\n",
+            "export RUNE_INTERACTIVE_SHELL_VAR=rune\n",
             2_500,
         )
         .await?;
@@ -288,12 +288,12 @@ mod tests {
         let out_2 = write_stdin(
             &session,
             process_id,
-            "echo $CODEX_INTERACTIVE_SHELL_VAR\n",
+            "echo $RUNE_INTERACTIVE_SHELL_VAR\n",
             2_500,
         )
         .await?;
         assert!(
-            out_2.output.contains("codex"),
+            out_2.output.contains("rune"),
             "expected environment variable output"
         );
 
@@ -316,20 +316,20 @@ mod tests {
         write_stdin(
             &session,
             session_a.as_str(),
-            "export CODEX_INTERACTIVE_SHELL_VAR=codex\n",
+            "export RUNE_INTERACTIVE_SHELL_VAR=rune\n",
             2_500,
         )
         .await?;
 
         let out_2 =
-            exec_command(&session, &turn, "echo $CODEX_INTERACTIVE_SHELL_VAR", 2_500).await?;
+            exec_command(&session, &turn, "echo $RUNE_INTERACTIVE_SHELL_VAR", 2_500).await?;
         tokio::time::sleep(Duration::from_secs(2)).await;
         assert!(
             out_2.process_id.is_none(),
             "short command should not report a process id if it exits quickly"
         );
         assert!(
-            !out_2.output.contains("codex"),
+            !out_2.output.contains("rune"),
             "short command should run in a fresh shell"
         );
 
@@ -340,12 +340,12 @@ mod tests {
                 .as_ref()
                 .expect("expected process id")
                 .as_str(),
-            "echo $CODEX_INTERACTIVE_SHELL_VAR\n",
+            "echo $RUNE_INTERACTIVE_SHELL_VAR\n",
             2_500,
         )
         .await?;
         assert!(
-            out_3.output.contains("codex"),
+            out_3.output.contains("rune"),
             "session should preserve state"
         );
 
@@ -370,7 +370,7 @@ mod tests {
         write_stdin(
             &session,
             process_id,
-            format!("export CODEX_INTERACTIVE_SHELL_VAR={TEST_VAR_VALUE}\n").as_str(),
+            format!("export RUNE_INTERACTIVE_SHELL_VAR={TEST_VAR_VALUE}\n").as_str(),
             2_500,
         )
         .await?;
@@ -378,7 +378,7 @@ mod tests {
         let out_2 = write_stdin(
             &session,
             process_id,
-            "sleep 5 && echo $CODEX_INTERACTIVE_SHELL_VAR\n",
+            "sleep 5 && echo $RUNE_INTERACTIVE_SHELL_VAR\n",
             10,
         )
         .await?;
@@ -404,10 +404,10 @@ mod tests {
     async fn requests_with_large_timeout_are_capped() -> anyhow::Result<()> {
         let (session, turn) = test_session_and_turn().await;
 
-        let result = exec_command(&session, &turn, "echo codex", 120_000).await?;
+        let result = exec_command(&session, &turn, "echo rune", 120_000).await?;
 
         assert!(result.process_id.is_some());
-        assert!(result.output.contains("codex"));
+        assert!(result.output.contains("rune"));
 
         Ok(())
     }
@@ -416,13 +416,13 @@ mod tests {
     #[ignore] // Ignored while we have a better way to test this.
     async fn completed_commands_do_not_persist_sessions() -> anyhow::Result<()> {
         let (session, turn) = test_session_and_turn().await;
-        let result = exec_command(&session, &turn, "echo codex", 2_500).await?;
+        let result = exec_command(&session, &turn, "echo rune", 2_500).await?;
 
         assert!(
             result.process_id.is_some(),
             "completed command should report a process id"
         );
-        assert!(result.output.contains("codex"));
+        assert!(result.output.contains("rune"));
 
         assert!(
             session

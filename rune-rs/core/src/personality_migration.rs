@@ -7,8 +7,8 @@ use crate::rollout::list::ThreadListLayout;
 use crate::rollout::list::ThreadSortKey;
 use crate::rollout::list::get_threads_in_root;
 use crate::state_db;
-use codex_protocol::config_types::Personality;
-use codex_protocol::protocol::SessionSource;
+use rune_protocol::config_types::Personality;
+use rune_protocol::protocol::SessionSource;
 use std::io;
 use std::path::Path;
 use tokio::fs::OpenOptions;
@@ -25,10 +25,10 @@ pub enum PersonalityMigrationStatus {
 }
 
 pub async fn maybe_migrate_personality(
-    codex_home: &Path,
+    rune_home: &Path,
     config_toml: &ConfigToml,
 ) -> io::Result<PersonalityMigrationStatus> {
-    let marker_path = codex_home.join(PERSONALITY_MIGRATION_FILENAME);
+    let marker_path = rune_home.join(PERSONALITY_MIGRATION_FILENAME);
     if tokio::fs::try_exists(&marker_path).await? {
         return Ok(PersonalityMigrationStatus::SkippedMarker);
     }
@@ -46,12 +46,12 @@ pub async fn maybe_migrate_personality(
         .or_else(|| config_toml.model_provider.clone())
         .unwrap_or_else(|| "openai".to_string());
 
-    if !has_recorded_sessions(codex_home, model_provider_id.as_str()).await? {
+    if !has_recorded_sessions(rune_home, model_provider_id.as_str()).await? {
         create_marker(&marker_path).await?;
         return Ok(PersonalityMigrationStatus::SkippedNoSessions);
     }
 
-    ConfigEditsBuilder::new(codex_home)
+    ConfigEditsBuilder::new(rune_home)
         .set_personality(Some(Personality::Pragmatic))
         .apply()
         .await
@@ -63,13 +63,13 @@ pub async fn maybe_migrate_personality(
     Ok(PersonalityMigrationStatus::Applied)
 }
 
-async fn has_recorded_sessions(codex_home: &Path, default_provider: &str) -> io::Result<bool> {
+async fn has_recorded_sessions(rune_home: &Path, default_provider: &str) -> io::Result<bool> {
     let allowed_sources: &[SessionSource] = &[];
 
-    if let Some(state_db_ctx) = state_db::open_if_present(codex_home, default_provider).await
+    if let Some(state_db_ctx) = state_db::open_if_present(rune_home, default_provider).await
         && let Some(ids) = state_db::list_thread_ids_db(
             Some(state_db_ctx.as_ref()),
-            codex_home,
+            rune_home,
             1,
             None,
             ThreadSortKey::CreatedAt,
@@ -85,7 +85,7 @@ async fn has_recorded_sessions(codex_home: &Path, default_provider: &str) -> io:
     }
 
     let sessions = get_threads_in_root(
-        codex_home.join(SESSIONS_SUBDIR),
+        rune_home.join(SESSIONS_SUBDIR),
         1,
         None,
         ThreadSortKey::CreatedAt,
@@ -102,7 +102,7 @@ async fn has_recorded_sessions(codex_home: &Path, default_provider: &str) -> io:
     }
 
     let archived_sessions = get_threads_in_root(
-        codex_home.join(ARCHIVED_SESSIONS_SUBDIR),
+        rune_home.join(ARCHIVED_SESSIONS_SUBDIR),
         1,
         None,
         ThreadSortKey::CreatedAt,
@@ -133,28 +133,28 @@ async fn create_marker(marker_path: &Path) -> io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::ThreadId;
-    use codex_protocol::protocol::EventMsg;
-    use codex_protocol::protocol::RolloutItem;
-    use codex_protocol::protocol::RolloutLine;
-    use codex_protocol::protocol::SessionMeta;
-    use codex_protocol::protocol::SessionMetaLine;
-    use codex_protocol::protocol::SessionSource;
-    use codex_protocol::protocol::UserMessageEvent;
+    use rune_protocol::ThreadId;
+    use rune_protocol::protocol::EventMsg;
+    use rune_protocol::protocol::RolloutItem;
+    use rune_protocol::protocol::RolloutLine;
+    use rune_protocol::protocol::SessionMeta;
+    use rune_protocol::protocol::SessionMetaLine;
+    use rune_protocol::protocol::SessionSource;
+    use rune_protocol::protocol::UserMessageEvent;
     use pretty_assertions::assert_eq;
     use tempfile::TempDir;
     use tokio::io::AsyncWriteExt;
 
     const TEST_TIMESTAMP: &str = "2025-01-01T00-00-00";
 
-    async fn read_config_toml(codex_home: &Path) -> io::Result<ConfigToml> {
-        let contents = tokio::fs::read_to_string(codex_home.join("config.toml")).await?;
+    async fn read_config_toml(rune_home: &Path) -> io::Result<ConfigToml> {
+        let contents = tokio::fs::read_to_string(rune_home.join("config.toml")).await?;
         toml::from_str(&contents).map_err(|err| io::Error::new(io::ErrorKind::InvalidData, err))
     }
 
-    async fn write_session_with_user_event(codex_home: &Path) -> io::Result<()> {
+    async fn write_session_with_user_event(rune_home: &Path) -> io::Result<()> {
         let thread_id = ThreadId::new();
-        let dir = codex_home
+        let dir = rune_home
             .join(SESSIONS_SUBDIR)
             .join("2025")
             .join("01")

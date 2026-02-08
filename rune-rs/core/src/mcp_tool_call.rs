@@ -3,24 +3,24 @@ use std::time::Instant;
 
 use tracing::error;
 
-use crate::codex::Session;
-use crate::codex::TurnContext;
-use crate::mcp::CODEX_APPS_MCP_SERVER_NAME;
+use crate::rune::Session;
+use crate::rune::TurnContext;
+use crate::mcp::RUNE_APPS_MCP_SERVER_NAME;
 use crate::protocol::EventMsg;
 use crate::protocol::McpInvocation;
 use crate::protocol::McpToolCallBeginEvent;
 use crate::protocol::McpToolCallEndEvent;
-use codex_protocol::mcp::CallToolResult;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::ReviewDecision;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::request_user_input::RequestUserInputArgs;
-use codex_protocol::request_user_input::RequestUserInputQuestion;
-use codex_protocol::request_user_input::RequestUserInputQuestionOption;
-use codex_protocol::request_user_input::RequestUserInputResponse;
+use rune_protocol::mcp::CallToolResult;
+use rune_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputPayload;
+use rune_protocol::models::ResponseInputItem;
+use rune_protocol::protocol::AskForApproval;
+use rune_protocol::protocol::ReviewDecision;
+use rune_protocol::protocol::SandboxPolicy;
+use rune_protocol::request_user_input::RequestUserInputArgs;
+use rune_protocol::request_user_input::RequestUserInputQuestion;
+use rune_protocol::request_user_input::RequestUserInputQuestionOption;
+use rune_protocol::request_user_input::RequestUserInputResponse;
 use rmcp::model::ToolAnnotations;
 use serde::Serialize;
 use std::sync::Arc;
@@ -123,7 +123,7 @@ pub(crate) async fn handle_mcp_tool_call(
         let status = if result.is_ok() { "ok" } else { "error" };
         turn_context
             .otel_manager
-            .counter("codex.mcp.call", 1, &[("status", status)]);
+            .counter("rune.mcp.call", 1, &[("status", status)]);
 
         return ResponseInputItem::McpToolCallOutput { call_id, result };
     }
@@ -155,7 +155,7 @@ pub(crate) async fn handle_mcp_tool_call(
     let status = if result.is_ok() { "ok" } else { "error" };
     turn_context
         .otel_manager
-        .counter("codex.mcp.call", 1, &[("status", status)]);
+        .counter("rune.mcp.call", 1, &[("status", status)]);
 
     ResponseInputItem::McpToolCallOutput { call_id, result }
 }
@@ -202,7 +202,7 @@ async fn maybe_request_mcp_tool_approval(
     if is_full_access_mode(turn_context) {
         return None;
     }
-    if server != CODEX_APPS_MCP_SERVER_NAME {
+    if server != RUNE_APPS_MCP_SERVER_NAME {
         return None;
     }
 

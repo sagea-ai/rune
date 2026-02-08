@@ -1,9 +1,9 @@
-use crate::codex::TurnContext;
+use crate::rune::TurnContext;
 use crate::shell::Shell;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::ENVIRONMENT_CONTEXT_CLOSE_TAG;
-use codex_protocol::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::protocol::ENVIRONMENT_CONTEXT_CLOSE_TAG;
+use rune_protocol::protocol::ENVIRONMENT_CONTEXT_OPEN_TAG;
 use serde::Deserialize;
 use serde::Serialize;
 use std::path::PathBuf;

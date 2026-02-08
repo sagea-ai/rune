@@ -18,8 +18,8 @@ use crate::render::line_utils::prefix_lines;
 use crate::render::renderable::ColumnRenderable;
 use crate::render::renderable::InsetRenderable;
 use crate::render::renderable::Renderable;
-use codex_core::git_info::get_git_repo_root;
-use codex_core::protocol::FileChange;
+use rune_core::git_info::get_git_repo_root;
+use rune_core::protocol::FileChange;
 
 // Internal representation for diff line rendering
 enum DiffLineType {
@@ -474,9 +474,9 @@ mod tests {
     #[test]
     fn display_path_prefers_cwd_without_git_repo() {
         let cwd = if cfg!(windows) {
-            PathBuf::from(r"C:\workspace\codex")
+            PathBuf::from(r"C:\workspace\rune")
         } else {
-            PathBuf::from("/workspace/codex")
+            PathBuf::from("/workspace/rune")
         };
         let path = cwd.join("tui").join("example.png");
 

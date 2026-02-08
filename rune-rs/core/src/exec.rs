@@ -16,7 +16,7 @@ use tokio::io::BufReader;
 use tokio::process::Child;
 use tokio_util::sync::CancellationToken;
 
-use crate::error::CodexErr;
+use crate::error::RuneErr;
 use crate::error::Result;
 use crate::error::SandboxErr;
 use crate::get_platform_sandbox;
@@ -32,7 +32,7 @@ use crate::sandboxing::SandboxPermissions;
 use crate::spawn::StdioPolicy;
 use crate::spawn::spawn_child_async;
 use crate::text_encoding::bytes_to_string_smart;
-use codex_utils_pty::process_group::kill_child_process_group;
+use rune_utils_pty::process_group::kill_child_process_group;
 
 pub const DEFAULT_EXEC_COMMAND_TIMEOUT_MS: u64 = 10_000;
 
@@ -64,7 +64,7 @@ pub struct ExecParams {
     pub expiration: ExecExpiration,
     pub env: HashMap<String, String>,
     pub sandbox_permissions: SandboxPermissions,
-    pub windows_sandbox_level: codex_protocol::config_types::WindowsSandboxLevel,
+    pub windows_sandbox_level: rune_protocol::config_types::WindowsSandboxLevel,
     pub justification: Option<String>,
     pub arg0: Option<String>,
 }
@@ -150,7 +150,7 @@ pub async fn process_exec_tool_call(
     params: ExecParams,
     sandbox_policy: &SandboxPolicy,
     sandbox_cwd: &Path,
-    codex_linux_sandbox_exe: &Option<PathBuf>,
+    rune_linux_sandbox_exe: &Option<PathBuf>,
     use_linux_sandbox_bwrap: bool,
     stdout_stream: Option<StdoutStream>,
 ) -> Result<ExecToolCallOutput> {
@@ -160,7 +160,7 @@ pub async fn process_exec_tool_call(
             SandboxType::None
         }
         _ => get_platform_sandbox(
-            windows_sandbox_level != codex_protocol::config_types::WindowsSandboxLevel::Disabled,
+            windows_sandbox_level != rune_protocol::config_types::WindowsSandboxLevel::Disabled,
         )
         .unwrap_or(SandboxType::None),
     };
@@ -178,7 +178,7 @@ pub async fn process_exec_tool_call(
     } = params;
 
     let (program, args) = command.split_first().ok_or_else(|| {
-        CodexErr::Io(io::Error::new(
+        RuneErr::Io(io::Error::new(
             io::ErrorKind::InvalidInput,
             "command args are empty",
         ))
@@ -201,11 +201,11 @@ pub async fn process_exec_tool_call(
             policy: sandbox_policy,
             sandbox: sandbox_type,
             sandbox_policy_cwd: sandbox_cwd,
-            codex_linux_sandbox_exe: codex_linux_sandbox_exe.as_ref(),
+            rune_linux_sandbox_exe: rune_linux_sandbox_exe.as_ref(),
             use_linux_sandbox_bwrap,
             windows_sandbox_level,
         })
-        .map_err(CodexErr::from)?;
+        .map_err(RuneErr::from)?;
 
     // Route through the sandboxing module for a single, unified execution path.
     crate::sandboxing::execute_env(exec_env, sandbox_policy, stdout_stream).await
@@ -276,7 +276,7 @@ fn windowsapps_path_kind(path: &str) -> &'static str {
 #[cfg(target_os = "windows")]
 fn record_windows_sandbox_spawn_failure(
     command_path: Option<&str>,
-    windows_sandbox_level: codex_protocol::config_types::WindowsSandboxLevel,
+    windows_sandbox_level: rune_protocol::config_types::WindowsSandboxLevel,
     err: &str,
 ) {
     let Some(error_code) = extract_create_process_as_user_error_code(err) else {
@@ -291,15 +291,15 @@ fn record_windows_sandbox_spawn_failure(
     let path_kind = windowsapps_path_kind(path);
     let level = if matches!(
         windows_sandbox_level,
-        codex_protocol::config_types::WindowsSandboxLevel::Elevated
+        rune_protocol::config_types::WindowsSandboxLevel::Elevated
     ) {
         "elevated"
     } else {
         "legacy"
     };
-    if let Some(metrics) = codex_otel::metrics::global() {
+    if let Some(metrics) = rune_otel::metrics::global() {
         let _ = metrics.counter(
-            "codex.windows_sandbox.createprocessasuserw_failed",
+            "rune.windows_sandbox.createprocessasuserw_failed",
             1,
             &[
                 ("error_code", error_code.as_str()),
@@ -316,10 +316,10 @@ async fn exec_windows_sandbox(
     params: ExecParams,
     sandbox_policy: &SandboxPolicy,
 ) -> Result<RawExecToolCallOutput> {
-    use crate::config::find_codex_home;
-    use codex_protocol::config_types::WindowsSandboxLevel;
-    use codex_windows_sandbox::run_windows_sandbox_capture;
-    use codex_windows_sandbox::run_windows_sandbox_capture_elevated;
+    use crate::config::find_rune_home;
+    use rune_protocol::config_types::WindowsSandboxLevel;
+    use rune_windows_sandbox::run_windows_sandbox_capture;
+    use rune_windows_sandbox::run_windows_sandbox_capture_elevated;
 
     let ExecParams {
         command,
@@ -334,14 +334,14 @@ async fn exec_windows_sandbox(
     let timeout_ms = expiration.timeout_ms();
 
     let policy_str = serde_json::to_string(sandbox_policy).map_err(|err| {
-        CodexErr::Io(io::Error::other(format!(
+        RuneErr::Io(io::Error::other(format!(
             "failed to serialize Windows sandbox policy: {err}"
         )))
     })?;
     let sandbox_cwd = cwd.clone();
-    let codex_home = find_codex_home().map_err(|err| {
-        CodexErr::Io(io::Error::other(format!(
-            "windows sandbox: failed to resolve codex_home: {err}"
+    let rune_home = find_rune_home().map_err(|err| {
+        RuneErr::Io(io::Error::other(format!(
+            "windows sandbox: failed to resolve rune_home: {err}"
         )))
     })?;
     let command_path = command.first().cloned();
@@ -352,7 +352,7 @@ async fn exec_windows_sandbox(
             run_windows_sandbox_capture_elevated(
                 policy_str.as_str(),
                 &sandbox_cwd,
-                codex_home.as_ref(),
+                rune_home.as_ref(),
                 command,
                 &cwd,
                 env,
@@ -362,7 +362,7 @@ async fn exec_windows_sandbox(
             run_windows_sandbox_capture(
                 policy_str.as_str(),
                 &sandbox_cwd,
-                codex_home.as_ref(),
+                rune_home.as_ref(),
                 command,
                 &cwd,
                 env,
@@ -380,12 +380,12 @@ async fn exec_windows_sandbox(
                 sandbox_level,
                 &err.to_string(),
             );
-            return Err(CodexErr::Io(io::Error::other(format!(
+            return Err(RuneErr::Io(io::Error::other(format!(
                 "windows sandbox: {err}"
             ))));
         }
         Err(join_err) => {
-            return Err(CodexErr::Io(io::Error::other(format!(
+            return Err(RuneErr::Io(io::Error::other(format!(
                 "windows sandbox join error: {join_err}"
             ))));
         }
@@ -420,7 +420,7 @@ async fn exec_windows_sandbox(
 }
 
 fn finalize_exec_result(
-    raw_output_result: std::result::Result<RawExecToolCallOutput, CodexErr>,
+    raw_output_result: std::result::Result<RawExecToolCallOutput, RuneErr>,
     sandbox_type: SandboxType,
     duration: Duration,
 ) -> Result<ExecToolCallOutput> {
@@ -435,7 +435,7 @@ fn finalize_exec_result(
                     if signal == TIMEOUT_CODE {
                         timed_out = true;
                     } else {
-                        return Err(CodexErr::Sandbox(SandboxErr::Signal(signal)));
+                        return Err(RuneErr::Sandbox(SandboxErr::Signal(signal)));
                     }
                 }
             }
@@ -458,13 +458,13 @@ fn finalize_exec_result(
             };
 
             if timed_out {
-                return Err(CodexErr::Sandbox(SandboxErr::Timeout {
+                return Err(RuneErr::Sandbox(SandboxErr::Timeout {
                     output: Box::new(exec_output),
                 }));
             }
 
             if is_likely_sandbox_denied(sandbox_type, &exec_output) {
-                return Err(CodexErr::Sandbox(SandboxErr::Denied {
+                return Err(RuneErr::Sandbox(SandboxErr::Denied {
                     output: Box::new(exec_output),
                 }));
             }
@@ -479,17 +479,17 @@ fn finalize_exec_result(
 }
 
 pub(crate) mod errors {
-    use super::CodexErr;
+    use super::RuneErr;
     use crate::sandboxing::SandboxTransformError;
 
-    impl From<SandboxTransformError> for CodexErr {
+    impl From<SandboxTransformError> for RuneErr {
         fn from(err: SandboxTransformError) -> Self {
             match err {
                 SandboxTransformError::MissingLinuxSandboxExecutable => {
-                    CodexErr::LandlockSandboxExecutableNotProvided
+                    RuneErr::LandlockSandboxExecutableNotProvided
                 }
                 #[cfg(not(target_os = "macos"))]
-                SandboxTransformError::SeatbeltUnavailable => CodexErr::UnsupportedOperation(
+                SandboxTransformError::SeatbeltUnavailable => RuneErr::UnsupportedOperation(
                     "seatbelt sandbox is only available on macOS".to_string(),
                 ),
             }
@@ -685,7 +685,7 @@ async fn exec(
     } = params;
 
     let (program, args) = command.split_first().ok_or_else(|| {
-        CodexErr::Io(io::Error::new(
+        RuneErr::Io(io::Error::new(
             io::ErrorKind::InvalidInput,
             "command args are empty",
         ))
@@ -716,12 +716,12 @@ async fn consume_truncated_output(
     // we treat it as an exceptional I/O error
 
     let stdout_reader = child.stdout.take().ok_or_else(|| {
-        CodexErr::Io(io::Error::other(
+        RuneErr::Io(io::Error::other(
             "stdout pipe was unexpectedly not available",
         ))
     })?;
     let stderr_reader = child.stderr.take().ok_or_else(|| {
-        CodexErr::Io(io::Error::other(
+        RuneErr::Io(io::Error::other(
             "stderr pipe was unexpectedly not available",
         ))
     })?;
@@ -1062,7 +1062,7 @@ mod tests {
             expiration: 500.into(),
             env,
             sandbox_permissions: SandboxPermissions::UseDefault,
-            windows_sandbox_level: codex_protocol::config_types::WindowsSandboxLevel::Disabled,
+            windows_sandbox_level: rune_protocol::config_types::WindowsSandboxLevel::Disabled,
             justification: None,
             arg0: None,
         };
@@ -1108,7 +1108,7 @@ mod tests {
             expiration: ExecExpiration::Cancellation(cancel_token),
             env,
             sandbox_permissions: SandboxPermissions::UseDefault,
-            windows_sandbox_level: codex_protocol::config_types::WindowsSandboxLevel::Disabled,
+            windows_sandbox_level: rune_protocol::config_types::WindowsSandboxLevel::Disabled,
             justification: None,
             arg0: None,
         };
@@ -1126,7 +1126,7 @@ mod tests {
         )
         .await;
         let output = match result {
-            Err(CodexErr::Sandbox(SandboxErr::Timeout { output })) => output,
+            Err(RuneErr::Sandbox(SandboxErr::Timeout { output })) => output,
             other => panic!("expected timeout error, got {other:?}"),
         };
         assert!(output.timed_out);

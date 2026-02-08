@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::protocol::SandboxPolicy;
-use codex_protocol::openai_models::ReasoningEffort;
+use rune_protocol::openai_models::ReasoningEffort;
 use serde::Deserialize;
 use serde::Serialize;
 

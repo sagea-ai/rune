@@ -1,6 +1,5 @@
 [workspace]
 members = [
-    "backend-client",
     "ansi-escape",
     "async-utils",
     "app-server",
@@ -10,7 +9,6 @@ members = [
     "apply-patch",
     "arg0",
     "feedback",
-    "rune-backend-openapi-models",
     "cloud-requirements",
     "cloud-tasks",
     "cloud-tasks-client",
@@ -26,7 +24,6 @@ members = [
     "file-search",
     "linux-sandbox",
     "lmstudio",
-    "login",
     "mcp-server",
     "network-proxy",
     "ollama",
@@ -47,10 +44,7 @@ members = [
     "utils/pty",
     "utils/readiness",
     "utils/string",
-    "rune-client",
-    "rune-api",
     "state",
-    "rune-experimental-api-macros",
 ]
 resolver = "2"
 
@@ -67,31 +61,25 @@ license = "Apache-2.0"
 # Internal
 app_test_support = { path = "app-server/tests/common" }
 rune-ansi-escape = { path = "ansi-escape" }
-rune-api = { path = "rune-api" }
 rune-app-server = { path = "app-server" }
 rune-app-server-protocol = { path = "app-server-protocol" }
 rune-app-server-test-client = { path = "app-server-test-client" }
 rune-apply-patch = { path = "apply-patch" }
 rune-arg0 = { path = "arg0" }
 rune-async-utils = { path = "async-utils" }
-rune-backend-client = { path = "backend-client" }
 rune-cloud-requirements = { path = "cloud-requirements" }
-rune-chatgpt = { path = "chatgpt" }
 rune-cli = { path = "cli"}
-rune-client = { path = "rune-client" }
 rune-common = { path = "common" }
 rune-core = { path = "core" }
 rune-secrets = { path = "secrets" }
 rune-exec = { path = "exec" }
 rune-execpolicy = { path = "execpolicy" }
-rune-experimental-api-macros = { path = "rune-experimental-api-macros" }
 rune-feedback = { path = "feedback" }
 rune-file-search = { path = "file-search" }
 rune-git = { path = "utils/git" }
 rune-keyring-store = { path = "keyring-store" }
 rune-linux-sandbox = { path = "linux-sandbox" }
 rune-lmstudio = { path = "lmstudio" }
-rune-login = { path = "login" }
 rune-mcp-server = { path = "mcp-server" }
 rune-ollama = { path = "ollama" }
 rune-otel = { path = "otel" }
@@ -306,7 +294,7 @@ lto = "fat"
 # remove everything to make the binary as small as possible.
 strip = "symbols"
 
-# See https://github.com/openai/codex/issues/1411 for details.
+# See https://github.com/openai/rune/issues/1411 for details.
 codegen-units = 1
 
 [profile.ci-test]

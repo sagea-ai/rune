@@ -1,6 +1,6 @@
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::Op;
-use codex_protocol::user_input::UserInput;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::Op;
+use rune_protocol::user_input::UserInput;
 use core_test_support::responses;
 use core_test_support::responses::ev_completed;
 use core_test_support::responses::ev_message_item_added;
@@ -8,7 +8,7 @@ use core_test_support::responses::ev_output_text_delta;
 use core_test_support::responses::ev_response_created;
 use core_test_support::streaming_sse::StreamingSseChunk;
 use core_test_support::streaming_sse::start_streaming_sse_server;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use core_test_support::wait_for_event;
 use pretty_assertions::assert_eq;
 use serde_json::Value;
@@ -89,14 +89,14 @@ async fn injected_user_input_triggers_follow_up_request_with_deltas() {
     let (server, _completions) =
         start_streaming_sse_server(vec![first_chunks, second_chunks]).await;
 
-    let codex = test_codex()
+    let rune = test_rune()
         .with_model("gpt-5.1")
         .build_with_streaming_server(&server)
         .await
         .unwrap()
-        .codex;
+        .rune;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "first prompt".into(),
@@ -107,12 +107,12 @@ async fn injected_user_input_triggers_follow_up_request_with_deltas() {
         .await
         .unwrap();
 
-    wait_for_event(&codex, |event| {
+    wait_for_event(&rune, |event| {
         matches!(event, EventMsg::AgentMessageContentDelta(_))
     })
     .await;
 
-    codex
+    rune
         .submit(Op::UserInput {
             items: vec![UserInput::Text {
                 text: "second prompt".into(),
@@ -125,12 +125,12 @@ async fn injected_user_input_triggers_follow_up_request_with_deltas() {
 
     let _ = gate_completed_tx.send(());
 
-    let _ = wait_for_event(&codex, |event| {
+    let _ = wait_for_event(&rune, |event| {
         matches!(event, EventMsg::UserMessage(message) if message.message == "second prompt")
     })
     .await;
 
-    wait_for_event(&codex, |event| matches!(event, EventMsg::TurnComplete(_))).await;
+    wait_for_event(&rune, |event| matches!(event, EventMsg::TurnComplete(_))).await;
 
     let requests = server.requests().await;
     assert_eq!(requests.len(), 2);

@@ -9,7 +9,7 @@ name = "rune-network-proxy"
 path = "src/main.rs"
 
 [lib]
-name = "codex_network_proxy"
+name = "rune_network_proxy"
 path = "src/lib.rs"
 
 [lints]

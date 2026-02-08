@@ -9,7 +9,7 @@ name = "rune-linux-sandbox"
 path = "src/main.rs"
 
 [lib]
-name = "codex_linux_sandbox"
+name = "rune_linux_sandbox"
 path = "src/lib.rs"
 
 [lints]

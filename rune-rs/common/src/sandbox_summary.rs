@@ -1,5 +1,5 @@
-use codex_core::protocol::NetworkAccess;
-use codex_core::protocol::SandboxPolicy;
+use rune_core::protocol::NetworkAccess;
+use rune_core::protocol::SandboxPolicy;
 
 pub fn summarize_sandbox_policy(sandbox_policy: &SandboxPolicy) -> String {
     match sandbox_policy {
@@ -46,7 +46,7 @@ pub fn summarize_sandbox_policy(sandbox_policy: &SandboxPolicy) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use rune_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
 
     #[test]

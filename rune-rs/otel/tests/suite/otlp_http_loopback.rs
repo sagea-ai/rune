@@ -1,8 +1,8 @@
-use codex_otel::config::OtelExporter;
-use codex_otel::config::OtelHttpProtocol;
-use codex_otel::metrics::MetricsClient;
-use codex_otel::metrics::MetricsConfig;
-use codex_otel::metrics::Result;
+use rune_otel::config::OtelExporter;
+use rune_otel::config::OtelHttpProtocol;
+use rune_otel::metrics::MetricsClient;
+use rune_otel::metrics::MetricsConfig;
+use rune_otel::metrics::Result;
 use std::collections::HashMap;
 use std::io::Read as _;
 use std::io::Write as _;
@@ -174,7 +174,7 @@ fn otlp_http_exporter_sends_metrics_to_collector() -> Result<()> {
         },
     ))?;
 
-    metrics.counter("codex.turns", 1, &[("source", "test")])?;
+    metrics.counter("rune.turns", 1, &[("source", "test")])?;
     metrics.shutdown()?;
 
     server.join().expect("server join");
@@ -205,7 +205,7 @@ fn otlp_http_exporter_sends_metrics_to_collector() -> Result<()> {
 
     let body = String::from_utf8_lossy(&request.body);
     assert!(
-        body.contains("codex.turns"),
+        body.contains("rune.turns"),
         "expected metric name not found; body prefix: {}",
         &body.chars().take(2000).collect::<String>()
     );

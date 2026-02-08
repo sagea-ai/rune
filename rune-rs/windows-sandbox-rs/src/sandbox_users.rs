@@ -34,17 +34,17 @@ use windows_sys::Win32::Security::LookupAccountNameW;
 use windows_sys::Win32::Security::LookupAccountSidW;
 use windows_sys::Win32::Security::SID_NAME_USE;
 
-use codex_windows_sandbox::dpapi_protect;
-use codex_windows_sandbox::sandbox_dir;
-use codex_windows_sandbox::sandbox_secrets_dir;
-use codex_windows_sandbox::string_from_sid_bytes;
-use codex_windows_sandbox::to_wide;
-use codex_windows_sandbox::SetupErrorCode;
-use codex_windows_sandbox::SetupFailure;
-use codex_windows_sandbox::SETUP_VERSION;
+use rune_windows_sandbox::dpapi_protect;
+use rune_windows_sandbox::sandbox_dir;
+use rune_windows_sandbox::sandbox_secrets_dir;
+use rune_windows_sandbox::string_from_sid_bytes;
+use rune_windows_sandbox::to_wide;
+use rune_windows_sandbox::SetupErrorCode;
+use rune_windows_sandbox::SetupFailure;
+use rune_windows_sandbox::SETUP_VERSION;
 
-pub const SANDBOX_USERS_GROUP: &str = "CodexSandboxUsers";
-const SANDBOX_USERS_GROUP_COMMENT: &str = "Codex sandbox internal group (managed)";
+pub const SANDBOX_USERS_GROUP: &str = "RuneSandboxUsers";
+const SANDBOX_USERS_GROUP_COMMENT: &str = "Rune sandbox internal group (managed)";
 const SID_ADMINISTRATORS: &str = "S-1-5-32-544";
 const SID_USERS: &str = "S-1-5-32-545";
 const SID_AUTHENTICATED_USERS: &str = "S-1-5-11";
@@ -60,7 +60,7 @@ pub fn resolve_sandbox_users_group_sid() -> Result<Vec<u8>> {
 }
 
 pub fn provision_sandbox_users(
-    codex_home: &Path,
+    rune_home: &Path,
     offline_username: &str,
     online_username: &str,
     log: &mut File,
@@ -75,7 +75,7 @@ pub fn provision_sandbox_users(
     ensure_sandbox_user(offline_username, &offline_password, log)?;
     ensure_sandbox_user(online_username, &online_password, log)?;
     write_secrets(
-        codex_home,
+        rune_home,
         offline_username,
         &offline_password,
         online_username,
@@ -393,13 +393,13 @@ struct SetupMarker {
 }
 
 fn write_secrets(
-    codex_home: &Path,
+    rune_home: &Path,
     offline_user: &str,
     offline_pwd: &str,
     online_user: &str,
     online_pwd: &str,
 ) -> Result<()> {
-    let sandbox_dir = sandbox_dir(codex_home);
+    let sandbox_dir = sandbox_dir(rune_home);
     std::fs::create_dir_all(&sandbox_dir).map_err(|err| {
         anyhow::Error::new(SetupFailure::new(
             SetupErrorCode::HelperUsersFileWriteFailed,
@@ -409,7 +409,7 @@ fn write_secrets(
             ),
         ))
     })?;
-    let secrets_dir = sandbox_secrets_dir(codex_home);
+    let secrets_dir = sandbox_secrets_dir(rune_home);
     std::fs::create_dir_all(&secrets_dir).map_err(|err| {
         anyhow::Error::new(SetupFailure::new(
             SetupErrorCode::HelperUsersFileWriteFailed,

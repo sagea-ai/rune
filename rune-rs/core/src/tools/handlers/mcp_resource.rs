@@ -1,11 +1,11 @@
-use codex_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputBody;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
 use async_trait::async_trait;
-use codex_protocol::mcp::CallToolResult;
+use rune_protocol::mcp::CallToolResult;
 use rmcp::model::ListResourceTemplatesResult;
 use rmcp::model::ListResourcesResult;
 use rmcp::model::PaginatedRequestParam;
@@ -18,8 +18,8 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
-use crate::codex::Session;
-use crate::codex::TurnContext;
+use crate::rune::Session;
+use crate::rune::TurnContext;
 use crate::function_tool::FunctionCallError;
 use crate::protocol::EventMsg;
 use crate::protocol::McpInvocation;
@@ -252,7 +252,7 @@ async fn handle_list_resources(
     let cursor = normalize_optional_string(cursor);
 
     let invocation = McpInvocation {
-        server: server.clone().unwrap_or_else(|| "codex".to_string()),
+        server: server.clone().unwrap_or_else(|| "rune".to_string()),
         tool: "list_mcp_resources".to_string(),
         arguments: arguments.clone(),
     };
@@ -357,7 +357,7 @@ async fn handle_list_resource_templates(
     let cursor = normalize_optional_string(cursor);
 
     let invocation = McpInvocation {
-        server: server.clone().unwrap_or_else(|| "codex".to_string()),
+        server: server.clone().unwrap_or_else(|| "rune".to_string()),
         tool: "list_mcp_resource_templates".to_string(),
         arguments: arguments.clone(),
     };

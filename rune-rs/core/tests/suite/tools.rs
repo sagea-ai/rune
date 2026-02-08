@@ -7,10 +7,10 @@ use std::time::Instant;
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_core::features::Feature;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::SandboxPolicy;
-use codex_core::sandboxing::SandboxPermissions;
+use rune_core::features::Feature;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::SandboxPolicy;
+use rune_core::sandboxing::SandboxPermissions;
 use core_test_support::assert_regex_match;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -22,7 +22,7 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::responses::start_mock_server;
 use core_test_support::skip_if_no_network;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::test_rune;
 use regex_lite::Regex;
 use serde_json::Value;
 use serde_json::json;
@@ -49,7 +49,7 @@ async fn custom_tool_unknown_returns_custom_output_error() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex();
+    let mut builder = test_rune();
     let test = builder.build(&server).await?;
 
     let call_id = "custom-unsupported";
@@ -96,7 +96,7 @@ async fn shell_escalated_permissions_rejected_then_ok() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5");
+    let mut builder = test_rune().with_model("gpt-5");
     let test = builder.build(&server).await?;
 
     let command = ["/bin/echo", "shell ok"];
@@ -193,7 +193,7 @@ async fn sandbox_denied_shell_returns_original_output() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.1-codex");
+    let mut builder = test_rune().with_model("gpt-5.1-rune");
     let fixture = builder.build(&server).await?;
 
     let call_id = "sandbox-denied-shell";
@@ -291,7 +291,7 @@ async fn collect_tools(use_unified_exec: bool) -> Result<Vec<String>> {
     ])];
     let mock = mount_sse_sequence(&server, responses).await;
 
-    let mut builder = test_codex().with_config(move |config| {
+    let mut builder = test_rune().with_config(move |config| {
         if use_unified_exec {
             config.features.enable(Feature::UnifiedExec);
         } else {
@@ -343,7 +343,7 @@ async fn shell_timeout_includes_timeout_prefix_and_metadata() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5");
+    let mut builder = test_rune().with_model("gpt-5");
     let test = builder.build(&server).await?;
 
     let call_id = "shell-timeout";
@@ -414,7 +414,7 @@ async fn shell_timeout_handles_background_grandchild_stdout() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_model("gpt-5.1").with_config(|config| {
+    let mut builder = test_rune().with_model("gpt-5.1").with_config(|config| {
         config
             .sandbox_policy
             .set(SandboxPolicy::DangerFullAccess)
@@ -510,7 +510,7 @@ async fn shell_spawn_failure_truncates_exec_error() -> Result<()> {
     skip_if_no_network!(Ok(()));
 
     let server = start_mock_server().await;
-    let mut builder = test_codex().with_config(|cfg| {
+    let mut builder = test_rune().with_config(|cfg| {
         cfg.sandbox_policy
             .set(SandboxPolicy::DangerFullAccess)
             .expect("set sandbox policy");

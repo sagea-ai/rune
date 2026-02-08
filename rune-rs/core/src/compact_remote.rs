@@ -1,25 +1,25 @@
 use std::sync::Arc;
 
 use crate::Prompt;
-use crate::codex::Session;
-use crate::codex::TurnContext;
+use crate::rune::Session;
+use crate::rune::TurnContext;
 use crate::context_manager::ContextManager;
-use crate::context_manager::is_codex_generated_item;
-use crate::error::Result as CodexResult;
+use crate::context_manager::is_rune_generated_item;
+use crate::error::Result as RuneResult;
 use crate::protocol::CompactedItem;
 use crate::protocol::EventMsg;
 use crate::protocol::RolloutItem;
 use crate::protocol::TurnStartedEvent;
-use codex_protocol::items::ContextCompactionItem;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::BaseInstructions;
-use codex_protocol::models::ResponseItem;
+use rune_protocol::items::ContextCompactionItem;
+use rune_protocol::items::TurnItem;
+use rune_protocol::models::BaseInstructions;
+use rune_protocol::models::ResponseItem;
 use tracing::info;
 
 pub(crate) async fn run_inline_remote_auto_compact_task(
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
-) -> CodexResult<()> {
+) -> RuneResult<()> {
     run_remote_compact_task_inner(&sess, &turn_context).await?;
     Ok(())
 }
@@ -27,7 +27,7 @@ pub(crate) async fn run_inline_remote_auto_compact_task(
 pub(crate) async fn run_remote_compact_task(
     sess: Arc<Session>,
     turn_context: Arc<TurnContext>,
-) -> CodexResult<()> {
+) -> RuneResult<()> {
     let start_event = EventMsg::TurnStarted(TurnStartedEvent {
         model_context_window: turn_context.model_context_window(),
         collaboration_mode_kind: turn_context.collaboration_mode.mode,
@@ -40,7 +40,7 @@ pub(crate) async fn run_remote_compact_task(
 async fn run_remote_compact_task_inner(
     sess: &Arc<Session>,
     turn_context: &Arc<TurnContext>,
-) -> CodexResult<()> {
+) -> RuneResult<()> {
     if let Err(err) = run_remote_compact_task_inner_impl(sess, turn_context).await {
         let event = EventMsg::Error(
             err.to_error_event(Some("Error running remote compact task".to_string())),
@@ -54,7 +54,7 @@ async fn run_remote_compact_task_inner(
 async fn run_remote_compact_task_inner_impl(
     sess: &Arc<Session>,
     turn_context: &Arc<TurnContext>,
-) -> CodexResult<()> {
+) -> RuneResult<()> {
     let compaction_item = TurnItem::ContextCompaction(ContextCompactionItem::new());
     sess.emit_turn_item_started(turn_context, &compaction_item)
         .await;
@@ -138,7 +138,7 @@ fn trim_function_call_history_to_fit_context_window(
         let Some(last_item) = history.raw_items().last() else {
             break;
         };
-        if !is_codex_generated_item(last_item) {
+        if !is_rune_generated_item(last_item) {
             break;
         }
         if !history.remove_last_item() {

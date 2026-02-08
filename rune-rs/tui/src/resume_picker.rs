@@ -6,14 +6,14 @@ use std::sync::Arc;
 
 use chrono::DateTime;
 use chrono::Utc;
-use codex_core::Cursor;
-use codex_core::INTERACTIVE_SESSION_SOURCES;
-use codex_core::RolloutRecorder;
-use codex_core::ThreadItem;
-use codex_core::ThreadSortKey;
-use codex_core::ThreadsPage;
-use codex_core::find_thread_names_by_ids;
-use codex_core::path_utils;
+use rune_core::Cursor;
+use rune_core::INTERACTIVE_SESSION_SOURCES;
+use rune_core::RolloutRecorder;
+use rune_core::ThreadItem;
+use rune_core::ThreadSortKey;
+use rune_core::ThreadsPage;
+use rune_core::find_thread_names_by_ids;
+use rune_core::path_utils;
 use color_eyre::eyre::Result;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
@@ -35,7 +35,7 @@ use crate::text_formatting::truncate_text;
 use crate::tui::FrameRequester;
 use crate::tui::Tui;
 use crate::tui::TuiEvent;
-use codex_protocol::ThreadId;
+use rune_protocol::ThreadId;
 
 const PAGE_SIZE: usize = 25;
 const LOAD_NEAR_THRESHOLD: usize = 5;
@@ -78,7 +78,7 @@ impl SessionPickerAction {
 
 #[derive(Clone)]
 struct PageLoadRequest {
-    codex_home: PathBuf,
+    rune_home: PathBuf,
     cursor: Option<Cursor>,
     request_token: usize,
     search_token: Option<usize>,
@@ -114,13 +114,13 @@ enum BackgroundEvent {
 /// 2. Working-directory filtering at the picker (unless `--all` is passed).
 pub async fn run_resume_picker(
     tui: &mut Tui,
-    codex_home: &Path,
+    rune_home: &Path,
     default_provider: &str,
     show_all: bool,
 ) -> Result<SessionSelection> {
     run_session_picker(
         tui,
-        codex_home,
+        rune_home,
         default_provider,
         show_all,
         SessionPickerAction::Resume,
@@ -130,13 +130,13 @@ pub async fn run_resume_picker(
 
 pub async fn run_fork_picker(
     tui: &mut Tui,
-    codex_home: &Path,
+    rune_home: &Path,
     default_provider: &str,
     show_all: bool,
 ) -> Result<SessionSelection> {
     run_session_picker(
         tui,
-        codex_home,
+        rune_home,
         default_provider,
         show_all,
         SessionPickerAction::Fork,
@@ -146,7 +146,7 @@ pub async fn run_fork_picker(
 
 async fn run_session_picker(
     tui: &mut Tui,
-    codex_home: &Path,
+    rune_home: &Path,
     default_provider: &str,
     show_all: bool,
     action: SessionPickerAction,
@@ -167,7 +167,7 @@ async fn run_session_picker(
         tokio::spawn(async move {
             let provider_filter = vec![request.default_provider.clone()];
             let page = RolloutRecorder::list_threads(
-                &request.codex_home,
+                &request.rune_home,
                 PAGE_SIZE,
                 request.cursor.as_ref(),
                 request.sort_key,
@@ -185,7 +185,7 @@ async fn run_session_picker(
     });
 
     let mut state = PickerState::new(
-        codex_home.to_path_buf(),
+        rune_home.to_path_buf(),
         alt.tui.frame_requester(),
         page_loader,
         default_provider.clone(),
@@ -260,7 +260,7 @@ impl Drop for AltScreenGuard<'_> {
 }
 
 struct PickerState {
-    codex_home: PathBuf,
+    rune_home: PathBuf,
     requester: FrameRequester,
     pagination: PaginationState,
     all_rows: Vec<Row>,
@@ -363,7 +363,7 @@ impl Row {
 
 impl PickerState {
     fn new(
-        codex_home: PathBuf,
+        rune_home: PathBuf,
         requester: FrameRequester,
         page_loader: PageLoader,
         default_provider: String,
@@ -372,7 +372,7 @@ impl PickerState {
         action: SessionPickerAction,
     ) -> Self {
         Self {
-            codex_home,
+            rune_home,
             requester,
             pagination: PaginationState {
                 next_cursor: None,
@@ -502,7 +502,7 @@ impl PickerState {
         self.request_frame();
 
         (self.page_loader)(PageLoadRequest {
-            codex_home: self.codex_home.clone(),
+            rune_home: self.rune_home.clone(),
             cursor: None,
             request_token,
             search_token,
@@ -583,7 +583,7 @@ impl PickerState {
             return;
         }
 
-        let names = find_thread_names_by_ids(&self.codex_home, &missing_ids)
+        let names = find_thread_names_by_ids(&self.rune_home, &missing_ids)
             .await
             .unwrap_or_default();
         for thread_id in missing_ids {
@@ -773,7 +773,7 @@ impl PickerState {
         self.request_frame();
 
         (self.page_loader)(PageLoadRequest {
-            codex_home: self.codex_home.clone(),
+            rune_home: self.rune_home.clone(),
             cursor: Some(cursor),
             request_token,
             search_token,
@@ -1326,14 +1326,14 @@ fn column_visibility(
 mod tests {
     use super::*;
     use chrono::Duration;
-    use codex_protocol::ThreadId;
-    use codex_protocol::protocol::EventMsg;
-    use codex_protocol::protocol::RolloutItem;
-    use codex_protocol::protocol::RolloutLine;
-    use codex_protocol::protocol::SessionMeta;
-    use codex_protocol::protocol::SessionMetaLine;
-    use codex_protocol::protocol::SessionSource;
-    use codex_protocol::protocol::UserMessageEvent;
+    use rune_protocol::ThreadId;
+    use rune_protocol::protocol::EventMsg;
+    use rune_protocol::protocol::RolloutItem;
+    use rune_protocol::protocol::RolloutLine;
+    use rune_protocol::protocol::SessionMeta;
+    use rune_protocol::protocol::SessionMetaLine;
+    use rune_protocol::protocol::SessionSource;
+    use rune_protocol::protocol::UserMessageEvent;
     use crossterm::event::KeyCode;
     use crossterm::event::KeyEvent;
     use crossterm::event::KeyModifiers;
@@ -1756,7 +1756,7 @@ mod tests {
         );
 
         let page = RolloutRecorder::list_threads(
-            &state.codex_home,
+            &state.rune_home,
             PAGE_SIZE,
             None,
             ThreadSortKey::CreatedAt,

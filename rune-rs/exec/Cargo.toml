@@ -9,7 +9,7 @@ name = "rune-exec"
 path = "src/main.rs"
 
 [lib]
-name = "codex_exec"
+name = "rune_exec"
 path = "src/lib.rs"
 
 [lints]

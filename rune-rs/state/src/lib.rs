@@ -37,10 +37,10 @@ pub use runtime::state_db_filename;
 pub use runtime::state_db_path;
 
 /// Errors encountered during DB operations. Tags: [stage]
-pub const DB_ERROR_METRIC: &str = "codex.db.error";
+pub const DB_ERROR_METRIC: &str = "rune.db.error";
 /// Metrics on backfill process. Tags: [status]
-pub const DB_METRIC_BACKFILL: &str = "codex.db.backfill";
+pub const DB_METRIC_BACKFILL: &str = "rune.db.backfill";
 /// Metrics on backfill duration. Tags: [status]
-pub const DB_METRIC_BACKFILL_DURATION_MS: &str = "codex.db.backfill.duration_ms";
+pub const DB_METRIC_BACKFILL_DURATION_MS: &str = "rune.db.backfill.duration_ms";
 /// Metrics on errors during comparison between DB and rollout file. Tags: [stage]
-pub const DB_METRIC_COMPARE_ERROR: &str = "codex.db.compare_error";
+pub const DB_METRIC_COMPARE_ERROR: &str = "rune.db.compare_error";

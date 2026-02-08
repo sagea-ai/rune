@@ -30,7 +30,7 @@ export type { CancelLoginChatGptResponse } from "./CancelLoginChatGptResponse";
 export type { ClientInfo } from "./ClientInfo";
 export type { ClientNotification } from "./ClientNotification";
 export type { ClientRequest } from "./ClientRequest";
-export type { CodexErrorInfo } from "./CodexErrorInfo";
+export type { RuneErrorInfo } from "./RuneErrorInfo";
 export type { CollabAgentInteractionBeginEvent } from "./CollabAgentInteractionBeginEvent";
 export type { CollabAgentInteractionEndEvent } from "./CollabAgentInteractionEndEvent";
 export type { CollabAgentSpawnBeginEvent } from "./CollabAgentSpawnBeginEvent";

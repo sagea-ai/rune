@@ -1,7 +1,7 @@
-use codex_protocol::config_types::CollaborationModeMask;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::TUI_VISIBLE_COLLABORATION_MODES;
-use codex_protocol::openai_models::ReasoningEffort;
+use rune_protocol::config_types::CollaborationModeMask;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::config_types::TUI_VISIBLE_COLLABORATION_MODES;
+use rune_protocol::openai_models::ReasoningEffort;
 
 const COLLABORATION_MODE_PLAN: &str = include_str!("../../templates/collaboration_mode/plan.md");
 const COLLABORATION_MODE_DEFAULT: &str =

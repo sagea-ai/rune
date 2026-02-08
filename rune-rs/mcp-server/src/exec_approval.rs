@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use codex_core::CodexThread;
-use codex_core::protocol::Op;
-use codex_core::protocol::ReviewDecision;
-use codex_protocol::ThreadId;
-use codex_protocol::parse_command::ParsedCommand;
+use rune_core::RuneThread;
+use rune_core::protocol::Op;
+use rune_core::protocol::ReviewDecision;
+use rune_protocol::ThreadId;
+use rune_protocol::parse_command::ParsedCommand;
 use rmcp::model::ErrorData;
 use rmcp::model::RequestId;
 use serde::Deserialize;
@@ -26,16 +26,16 @@ pub struct ExecApprovalElicitRequestParams {
     pub requested_schema: Value,
 
     // These are additional fields the client can use to
-    // correlate the request with the codex tool call.
+    // correlate the request with the rune tool call.
     #[serde(rename = "threadId")]
     pub thread_id: ThreadId,
-    pub codex_elicitation: String,
-    pub codex_mcp_tool_call_id: String,
-    pub codex_event_id: String,
-    pub codex_call_id: String,
-    pub codex_command: Vec<String>,
-    pub codex_cwd: PathBuf,
-    pub codex_parsed_cmd: Vec<ParsedCommand>,
+    pub rune_elicitation: String,
+    pub rune_mcp_tool_call_id: String,
+    pub rune_event_id: String,
+    pub rune_call_id: String,
+    pub rune_command: Vec<String>,
+    pub rune_cwd: PathBuf,
+    pub rune_parsed_cmd: Vec<ParsedCommand>,
 }
 
 // TODO(mbolin): ExecApprovalResponse does not conform to ElicitResult. See:
@@ -52,18 +52,18 @@ pub(crate) async fn handle_exec_approval_request(
     command: Vec<String>,
     cwd: PathBuf,
     outgoing: Arc<crate::outgoing_message::OutgoingMessageSender>,
-    codex: Arc<CodexThread>,
+    rune: Arc<RuneThread>,
     request_id: RequestId,
     tool_call_id: String,
     event_id: String,
     call_id: String,
-    codex_parsed_cmd: Vec<ParsedCommand>,
+    rune_parsed_cmd: Vec<ParsedCommand>,
     thread_id: ThreadId,
 ) {
     let escaped_command =
         shlex::try_join(command.iter().map(String::as_str)).unwrap_or_else(|_| command.join(" "));
     let message = format!(
-        "Allow Codex to run `{escaped_command}` in `{cwd}`?",
+        "Allow Rune to run `{escaped_command}` in `{cwd}`?",
         cwd = cwd.to_string_lossy()
     );
 
@@ -71,13 +71,13 @@ pub(crate) async fn handle_exec_approval_request(
         message,
         requested_schema: json!({"type":"object","properties":{}}),
         thread_id,
-        codex_elicitation: "exec-approval".to_string(),
-        codex_mcp_tool_call_id: tool_call_id.clone(),
-        codex_event_id: event_id.clone(),
-        codex_call_id: call_id,
-        codex_command: command,
-        codex_cwd: cwd,
-        codex_parsed_cmd,
+        rune_elicitation: "exec-approval".to_string(),
+        rune_mcp_tool_call_id: tool_call_id.clone(),
+        rune_event_id: event_id.clone(),
+        rune_call_id: call_id,
+        rune_command: command,
+        rune_cwd: cwd,
+        rune_parsed_cmd,
     };
     let params_json = match serde_json::to_value(&params) {
         Ok(value) => value,
@@ -99,10 +99,10 @@ pub(crate) async fn handle_exec_approval_request(
 
     // Listen for the response on a separate task so we don't block the main agent loop.
     {
-        let codex = codex.clone();
+        let rune = rune.clone();
         let event_id = event_id.clone();
         tokio::spawn(async move {
-            on_exec_approval_response(event_id, on_response, codex).await;
+            on_exec_approval_response(event_id, on_response, rune).await;
         });
     }
 }
@@ -110,7 +110,7 @@ pub(crate) async fn handle_exec_approval_request(
 async fn on_exec_approval_response(
     event_id: String,
     receiver: tokio::sync::oneshot::Receiver<serde_json::Value>,
-    codex: Arc<CodexThread>,
+    rune: Arc<RuneThread>,
 ) {
     let response = receiver.await;
     let value = match response {
@@ -121,7 +121,7 @@ async fn on_exec_approval_response(
         }
     };
 
-    // Try to deserialize `value` and then make the appropriate call to `codex`.
+    // Try to deserialize `value` and then make the appropriate call to `rune`.
     let response = serde_json::from_value::<ExecApprovalResponse>(value).unwrap_or_else(|err| {
         error!("failed to deserialize ExecApprovalResponse: {err}");
         // If we cannot deserialize the response, we deny the request to be
@@ -131,7 +131,7 @@ async fn on_exec_approval_response(
         }
     });
 
-    if let Err(err) = codex
+    if let Err(err) = rune
         .submit(Op::ExecApproval {
             id: event_id,
             decision: response.decision,

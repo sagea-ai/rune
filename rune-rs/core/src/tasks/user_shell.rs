@@ -2,14 +2,14 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use codex_async_utils::CancelErr;
-use codex_async_utils::OrCancelExt;
-use codex_protocol::user_input::UserInput;
+use rune_async_utils::CancelErr;
+use rune_async_utils::OrCancelExt;
+use rune_protocol::user_input::UserInput;
 use tokio_util::sync::CancellationToken;
 use tracing::error;
 use uuid::Uuid;
 
-use crate::codex::TurnContext;
+use crate::rune::TurnContext;
 use crate::exec::ExecToolCallOutput;
 use crate::exec::SandboxType;
 use crate::exec::StdoutStream;
@@ -32,9 +32,9 @@ use crate::user_shell_command::user_shell_command_record_item;
 
 use super::SessionTask;
 use super::SessionTaskContext;
-use crate::codex::Session;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ResponseItem;
+use crate::rune::Session;
+use rune_protocol::models::ResponseInputItem;
+use rune_protocol::models::ResponseItem;
 
 const USER_SHELL_TIMEOUT_MS: u64 = 60 * 60 * 1000; // 1 hour
 
@@ -94,7 +94,7 @@ pub(crate) async fn execute_user_shell_command(
     session
         .services
         .otel_manager
-        .counter("codex.task.user_shell", 1, &[]);
+        .counter("rune.task.user_shell", 1, &[]);
 
     if mode == UserShellCommandMode::StandaloneTurn {
         // Auxiliary mode runs within an existing active turn. That turn already

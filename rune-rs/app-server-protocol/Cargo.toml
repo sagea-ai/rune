@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "codex_app_server_protocol"
+name = "rune_app_server_protocol"
 path = "src/lib.rs"
 
 [lints]
@@ -15,7 +15,6 @@ workspace = true
 anyhow = { workspace = true }
 clap = { workspace = true, features = ["derive"] }
 rune-protocol = { workspace = true }
-rune-experimental-api-macros = { workspace = true }
 rune-utils-absolute-path = { workspace = true }
 schemars = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

@@ -2,19 +2,19 @@ use anyhow::Result;
 use app_test_support::McpProcess;
 use app_test_support::create_fake_rollout;
 use app_test_support::to_response;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::ListConversationsParams;
-use codex_app_server_protocol::ListConversationsResponse;
-use codex_app_server_protocol::NewConversationParams;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ResumeConversationParams;
-use codex_app_server_protocol::ResumeConversationResponse;
-use codex_app_server_protocol::ServerNotification;
-use codex_app_server_protocol::SessionConfiguredNotification;
-use codex_core::protocol::EventMsg;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
+use rune_app_server_protocol::JSONRPCNotification;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::ListConversationsParams;
+use rune_app_server_protocol::ListConversationsResponse;
+use rune_app_server_protocol::NewConversationParams;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::ResumeConversationParams;
+use rune_app_server_protocol::ResumeConversationResponse;
+use rune_app_server_protocol::ServerNotification;
+use rune_app_server_protocol::SessionConfiguredNotification;
+use rune_core::protocol::EventMsg;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::ResponseItem;
 use pretty_assertions::assert_eq;
 use tempfile::TempDir;
 use tokio::time::timeout;
@@ -23,10 +23,10 @@ const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_list_and_resume_conversations() -> Result<()> {
-    // Prepare a temporary CODEX_HOME with a few fake rollout files.
-    let codex_home = TempDir::new()?;
+    // Prepare a temporary RUNE_HOME with a few fake rollout files.
+    let rune_home = TempDir::new()?;
     create_fake_rollout(
-        codex_home.path(),
+        rune_home.path(),
         "2025-01-02T12-00-00",
         "2025-01-02T12:00:00Z",
         "Hello A",
@@ -34,7 +34,7 @@ async fn test_list_and_resume_conversations() -> Result<()> {
         None,
     )?;
     create_fake_rollout(
-        codex_home.path(),
+        rune_home.path(),
         "2025-01-01T13-00-00",
         "2025-01-01T13:00:00Z",
         "Hello B",
@@ -42,7 +42,7 @@ async fn test_list_and_resume_conversations() -> Result<()> {
         None,
     )?;
     create_fake_rollout(
-        codex_home.path(),
+        rune_home.path(),
         "2025-01-01T12-00-00",
         "2025-01-01T12:00:00Z",
         "Hello C",
@@ -50,7 +50,7 @@ async fn test_list_and_resume_conversations() -> Result<()> {
         None,
     )?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // Request first page with size 2
@@ -103,7 +103,7 @@ async fn test_list_and_resume_conversations() -> Result<()> {
 
     // Add a conversation with an explicit non-OpenAI provider for filter tests.
     create_fake_rollout(
-        codex_home.path(),
+        rune_home.path(),
         "2025-01-01T11-30-00",
         "2025-01-01T11:30:00Z",
         "Hello TP",
@@ -187,7 +187,7 @@ async fn test_list_and_resume_conversations() -> Result<()> {
         })
         .await?;
 
-    // Expect a codex/event notification with msg.type == sessionConfigured
+    // Expect a rune/event notification with msg.type == sessionConfigured
     let notification: JSONRPCNotification = timeout(
         DEFAULT_READ_TIMEOUT,
         mcp.read_stream_until_notification_message("sessionConfigured"),
@@ -363,7 +363,7 @@ async fn test_list_and_resume_conversations() -> Result<()> {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn list_conversations_fetches_through_filtered_pages() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
 
     // Only the last 3 conversations match the provider filter; request 3 and
     // ensure pagination keeps fetching past non-matching pages.
@@ -397,7 +397,7 @@ async fn list_conversations_fetches_through_filtered_pages() -> Result<()> {
 
     for (ts_file, ts_rfc, provider) in cases {
         create_fake_rollout(
-            codex_home.path(),
+            rune_home.path(),
             ts_file,
             ts_rfc,
             "Hello",
@@ -406,7 +406,7 @@ async fn list_conversations_fetches_through_filtered_pages() -> Result<()> {
         )?;
     }
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let req_id = mcp

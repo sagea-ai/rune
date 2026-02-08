@@ -7,8 +7,8 @@ use crate::tools::handlers::parse_arguments;
 use crate::tools::registry::ToolHandler;
 use crate::tools::registry::ToolKind;
 use async_trait::async_trait;
-use codex_protocol::ThreadId;
-use codex_protocol::models::FunctionCallOutputBody;
+use rune_protocol::ThreadId;
+use rune_protocol::models::FunctionCallOutputBody;
 use serde::Deserialize;
 use serde_json::json;
 

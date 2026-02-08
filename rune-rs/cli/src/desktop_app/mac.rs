@@ -8,41 +8,41 @@ pub async fn run_mac_app_open_or_install(
     workspace: PathBuf,
     download_url: String,
 ) -> anyhow::Result<()> {
-    if let Some(app_path) = find_existing_codex_app_path() {
+    if let Some(app_path) = find_existing_rune_app_path() {
         eprintln!(
-            "Opening Codex Desktop at {app_path}...",
+            "Opening Rune Desktop at {app_path}...",
             app_path = app_path.display()
         );
-        open_codex_app(&app_path, &workspace).await?;
+        open_rune_app(&app_path, &workspace).await?;
         return Ok(());
     }
-    eprintln!("Codex Desktop not found; downloading installer...");
-    let installed_app = download_and_install_codex_to_user_applications(&download_url)
+    eprintln!("Rune Desktop not found; downloading installer...");
+    let installed_app = download_and_install_rune_to_user_applications(&download_url)
         .await
-        .context("failed to download/install Codex Desktop")?;
+        .context("failed to download/install Rune Desktop")?;
     eprintln!(
-        "Launching Codex Desktop from {installed_app}...",
+        "Launching Rune Desktop from {installed_app}...",
         installed_app = installed_app.display()
     );
-    open_codex_app(&installed_app, &workspace).await?;
+    open_rune_app(&installed_app, &workspace).await?;
     Ok(())
 }
 
-fn find_existing_codex_app_path() -> Option<PathBuf> {
-    candidate_codex_app_paths()
+fn find_existing_rune_app_path() -> Option<PathBuf> {
+    candidate_rune_app_paths()
         .into_iter()
         .find(|candidate| candidate.is_dir())
 }
 
-fn candidate_codex_app_paths() -> Vec<PathBuf> {
-    let mut paths = vec![PathBuf::from("/Applications/Codex.app")];
+fn candidate_rune_app_paths() -> Vec<PathBuf> {
+    let mut paths = vec![PathBuf::from("/Applications/Rune.app")];
     if let Some(home) = std::env::var_os("HOME") {
-        paths.push(PathBuf::from(home).join("Applications").join("Codex.app"));
+        paths.push(PathBuf::from(home).join("Applications").join("Rune.app"));
     }
     paths
 }
 
-async fn open_codex_app(app_path: &Path, workspace: &Path) -> anyhow::Result<()> {
+async fn open_rune_app(app_path: &Path, workspace: &Path) -> anyhow::Result<()> {
     eprintln!(
         "Opening workspace {workspace}...",
         workspace = workspace.display()
@@ -66,7 +66,7 @@ async fn open_codex_app(app_path: &Path, workspace: &Path) -> anyhow::Result<()>
     );
 }
 
-async fn download_and_install_codex_to_user_applications(dmg_url: &str) -> anyhow::Result<PathBuf> {
+async fn download_and_install_rune_to_user_applications(dmg_url: &str) -> anyhow::Result<PathBuf> {
     let temp_dir = Builder::new()
         .prefix("rune-app-installer-")
         .tempdir()
@@ -74,19 +74,19 @@ async fn download_and_install_codex_to_user_applications(dmg_url: &str) -> anyho
     let tmp_root = temp_dir.path().to_path_buf();
     let _temp_dir = temp_dir;
 
-    let dmg_path = tmp_root.join("Codex.dmg");
+    let dmg_path = tmp_root.join("Rune.dmg");
     download_dmg(dmg_url, &dmg_path).await?;
 
-    eprintln!("Mounting Codex Desktop installer...");
+    eprintln!("Mounting Rune Desktop installer...");
     let mount_point = mount_dmg(&dmg_path).await?;
     eprintln!(
         "Installer mounted at {mount_point}.",
         mount_point = mount_point.display()
     );
     let result = async {
-        let app_in_volume = find_codex_app_in_mount(&mount_point)
-            .context("failed to locate Codex.app in mounted dmg")?;
-        install_codex_app_bundle(&app_in_volume).await
+        let app_in_volume = find_rune_app_in_mount(&mount_point)
+            .context("failed to locate Rune.app in mounted dmg")?;
+        install_rune_app_bundle(&app_in_volume).await
     }
     .await;
 
@@ -101,10 +101,10 @@ async fn download_and_install_codex_to_user_applications(dmg_url: &str) -> anyho
     result
 }
 
-async fn install_codex_app_bundle(app_in_volume: &Path) -> anyhow::Result<PathBuf> {
+async fn install_rune_app_bundle(app_in_volume: &Path) -> anyhow::Result<PathBuf> {
     for applications_dir in candidate_applications_dirs()? {
         eprintln!(
-            "Installing Codex Desktop into {applications_dir}...",
+            "Installing Rune Desktop into {applications_dir}...",
             applications_dir = applications_dir.display()
         );
         std::fs::create_dir_all(&applications_dir).with_context(|| {
@@ -114,7 +114,7 @@ async fn install_codex_app_bundle(app_in_volume: &Path) -> anyhow::Result<PathBu
             )
         })?;
 
-        let dest_app = applications_dir.join("Codex.app");
+        let dest_app = applications_dir.join("Rune.app");
         if dest_app.is_dir() {
             return Ok(dest_app);
         }
@@ -123,14 +123,14 @@ async fn install_codex_app_bundle(app_in_volume: &Path) -> anyhow::Result<PathBu
             Ok(()) => return Ok(dest_app),
             Err(err) => {
                 eprintln!(
-                    "warning: failed to install Codex.app to {applications_dir}: {err}",
+                    "warning: failed to install Rune.app to {applications_dir}: {err}",
                     applications_dir = applications_dir.display()
                 );
             }
         }
     }
 
-    anyhow::bail!("failed to install Codex.app to any applications directory");
+    anyhow::bail!("failed to install Rune.app to any applications directory");
 }
 
 fn candidate_applications_dirs() -> anyhow::Result<Vec<PathBuf>> {
@@ -198,8 +198,8 @@ async fn detach_dmg(mount_point: &Path) -> anyhow::Result<()> {
     anyhow::bail!("hdiutil detach failed with {status}");
 }
 
-fn find_codex_app_in_mount(mount_point: &Path) -> anyhow::Result<PathBuf> {
-    let direct = mount_point.join("Codex.app");
+fn find_rune_app_in_mount(mount_point: &Path) -> anyhow::Result<PathBuf> {
+    let direct = mount_point.join("Rune.app");
     if direct.is_dir() {
         return Ok(direct);
     }
@@ -263,19 +263,19 @@ mod tests {
 
     #[test]
     fn parses_mount_point_from_tab_separated_hdiutil_output() {
-        let output = "/dev/disk2s1\tApple_HFS\tCodex\t/Volumes/Codex\n";
+        let output = "/dev/disk2s1\tApple_HFS\tRune\t/Volumes/Rune\n";
         assert_eq!(
             parse_hdiutil_attach_mount_point(output).as_deref(),
-            Some("/Volumes/Codex")
+            Some("/Volumes/Rune")
         );
     }
 
     #[test]
     fn parses_mount_point_with_spaces() {
-        let output = "/dev/disk2s1\tApple_HFS\tCodex Installer\t/Volumes/Codex Installer\n";
+        let output = "/dev/disk2s1\tApple_HFS\tRune Installer\t/Volumes/Rune Installer\n";
         assert_eq!(
             parse_hdiutil_attach_mount_point(output).as_deref(),
-            Some("/Volumes/Codex Installer")
+            Some("/Volumes/Rune Installer")
         );
     }
 }

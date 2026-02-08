@@ -1,7 +1,7 @@
 use crate::client_common::tools::ResponsesApiTool;
 use crate::client_common::tools::ToolSpec;
-use crate::codex::Session;
-use crate::codex::TurnContext;
+use crate::rune::Session;
+use crate::rune::TurnContext;
 use crate::function_tool::FunctionCallError;
 use crate::tools::context::ToolInvocation;
 use crate::tools::context::ToolOutput;
@@ -10,10 +10,10 @@ use crate::tools::registry::ToolHandler;
 use crate::tools::registry::ToolKind;
 use crate::tools::spec::JsonSchema;
 use async_trait::async_trait;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::plan_tool::UpdatePlanArgs;
-use codex_protocol::protocol::EventMsg;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::models::FunctionCallOutputBody;
+use rune_protocol::plan_tool::UpdatePlanArgs;
+use rune_protocol::protocol::EventMsg;
 use std::collections::BTreeMap;
 use std::sync::LazyLock;
 

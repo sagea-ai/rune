@@ -9,7 +9,7 @@ name = "rune-app-server"
 path = "src/main.rs"
 
 [lib]
-name = "codex_app_server"
+name = "rune_app_server"
 path = "src/lib.rs"
 
 [lints]
@@ -22,10 +22,7 @@ rune-arg0 = { workspace = true }
 rune-cloud-requirements = { workspace = true }
 rune-common = { workspace = true, features = ["cli"] }
 rune-core = { workspace = true }
-rune-backend-client = { workspace = true }
 rune-file-search = { workspace = true }
-rune-chatgpt = { workspace = true }
-rune-login = { workspace = true }
 rune-protocol = { workspace = true }
 rune-app-server-protocol = { workspace = true }
 rune-feedback = { workspace = true }

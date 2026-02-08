@@ -1,27 +1,27 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::items::TurnItem;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::AgentMessageContentDeltaEvent;
-use codex_protocol::protocol::AgentMessageDeltaEvent;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::ExitedReviewModeEvent;
-use codex_protocol::protocol::ItemCompletedEvent;
-use codex_protocol::protocol::ReviewOutputEvent;
+use rune_protocol::config_types::WebSearchMode;
+use rune_protocol::items::TurnItem;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::protocol::AgentMessageContentDeltaEvent;
+use rune_protocol::protocol::AgentMessageDeltaEvent;
+use rune_protocol::protocol::Event;
+use rune_protocol::protocol::EventMsg;
+use rune_protocol::protocol::ExitedReviewModeEvent;
+use rune_protocol::protocol::ItemCompletedEvent;
+use rune_protocol::protocol::ReviewOutputEvent;
 use tokio_util::sync::CancellationToken;
 
-use crate::codex::Session;
-use crate::codex::TurnContext;
-use crate::codex_delegate::run_codex_thread_one_shot;
+use crate::rune::Session;
+use crate::rune::TurnContext;
+use crate::rune_delegate::run_rune_thread_one_shot;
 use crate::config::Constrained;
 use crate::review_format::format_review_findings_block;
 use crate::review_format::render_review_output_text;
 use crate::state::TaskKind;
-use codex_protocol::user_input::UserInput;
+use rune_protocol::user_input::UserInput;
 
 use super::SessionTask;
 use super::SessionTaskContext;
@@ -52,9 +52,9 @@ impl SessionTask for ReviewTask {
             .session
             .services
             .otel_manager
-            .counter("codex.task.review", 1, &[]);
+            .counter("rune.task.review", 1, &[]);
 
-        // Start sub-codex conversation and get the receiver for events.
+        // Start sub-rune conversation and get the receiver for events.
         let output = match start_review_conversation(
             session.clone(),
             ctx.clone(),
@@ -110,7 +110,7 @@ async fn start_review_conversation(
         .clone()
         .unwrap_or_else(|| ctx.model_info.slug.clone());
     sub_agent_config.model = Some(model);
-    (run_codex_thread_one_shot(
+    (run_rune_thread_one_shot(
         sub_agent_config,
         session.auth_manager(),
         session.models_manager(),

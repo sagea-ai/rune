@@ -1,6 +1,6 @@
 //! Connection manager for Model Context Protocol (MCP) servers.
 //!
-//! The [`McpConnectionManager`] owns one [`codex_rmcp_client::RmcpClient`] per
+//! The [`McpConnectionManager`] owns one [`rune_rmcp_client::RmcpClient`] per
 //! configured server (keyed by the *server name*). It offers convenience
 //! helpers to query the available tools across *all* servers and returns them
 //! in a single aggregated map using the fully-qualified tool name
@@ -17,28 +17,28 @@ use std::sync::Mutex as StdMutex;
 use std::time::Duration;
 use std::time::Instant;
 
-use crate::mcp::CODEX_APPS_MCP_SERVER_NAME;
+use crate::mcp::RUNE_APPS_MCP_SERVER_NAME;
 use crate::mcp::auth::McpAuthStatusEntry;
 use anyhow::Context;
 use anyhow::Result;
 use anyhow::anyhow;
 use async_channel::Sender;
-use codex_async_utils::CancelErr;
-use codex_async_utils::OrCancelExt;
-use codex_protocol::approvals::ElicitationRequestEvent;
-use codex_protocol::mcp::CallToolResult;
-use codex_protocol::mcp::RequestId as ProtocolRequestId;
-use codex_protocol::protocol::Event;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::McpStartupCompleteEvent;
-use codex_protocol::protocol::McpStartupFailure;
-use codex_protocol::protocol::McpStartupStatus;
-use codex_protocol::protocol::McpStartupUpdateEvent;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_rmcp_client::ElicitationResponse;
-use codex_rmcp_client::OAuthCredentialsStoreMode;
-use codex_rmcp_client::RmcpClient;
-use codex_rmcp_client::SendElicitation;
+use rune_async_utils::CancelErr;
+use rune_async_utils::OrCancelExt;
+use rune_protocol::approvals::ElicitationRequestEvent;
+use rune_protocol::mcp::CallToolResult;
+use rune_protocol::mcp::RequestId as ProtocolRequestId;
+use rune_protocol::protocol::Event;
+use rune_protocol::protocol::EventMsg;
+use rune_protocol::protocol::McpStartupCompleteEvent;
+use rune_protocol::protocol::McpStartupFailure;
+use rune_protocol::protocol::McpStartupStatus;
+use rune_protocol::protocol::McpStartupUpdateEvent;
+use rune_protocol::protocol::SandboxPolicy;
+use rune_rmcp_client::ElicitationResponse;
+use rune_rmcp_client::OAuthCredentialsStoreMode;
+use rune_rmcp_client::RmcpClient;
+use rune_rmcp_client::SendElicitation;
 use futures::future::BoxFuture;
 use futures::future::FutureExt;
 use futures::future::Shared;
@@ -68,7 +68,7 @@ use tokio_util::sync::CancellationToken;
 use tracing::instrument;
 use tracing::warn;
 
-use crate::codex::INITIAL_SUBMIT_ID;
+use crate::rune::INITIAL_SUBMIT_ID;
 use crate::config::types::McpServerConfig;
 use crate::config::types::McpServerTransportConfig;
 
@@ -86,7 +86,7 @@ pub const DEFAULT_STARTUP_TIMEOUT: Duration = Duration::from_secs(10);
 /// Default timeout for individual tool calls.
 const DEFAULT_TOOL_TIMEOUT: Duration = Duration::from_secs(60);
 
-const CODEX_APPS_TOOLS_CACHE_TTL: Duration = Duration::from_secs(3600);
+const RUNE_APPS_TOOLS_CACHE_TTL: Duration = Duration::from_secs(3600);
 
 /// The Responses API requires tool names to match `^[a-zA-Z0-9_-]+$`.
 /// MCP server/tool names are user-controlled, so sanitize the fully-qualified
@@ -167,12 +167,12 @@ pub(crate) struct ToolInfo {
 }
 
 #[derive(Clone)]
-struct CachedCodexAppsTools {
+struct CachedRuneAppsTools {
     expires_at: Instant,
     tools: Vec<ToolInfo>,
 }
 
-static CODEX_APPS_TOOLS_CACHE: LazyLock<StdMutex<Option<CachedCodexAppsTools>>> =
+static RUNE_APPS_TOOLS_CACHE: LazyLock<StdMutex<Option<CachedRuneAppsTools>>> =
     LazyLock::new(|| StdMutex::new(None));
 
 type ResponderMap = HashMap<(String, RequestId), oneshot::Sender<ElicitationResponse>>;
@@ -315,17 +315,17 @@ impl AsyncManagedClient {
     }
 }
 
-pub const MCP_SANDBOX_STATE_CAPABILITY: &str = "codex/sandbox-state";
+pub const MCP_SANDBOX_STATE_CAPABILITY: &str = "rune/sandbox-state";
 
 /// Custom MCP request to push sandbox state updates.
 /// When used, the `params` field of the notification is [`SandboxState`].
-pub const MCP_SANDBOX_STATE_METHOD: &str = "codex/sandbox-state/update";
+pub const MCP_SANDBOX_STATE_METHOD: &str = "rune/sandbox-state/update";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SandboxState {
     pub sandbox_policy: SandboxPolicy,
-    pub codex_linux_sandbox_exe: Option<PathBuf>,
+    pub rune_linux_sandbox_exe: Option<PathBuf>,
     pub sandbox_cwd: PathBuf,
     #[serde(default)]
     pub use_linux_sandbox_bwrap: bool,
@@ -512,7 +512,7 @@ impl McpConnectionManager {
                 let tool_filter = client.tool_filter;
                 let mut server_tools = client.tools;
 
-                if server_name == CODEX_APPS_MCP_SERVER_NAME {
+                if server_name == RUNE_APPS_MCP_SERVER_NAME {
                     match list_tools_for_client(server_name, &rmcp_client, tool_timeout).await {
                         Ok(fresh_or_cached_tools) => {
                             server_tools = fresh_or_cached_tools;
@@ -841,12 +841,12 @@ fn filter_tools(tools: Vec<ToolInfo>, filter: ToolFilter) -> Vec<ToolInfo> {
         .collect()
 }
 
-fn normalize_codex_apps_tool_title(
+fn normalize_rune_apps_tool_title(
     server_name: &str,
     connector_name: Option<&str>,
     value: &str,
 ) -> String {
-    if server_name != CODEX_APPS_MCP_SERVER_NAME {
+    if server_name != RUNE_APPS_MCP_SERVER_NAME {
         return value.to_string();
     }
 
@@ -935,7 +935,7 @@ async fn start_server_task(
         client_info: Implementation {
             name: "rune-mcp-client".to_owned(),
             version: env!("CARGO_PKG_VERSION").to_owned(),
-            title: Some("Codex".into()),
+            title: Some("Rune".into()),
             icons: None,
             website_url: None,
         },
@@ -1020,21 +1020,21 @@ async fn list_tools_for_client(
     client: &Arc<RmcpClient>,
     timeout: Option<Duration>,
 ) -> Result<Vec<ToolInfo>> {
-    if server_name == CODEX_APPS_MCP_SERVER_NAME
-        && let Some(cached_tools) = read_cached_codex_apps_tools()
+    if server_name == RUNE_APPS_MCP_SERVER_NAME
+        && let Some(cached_tools) = read_cached_rune_apps_tools()
     {
         return Ok(cached_tools);
     }
 
     let tools = list_tools_for_client_uncached(server_name, client, timeout).await?;
-    if server_name == CODEX_APPS_MCP_SERVER_NAME {
-        write_cached_codex_apps_tools(&tools);
+    if server_name == RUNE_APPS_MCP_SERVER_NAME {
+        write_cached_rune_apps_tools(&tools);
     }
     Ok(tools)
 }
 
-fn read_cached_codex_apps_tools() -> Option<Vec<ToolInfo>> {
-    let mut cache_guard = CODEX_APPS_TOOLS_CACHE
+fn read_cached_rune_apps_tools() -> Option<Vec<ToolInfo>> {
+    let mut cache_guard = RUNE_APPS_TOOLS_CACHE
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     let now = Instant::now();
@@ -1049,12 +1049,12 @@ fn read_cached_codex_apps_tools() -> Option<Vec<ToolInfo>> {
     None
 }
 
-fn write_cached_codex_apps_tools(tools: &[ToolInfo]) {
-    let mut cache_guard = CODEX_APPS_TOOLS_CACHE
+fn write_cached_rune_apps_tools(tools: &[ToolInfo]) {
+    let mut cache_guard = RUNE_APPS_TOOLS_CACHE
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    *cache_guard = Some(CachedCodexAppsTools {
-        expires_at: Instant::now() + CODEX_APPS_TOOLS_CACHE_TTL,
+    *cache_guard = Some(CachedRuneAppsTools {
+        expires_at: Instant::now() + RUNE_APPS_TOOLS_CACHE_TTL,
         tools: tools.to_vec(),
     });
 }
@@ -1073,7 +1073,7 @@ async fn list_tools_for_client_uncached(
             let mut tool_def = tool.tool;
             if let Some(title) = tool_def.title.as_deref() {
                 let normalized_title =
-                    normalize_codex_apps_tool_title(server_name, connector_name.as_deref(), title);
+                    normalize_rune_apps_tool_title(server_name, connector_name.as_deref(), title);
                 if tool_def.title.as_deref() != Some(normalized_title.as_str()) {
                     tool_def.title = Some(normalized_title);
                 }
@@ -1116,11 +1116,11 @@ fn mcp_init_error_display(
         && http_headers.as_ref().map(HashMap::is_empty).unwrap_or(true)
     {
         format!(
-            "GitHub MCP does not support OAuth. Log in by adding a personal access token (https://github.com/settings/personal-access-tokens) to your environment and config.toml:\n[mcp_servers.{server_name}]\nbearer_token_env_var = CODEX_GITHUB_PERSONAL_ACCESS_TOKEN"
+            "GitHub MCP does not support OAuth. Log in by adding a personal access token (https://github.com/settings/personal-access-tokens) to your environment and config.toml:\n[mcp_servers.{server_name}]\nbearer_token_env_var = RUNE_GITHUB_PERSONAL_ACCESS_TOKEN"
         )
     } else if is_mcp_client_auth_required_error(err) {
         format!(
-            "The {server_name} MCP server is not logged in. Run `codex mcp login {server_name}`."
+            "The {server_name} MCP server is not logged in. Run `rune mcp login {server_name}`."
         )
     } else if is_mcp_client_startup_timeout_error(err) {
         let startup_timeout_secs = match entry {
@@ -1169,7 +1169,7 @@ mod mcp_init_error_display_tests {}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::protocol::McpAuthStatus;
+    use rune_protocol::protocol::McpAuthStatus;
     use rmcp::model::JsonObject;
     use std::collections::HashSet;
     use std::sync::Arc;
@@ -1372,7 +1372,7 @@ mod tests {
         let display = mcp_init_error_display(server_name, Some(&entry), &err);
 
         let expected = format!(
-            "GitHub MCP does not support OAuth. Log in by adding a personal access token (https://github.com/settings/personal-access-tokens) to your environment and config.toml:\n[mcp_servers.{server_name}]\nbearer_token_env_var = CODEX_GITHUB_PERSONAL_ACCESS_TOKEN"
+            "GitHub MCP does not support OAuth. Log in by adding a personal access token (https://github.com/settings/personal-access-tokens) to your environment and config.toml:\n[mcp_servers.{server_name}]\nbearer_token_env_var = RUNE_GITHUB_PERSONAL_ACCESS_TOKEN"
         );
 
         assert_eq!(expected, display);
@@ -1386,7 +1386,7 @@ mod tests {
         let display = mcp_init_error_display(server_name, None, &err);
 
         let expected = format!(
-            "The {server_name} MCP server is not logged in. Run `codex mcp login {server_name}`."
+            "The {server_name} MCP server is not logged in. Run `rune mcp login {server_name}`."
         );
 
         assert_eq!(expected, display);

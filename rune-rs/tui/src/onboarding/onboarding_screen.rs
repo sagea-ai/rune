@@ -1,6 +1,6 @@
-use codex_core::AuthManager;
-use codex_core::config::Config;
-use codex_core::git_info::get_git_repo_root;
+use rune_core::AuthManager;
+use rune_core::config::Config;
+use rune_core::git_info::get_git_repo_root;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -11,7 +11,7 @@ use ratatui::style::Color;
 use ratatui::widgets::Clear;
 use ratatui::widgets::WidgetRef;
 
-use codex_protocol::config_types::ForcedLoginMethod;
+use rune_protocol::config_types::ForcedLoginMethod;
 
 use crate::LoginStatus;
 use crate::onboarding::auth::AuthModeWidget;
@@ -82,7 +82,7 @@ impl OnboardingScreen {
         let cwd = config.cwd.clone();
         let forced_chatgpt_workspace_id = config.forced_chatgpt_workspace_id.clone();
         let forced_login_method = config.forced_login_method;
-        let codex_home = config.codex_home;
+        let rune_home = config.rune_home;
         let cli_auth_credentials_store_mode = config.cli_auth_credentials_store_mode;
         let mut steps: Vec<Step> = Vec::new();
         steps.push(Step::Welcome(WelcomeWidget::new(
@@ -100,7 +100,7 @@ impl OnboardingScreen {
                 highlighted_mode,
                 error: None,
                 sign_in_state: Arc::new(RwLock::new(SignInState::PickMode)),
-                codex_home: codex_home.clone(),
+                rune_home: rune_home.clone(),
                 cli_auth_credentials_store_mode,
                 login_status,
                 auth_manager,
@@ -119,7 +119,7 @@ impl OnboardingScreen {
         if show_trust_screen {
             steps.push(Step::TrustDirectory(TrustDirectoryWidget {
                 cwd,
-                codex_home,
+                rune_home,
                 is_git_repo,
                 selection: None,
                 highlighted,

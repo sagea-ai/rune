@@ -10,7 +10,7 @@ name = "rune-execpolicy-legacy"
 path = "src/main.rs"
 
 [lib]
-name = "codex_execpolicy_legacy"
+name = "rune_execpolicy_legacy"
 path = "src/lib.rs"
 
 [lints]

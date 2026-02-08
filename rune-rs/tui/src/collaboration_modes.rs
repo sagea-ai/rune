@@ -1,6 +1,6 @@
-use codex_core::models_manager::manager::ModelsManager;
-use codex_protocol::config_types::CollaborationModeMask;
-use codex_protocol::config_types::ModeKind;
+use rune_core::models_manager::manager::ModelsManager;
+use rune_protocol::config_types::CollaborationModeMask;
+use rune_protocol::config_types::ModeKind;
 
 fn filtered_presets(models_manager: &ModelsManager) -> Vec<CollaborationModeMask> {
     models_manager

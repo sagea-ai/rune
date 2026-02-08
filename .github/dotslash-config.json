@@ -1,82 +1,82 @@
 {
   "outputs": {
-    "codex": {
+    "rune": {
       "platforms": {
         "macos-aarch64": {
-          "regex": "^codex-aarch64-apple-darwin\\.zst$",
-          "path": "codex"
+          "regex": "^rune-aarch64-apple-darwin\\.zst$",
+          "path": "rune"
         },
         "macos-x86_64": {
-          "regex": "^codex-x86_64-apple-darwin\\.zst$",
-          "path": "codex"
+          "regex": "^rune-x86_64-apple-darwin\\.zst$",
+          "path": "rune"
         },
         "linux-x86_64": {
-          "regex": "^codex-x86_64-unknown-linux-musl\\.zst$",
-          "path": "codex"
+          "regex": "^rune-x86_64-unknown-linux-musl\\.zst$",
+          "path": "rune"
         },
         "linux-aarch64": {
-          "regex": "^codex-aarch64-unknown-linux-musl\\.zst$",
-          "path": "codex"
+          "regex": "^rune-aarch64-unknown-linux-musl\\.zst$",
+          "path": "rune"
         },
         "windows-x86_64": {
-          "regex": "^codex-x86_64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex.exe"
+          "regex": "^rune-x86_64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "rune.exe"
         },
         "windows-aarch64": {
-          "regex": "^codex-aarch64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex.exe"
+          "regex": "^rune-aarch64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "rune.exe"
         }
       }
     },
-    "codex-responses-api-proxy": {
+    "rune-responses-api-proxy": {
       "platforms": {
         "macos-aarch64": {
-          "regex": "^codex-responses-api-proxy-aarch64-apple-darwin\\.zst$",
-          "path": "codex-responses-api-proxy"
+          "regex": "^rune-responses-api-proxy-aarch64-apple-darwin\\.zst$",
+          "path": "rune-responses-api-proxy"
         },
         "macos-x86_64": {
-          "regex": "^codex-responses-api-proxy-x86_64-apple-darwin\\.zst$",
-          "path": "codex-responses-api-proxy"
+          "regex": "^rune-responses-api-proxy-x86_64-apple-darwin\\.zst$",
+          "path": "rune-responses-api-proxy"
         },
         "linux-x86_64": {
-          "regex": "^codex-responses-api-proxy-x86_64-unknown-linux-musl\\.zst$",
-          "path": "codex-responses-api-proxy"
+          "regex": "^rune-responses-api-proxy-x86_64-unknown-linux-musl\\.zst$",
+          "path": "rune-responses-api-proxy"
         },
         "linux-aarch64": {
-          "regex": "^codex-responses-api-proxy-aarch64-unknown-linux-musl\\.zst$",
-          "path": "codex-responses-api-proxy"
+          "regex": "^rune-responses-api-proxy-aarch64-unknown-linux-musl\\.zst$",
+          "path": "rune-responses-api-proxy"
         },
         "windows-x86_64": {
-          "regex": "^codex-responses-api-proxy-x86_64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-responses-api-proxy.exe"
+          "regex": "^rune-responses-api-proxy-x86_64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "rune-responses-api-proxy.exe"
         },
         "windows-aarch64": {
-          "regex": "^codex-responses-api-proxy-aarch64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-responses-api-proxy.exe"
+          "regex": "^rune-responses-api-proxy-aarch64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "rune-responses-api-proxy.exe"
         }
       }
     },
-    "codex-command-runner": {
+    "rune-command-runner": {
       "platforms": {
         "windows-x86_64": {
-          "regex": "^codex-command-runner-x86_64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-command-runner.exe"
+          "regex": "^rune-command-runner-x86_64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "rune-command-runner.exe"
         },
         "windows-aarch64": {
-          "regex": "^codex-command-runner-aarch64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-command-runner.exe"
+          "regex": "^rune-command-runner-aarch64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "rune-command-runner.exe"
         }
       }
     },
-    "codex-windows-sandbox-setup": {
+    "rune-windows-sandbox-setup": {
       "platforms": {
         "windows-x86_64": {
-          "regex": "^codex-windows-sandbox-setup-x86_64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-windows-sandbox-setup.exe"
+          "regex": "^rune-windows-sandbox-setup-x86_64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "rune-windows-sandbox-setup.exe"
         },
         "windows-aarch64": {
-          "regex": "^codex-windows-sandbox-setup-aarch64-pc-windows-msvc\\.exe\\.zst$",
-          "path": "codex-windows-sandbox-setup.exe"
+          "regex": "^rune-windows-sandbox-setup-aarch64-pc-windows-msvc\\.exe\\.zst$",
+          "path": "rune-windows-sandbox-setup.exe"
         }
       }
     }

@@ -11,59 +11,59 @@ use tokio::process::ChildStdin;
 use tokio::process::ChildStdout;
 
 use anyhow::Context;
-use codex_app_server_protocol::AddConversationListenerParams;
-use codex_app_server_protocol::AppsListParams;
-use codex_app_server_protocol::ArchiveConversationParams;
-use codex_app_server_protocol::CancelLoginAccountParams;
-use codex_app_server_protocol::CancelLoginChatGptParams;
-use codex_app_server_protocol::ClientInfo;
-use codex_app_server_protocol::ClientNotification;
-use codex_app_server_protocol::CollaborationModeListParams;
-use codex_app_server_protocol::ConfigBatchWriteParams;
-use codex_app_server_protocol::ConfigReadParams;
-use codex_app_server_protocol::ConfigValueWriteParams;
-use codex_app_server_protocol::ExperimentalFeatureListParams;
-use codex_app_server_protocol::FeedbackUploadParams;
-use codex_app_server_protocol::ForkConversationParams;
-use codex_app_server_protocol::GetAccountParams;
-use codex_app_server_protocol::GetAuthStatusParams;
-use codex_app_server_protocol::InitializeCapabilities;
-use codex_app_server_protocol::InitializeParams;
-use codex_app_server_protocol::InterruptConversationParams;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCErrorError;
-use codex_app_server_protocol::JSONRPCMessage;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCRequest;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::ListConversationsParams;
-use codex_app_server_protocol::LoginAccountParams;
-use codex_app_server_protocol::LoginApiKeyParams;
-use codex_app_server_protocol::MockExperimentalMethodParams;
-use codex_app_server_protocol::ModelListParams;
-use codex_app_server_protocol::NewConversationParams;
-use codex_app_server_protocol::RemoveConversationListenerParams;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ResumeConversationParams;
-use codex_app_server_protocol::ReviewStartParams;
-use codex_app_server_protocol::SendUserMessageParams;
-use codex_app_server_protocol::SendUserTurnParams;
-use codex_app_server_protocol::ServerRequest;
-use codex_app_server_protocol::SetDefaultModelParams;
-use codex_app_server_protocol::ThreadArchiveParams;
-use codex_app_server_protocol::ThreadCompactStartParams;
-use codex_app_server_protocol::ThreadForkParams;
-use codex_app_server_protocol::ThreadListParams;
-use codex_app_server_protocol::ThreadLoadedListParams;
-use codex_app_server_protocol::ThreadReadParams;
-use codex_app_server_protocol::ThreadResumeParams;
-use codex_app_server_protocol::ThreadRollbackParams;
-use codex_app_server_protocol::ThreadStartParams;
-use codex_app_server_protocol::ThreadUnarchiveParams;
-use codex_app_server_protocol::TurnInterruptParams;
-use codex_app_server_protocol::TurnStartParams;
-use codex_app_server_protocol::TurnSteerParams;
-use codex_core::default_client::CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR;
+use rune_app_server_protocol::AddConversationListenerParams;
+use rune_app_server_protocol::AppsListParams;
+use rune_app_server_protocol::ArchiveConversationParams;
+use rune_app_server_protocol::CancelLoginAccountParams;
+use rune_app_server_protocol::CancelLoginChatGptParams;
+use rune_app_server_protocol::ClientInfo;
+use rune_app_server_protocol::ClientNotification;
+use rune_app_server_protocol::CollaborationModeListParams;
+use rune_app_server_protocol::ConfigBatchWriteParams;
+use rune_app_server_protocol::ConfigReadParams;
+use rune_app_server_protocol::ConfigValueWriteParams;
+use rune_app_server_protocol::ExperimentalFeatureListParams;
+use rune_app_server_protocol::FeedbackUploadParams;
+use rune_app_server_protocol::ForkConversationParams;
+use rune_app_server_protocol::GetAccountParams;
+use rune_app_server_protocol::GetAuthStatusParams;
+use rune_app_server_protocol::InitializeCapabilities;
+use rune_app_server_protocol::InitializeParams;
+use rune_app_server_protocol::InterruptConversationParams;
+use rune_app_server_protocol::JSONRPCError;
+use rune_app_server_protocol::JSONRPCErrorError;
+use rune_app_server_protocol::JSONRPCMessage;
+use rune_app_server_protocol::JSONRPCNotification;
+use rune_app_server_protocol::JSONRPCRequest;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::ListConversationsParams;
+use rune_app_server_protocol::LoginAccountParams;
+use rune_app_server_protocol::LoginApiKeyParams;
+use rune_app_server_protocol::MockExperimentalMethodParams;
+use rune_app_server_protocol::ModelListParams;
+use rune_app_server_protocol::NewConversationParams;
+use rune_app_server_protocol::RemoveConversationListenerParams;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::ResumeConversationParams;
+use rune_app_server_protocol::ReviewStartParams;
+use rune_app_server_protocol::SendUserMessageParams;
+use rune_app_server_protocol::SendUserTurnParams;
+use rune_app_server_protocol::ServerRequest;
+use rune_app_server_protocol::SetDefaultModelParams;
+use rune_app_server_protocol::ThreadArchiveParams;
+use rune_app_server_protocol::ThreadCompactStartParams;
+use rune_app_server_protocol::ThreadForkParams;
+use rune_app_server_protocol::ThreadListParams;
+use rune_app_server_protocol::ThreadLoadedListParams;
+use rune_app_server_protocol::ThreadReadParams;
+use rune_app_server_protocol::ThreadResumeParams;
+use rune_app_server_protocol::ThreadRollbackParams;
+use rune_app_server_protocol::ThreadStartParams;
+use rune_app_server_protocol::ThreadUnarchiveParams;
+use rune_app_server_protocol::TurnInterruptParams;
+use rune_app_server_protocol::TurnStartParams;
+use rune_app_server_protocol::TurnSteerParams;
+use rune_core::default_client::RUNE_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR;
 use tokio::process::Command;
 
 pub struct McpProcess {
@@ -81,8 +81,8 @@ pub struct McpProcess {
 pub const DEFAULT_CLIENT_NAME: &str = "rune-app-server-tests";
 
 impl McpProcess {
-    pub async fn new(codex_home: &Path) -> anyhow::Result<Self> {
-        Self::new_with_env(codex_home, &[]).await
+    pub async fn new(rune_home: &Path) -> anyhow::Result<Self> {
+        Self::new_with_env(rune_home, &[]).await
     }
 
     /// Creates a new MCP process, allowing tests to override or remove
@@ -91,19 +91,19 @@ impl McpProcess {
     /// Pass a tuple of (key, Some(value)) to set/override, or (key, None) to
     /// remove a variable from the child's environment.
     pub async fn new_with_env(
-        codex_home: &Path,
+        rune_home: &Path,
         env_overrides: &[(&str, Option<&str>)],
     ) -> anyhow::Result<Self> {
-        let program = codex_utils_cargo_bin::cargo_bin("rune-app-server")
+        let program = rune_utils_cargo_bin::cargo_bin("rune-app-server")
             .context("should find binary for rune-app-server")?;
         let mut cmd = Command::new(program);
 
         cmd.stdin(Stdio::piped());
         cmd.stdout(Stdio::piped());
         cmd.stderr(Stdio::piped());
-        cmd.env("CODEX_HOME", codex_home);
+        cmd.env("RUNE_HOME", rune_home);
         cmd.env("RUST_LOG", "debug");
-        cmd.env_remove(CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR);
+        cmd.env_remove(RUNE_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR);
 
         for (k, v) in env_overrides {
             match v {

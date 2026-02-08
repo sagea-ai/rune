@@ -1,10 +1,10 @@
 //! Session-wide mutable state.
 
-use codex_protocol::models::ResponseItem;
+use rune_protocol::models::ResponseItem;
 use std::collections::HashMap;
 use std::collections::HashSet;
 
-use crate::codex::SessionConfiguration;
+use crate::rune::SessionConfiguration;
 use crate::context_manager::ContextManager;
 use crate::protocol::RateLimitSnapshot;
 use crate::protocol::TokenUsage;

@@ -1,10 +1,10 @@
 use std::path::Path;
 
-use codex_core::config::Config;
-use codex_core::protocol::Event;
-use codex_core::protocol::SessionConfiguredEvent;
+use rune_core::config::Config;
+use rune_core::protocol::Event;
+use rune_core::protocol::SessionConfiguredEvent;
 
-pub(crate) enum CodexStatus {
+pub(crate) enum RuneStatus {
     Running,
     InitiateShutdown,
     Shutdown,
@@ -20,7 +20,7 @@ pub(crate) trait EventProcessor {
     );
 
     /// Handle a single event emitted by the agent.
-    fn process_event(&mut self, event: Event) -> CodexStatus;
+    fn process_event(&mut self, event: Event) -> RuneStatus;
 
     fn print_final_output(&mut self) {}
 }

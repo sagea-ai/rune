@@ -3,29 +3,29 @@ use clap::CommandFactory;
 use clap::Parser;
 use clap_complete::Shell;
 use clap_complete::generate;
-use codex_arg0::arg0_dispatch_or_else;
-use codex_chatgpt::apply_command::ApplyCommand;
-use codex_chatgpt::apply_command::run_apply_command;
-use codex_cli::LandlockCommand;
-use codex_cli::SeatbeltCommand;
-use codex_cli::WindowsCommand;
-use codex_cli::login::read_api_key_from_stdin;
-use codex_cli::login::run_login_status;
-use codex_cli::login::run_login_with_api_key;
-use codex_cli::login::run_login_with_chatgpt;
-use codex_cli::login::run_login_with_device_code;
-use codex_cli::login::run_logout;
-use codex_cloud_tasks::Cli as CloudTasksCli;
-use codex_common::CliConfigOverrides;
-use codex_exec::Cli as ExecCli;
-use codex_exec::Command as ExecCommand;
-use codex_exec::ReviewArgs;
-use codex_execpolicy::ExecPolicyCheckCommand;
-use codex_responses_api_proxy::Args as ResponsesApiProxyArgs;
-use codex_tui::AppExitInfo;
-use codex_tui::Cli as TuiCli;
-use codex_tui::ExitReason;
-use codex_tui::update_action::UpdateAction;
+use rune_arg0::arg0_dispatch_or_else;
+use rune_chatgpt::apply_command::ApplyCommand;
+use rune_chatgpt::apply_command::run_apply_command;
+use rune_cli::LandlockCommand;
+use rune_cli::SeatbeltCommand;
+use rune_cli::WindowsCommand;
+use rune_cli::login::read_api_key_from_stdin;
+use rune_cli::login::run_login_status;
+use rune_cli::login::run_login_with_api_key;
+use rune_cli::login::run_login_with_chatgpt;
+use rune_cli::login::run_login_with_device_code;
+use rune_cli::login::run_logout;
+use rune_cloud_tasks::Cli as CloudTasksCli;
+use rune_common::CliConfigOverrides;
+use rune_exec::Cli as ExecCli;
+use rune_exec::Command as ExecCommand;
+use rune_exec::ReviewArgs;
+use rune_execpolicy::ExecPolicyCheckCommand;
+use rune_responses_api_proxy::Args as ResponsesApiProxyArgs;
+use rune_tui::AppExitInfo;
+use rune_tui::Cli as TuiCli;
+use rune_tui::ExitReason;
+use rune_tui::update_action::UpdateAction;
 use owo_colors::OwoColorize;
 use std::io::IsTerminal;
 use std::path::PathBuf;
@@ -41,15 +41,15 @@ mod wsl_paths;
 
 use crate::mcp_cmd::McpCli;
 
-use codex_core::config::Config;
-use codex_core::config::ConfigOverrides;
-use codex_core::config::edit::ConfigEditsBuilder;
-use codex_core::config::find_codex_home;
-use codex_core::features::Stage;
-use codex_core::features::is_known_feature_key;
-use codex_core::terminal::TerminalName;
+use rune_core::config::Config;
+use rune_core::config::ConfigOverrides;
+use rune_core::config::edit::ConfigEditsBuilder;
+use rune_core::config::find_rune_home;
+use rune_core::features::Stage;
+use rune_core::features::is_known_feature_key;
+use rune_core::terminal::TerminalName;
 
-/// Codex CLI
+/// Rune CLI
 ///
 /// If no subcommand is specified, options will be forwarded to the interactive CLI.
 #[derive(Debug, Parser)]
@@ -60,9 +60,9 @@ use codex_core::terminal::TerminalName;
     subcommand_negates_reqs = true,
     // The executable is sometimes invoked via a platform‑specific name like
     // `rune-x86_64-unknown-linux-musl`, but the help output should always use
-    // the generic `codex` command name that users run.
-    bin_name = "codex",
-    override_usage = "codex [OPTIONS] [PROMPT]\n       codex [OPTIONS] <COMMAND> [ARGS]"
+    // the generic `rune` command name that users run.
+    bin_name = "rune",
+    override_usage = "rune [OPTIONS] [PROMPT]\n       rune [OPTIONS] <COMMAND> [ARGS]"
 )]
 struct MultitoolCli {
     #[clap(flatten)]
@@ -80,7 +80,7 @@ struct MultitoolCli {
 
 #[derive(Debug, clap::Subcommand)]
 enum Subcommand {
-    /// Run Codex non-interactively.
+    /// Run Rune non-interactively.
     #[clap(visible_alias = "e")]
     Exec(ExecCli),
 
@@ -93,23 +93,23 @@ enum Subcommand {
     /// Remove stored authentication credentials.
     Logout(LogoutCommand),
 
-    /// [experimental] Run Codex as an MCP server and manage MCP servers.
+    /// [experimental] Run Rune as an MCP server and manage MCP servers.
     Mcp(McpCli),
 
-    /// [experimental] Run the Codex MCP server (stdio transport).
+    /// [experimental] Run the Rune MCP server (stdio transport).
     McpServer,
 
     /// [experimental] Run the app server or related tooling.
     AppServer(AppServerCommand),
 
-    /// Launch the Codex desktop app (downloads the macOS installer if missing).
+    /// Launch the Rune desktop app (downloads the macOS installer if missing).
     #[cfg(target_os = "macos")]
     App(app_cmd::AppCommand),
 
     /// Generate shell completion scripts.
     Completion(CompletionCommand),
 
-    /// Run commands within a Codex-provided sandbox.
+    /// Run commands within a Rune-provided sandbox.
     Sandbox(SandboxArgs),
 
     /// Debugging tools.
@@ -119,7 +119,7 @@ enum Subcommand {
     #[clap(hide = true)]
     Execpolicy(ExecpolicyCommand),
 
-    /// Apply the latest diff produced by Codex agent as a `git apply` to your local working tree.
+    /// Apply the latest diff produced by Rune agent as a `git apply` to your local working tree.
     #[clap(visible_alias = "a")]
     Apply(ApplyCommand),
 
@@ -129,7 +129,7 @@ enum Subcommand {
     /// Fork a previous interactive session (picker by default; use --last to fork the most recent).
     Fork(ForkCommand),
 
-    /// [EXPERIMENTAL] Browse tasks from Codex Cloud and apply changes locally.
+    /// [EXPERIMENTAL] Browse tasks from Rune Cloud and apply changes locally.
     #[clap(name = "cloud", alias = "cloud-tasks")]
     Cloud(CloudTasksCli),
 
@@ -260,7 +260,7 @@ struct LoginCommand {
 
     #[arg(
         long = "with-api-key",
-        help = "Read the API key from stdin (e.g. `printenv OPENAI_API_KEY | codex login --with-api-key`)"
+        help = "Read the API key from stdin (e.g. `printenv OPENAI_API_KEY | rune login --with-api-key`)"
     )]
     with_api_key: bool,
 
@@ -311,9 +311,9 @@ struct AppServerCommand {
     #[arg(
         long = "listen",
         value_name = "URL",
-        default_value = codex_app_server::AppServerTransport::DEFAULT_LISTEN_URL
+        default_value = rune_app_server::AppServerTransport::DEFAULT_LISTEN_URL
     )]
-    listen: codex_app_server::AppServerTransport,
+    listen: rune_app_server::AppServerTransport,
 
     /// Controls whether analytics are enabled by default.
     ///
@@ -329,7 +329,7 @@ struct AppServerCommand {
     /// enabled = false
     /// ```
     ///
-    /// See https://developers.openai.com/codex/config-advanced/#metrics for more details.
+    /// See https://developers.openai.com/rune/config-advanced/#metrics for more details.
     #[arg(long = "analytics-default-enabled")]
     analytics_default_enabled: bool,
 }
@@ -390,11 +390,11 @@ fn format_exit_messages(exit_info: AppExitInfo, color_enabled: bool) -> Vec<Stri
 
     let mut lines = vec![format!(
         "{}",
-        codex_core::protocol::FinalOutput::from(token_usage)
+        rune_core::protocol::FinalOutput::from(token_usage)
     )];
 
     if let Some(resume_cmd) =
-        codex_core::util::resume_command(thread_name.as_deref(), conversation_id)
+        rune_core::util::resume_command(thread_name.as_deref(), conversation_id)
     {
         let command = if color_enabled {
             resume_cmd.cyan().to_string()
@@ -432,7 +432,7 @@ fn handle_app_exit(exit_info: AppExitInfo) -> anyhow::Result<()> {
 fn run_update_action(action: UpdateAction) -> anyhow::Result<()> {
     println!();
     let cmd_str = action.command_str();
-    println!("Updating Codex via `{cmd_str}`...");
+    println!("Updating Rune via `{cmd_str}`...");
 
     let status = {
         #[cfg(windows)]
@@ -458,7 +458,7 @@ fn run_update_action(action: UpdateAction) -> anyhow::Result<()> {
     if !status.success() {
         anyhow::bail!("`{cmd_str}` failed with status {status}");
     }
-    println!("\n🎉 Update ran successfully! Please restart Codex.");
+    println!("\n🎉 Update ran successfully! Please restart Rune.");
     Ok(())
 }
 
@@ -469,8 +469,8 @@ fn run_execpolicycheck(cmd: ExecPolicyCheckCommand) -> anyhow::Result<()> {
 fn run_debug_app_server_command(cmd: DebugAppServerCommand) -> anyhow::Result<()> {
     match cmd.subcommand {
         DebugAppServerSubcommand::SendMessageV2(cmd) => {
-            let codex_bin = std::env::current_exe()?;
-            codex_app_server_test_client::send_message_v2(&codex_bin, &[], cmd.user_message, &None)
+            let rune_bin = std::env::current_exe()?;
+            rune_app_server_test_client::send_message_v2(&rune_bin, &[], cmd.user_message, &None)
         }
     }
 }
@@ -531,8 +531,8 @@ struct FeatureSetArgs {
     feature: String,
 }
 
-fn stage_str(stage: codex_core::features::Stage) -> &'static str {
-    use codex_core::features::Stage;
+fn stage_str(stage: rune_core::features::Stage) -> &'static str {
+    use rune_core::features::Stage;
     match stage {
         Stage::UnderDevelopment => "under development",
         Stage::Experimental { .. } => "experimental",
@@ -543,13 +543,13 @@ fn stage_str(stage: codex_core::features::Stage) -> &'static str {
 }
 
 fn main() -> anyhow::Result<()> {
-    arg0_dispatch_or_else(|codex_linux_sandbox_exe| async move {
-        cli_main(codex_linux_sandbox_exe).await?;
+    arg0_dispatch_or_else(|rune_linux_sandbox_exe| async move {
+        cli_main(rune_linux_sandbox_exe).await?;
         Ok(())
     })
 }
 
-async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()> {
+async fn cli_main(rune_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()> {
     let MultitoolCli {
         config_overrides: mut root_config_overrides,
         feature_toggles,
@@ -567,7 +567,7 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
                 &mut interactive.config_overrides,
                 root_config_overrides.clone(),
             );
-            let exit_info = run_interactive_tui(interactive, codex_linux_sandbox_exe).await?;
+            let exit_info = run_interactive_tui(interactive, rune_linux_sandbox_exe).await?;
             handle_app_exit(exit_info)?;
         }
         Some(Subcommand::Exec(mut exec_cli)) => {
@@ -575,19 +575,19 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
                 &mut exec_cli.config_overrides,
                 root_config_overrides.clone(),
             );
-            codex_exec::run_main(exec_cli, codex_linux_sandbox_exe).await?;
+            rune_exec::run_main(exec_cli, rune_linux_sandbox_exe).await?;
         }
         Some(Subcommand::Review(review_args)) => {
-            let mut exec_cli = ExecCli::try_parse_from(["codex", "exec"])?;
+            let mut exec_cli = ExecCli::try_parse_from(["rune", "exec"])?;
             exec_cli.command = Some(ExecCommand::Review(review_args));
             prepend_config_flags(
                 &mut exec_cli.config_overrides,
                 root_config_overrides.clone(),
             );
-            codex_exec::run_main(exec_cli, codex_linux_sandbox_exe).await?;
+            rune_exec::run_main(exec_cli, rune_linux_sandbox_exe).await?;
         }
         Some(Subcommand::McpServer) => {
-            codex_mcp_server::run_main(codex_linux_sandbox_exe, root_config_overrides).await?;
+            rune_mcp_server::run_main(rune_linux_sandbox_exe, root_config_overrides).await?;
         }
         Some(Subcommand::Mcp(mut mcp_cli)) => {
             // Propagate any root-level config overrides (e.g. `-c key=value`).
@@ -597,28 +597,28 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
         Some(Subcommand::AppServer(app_server_cli)) => match app_server_cli.subcommand {
             None => {
                 let transport = app_server_cli.listen;
-                codex_app_server::run_main_with_transport(
-                    codex_linux_sandbox_exe,
+                rune_app_server::run_main_with_transport(
+                    rune_linux_sandbox_exe,
                     root_config_overrides,
-                    codex_core::config_loader::LoaderOverrides::default(),
+                    rune_core::config_loader::LoaderOverrides::default(),
                     app_server_cli.analytics_default_enabled,
                     transport,
                 )
                 .await?;
             }
             Some(AppServerSubcommand::GenerateTs(gen_cli)) => {
-                let options = codex_app_server_protocol::GenerateTsOptions {
+                let options = rune_app_server_protocol::GenerateTsOptions {
                     experimental_api: gen_cli.experimental,
                     ..Default::default()
                 };
-                codex_app_server_protocol::generate_ts_with_options(
+                rune_app_server_protocol::generate_ts_with_options(
                     &gen_cli.out_dir,
                     gen_cli.prettier.as_deref(),
                     options,
                 )?;
             }
             Some(AppServerSubcommand::GenerateJsonSchema(gen_cli)) => {
-                codex_app_server_protocol::generate_json_with_experimental(
+                rune_app_server_protocol::generate_json_with_experimental(
                     &gen_cli.out_dir,
                     gen_cli.experimental,
                 )?;
@@ -642,7 +642,7 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
                 all,
                 config_overrides,
             );
-            let exit_info = run_interactive_tui(interactive, codex_linux_sandbox_exe).await?;
+            let exit_info = run_interactive_tui(interactive, rune_linux_sandbox_exe).await?;
             handle_app_exit(exit_info)?;
         }
         Some(Subcommand::Fork(ForkCommand {
@@ -659,7 +659,7 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
                 all,
                 config_overrides,
             );
-            let exit_info = run_interactive_tui(interactive, codex_linux_sandbox_exe).await?;
+            let exit_info = run_interactive_tui(interactive, rune_linux_sandbox_exe).await?;
             handle_app_exit(exit_info)?;
         }
         Some(Subcommand::Login(mut login_cli)) => {
@@ -681,7 +681,7 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
                         .await;
                     } else if login_cli.api_key.is_some() {
                         eprintln!(
-                            "The --api-key flag is no longer supported. Pipe the key instead, e.g. `printenv OPENAI_API_KEY | codex login --with-api-key`."
+                            "The --api-key flag is no longer supported. Pipe the key instead, e.g. `printenv OPENAI_API_KEY | rune login --with-api-key`."
                         );
                         std::process::exit(1);
                     } else if login_cli.with_api_key {
@@ -708,7 +708,7 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
                 &mut cloud_cli.config_overrides,
                 root_config_overrides.clone(),
             );
-            codex_cloud_tasks::run_main(cloud_cli, codex_linux_sandbox_exe).await?;
+            rune_cloud_tasks::run_main(cloud_cli, rune_linux_sandbox_exe).await?;
         }
         Some(Subcommand::Sandbox(sandbox_args)) => match sandbox_args.cmd {
             SandboxCommand::Macos(mut seatbelt_cli) => {
@@ -716,9 +716,9 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
                     &mut seatbelt_cli.config_overrides,
                     root_config_overrides.clone(),
                 );
-                codex_cli::debug_sandbox::run_command_under_seatbelt(
+                rune_cli::debug_sandbox::run_command_under_seatbelt(
                     seatbelt_cli,
-                    codex_linux_sandbox_exe,
+                    rune_linux_sandbox_exe,
                 )
                 .await?;
             }
@@ -727,9 +727,9 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
                     &mut landlock_cli.config_overrides,
                     root_config_overrides.clone(),
                 );
-                codex_cli::debug_sandbox::run_command_under_landlock(
+                rune_cli::debug_sandbox::run_command_under_landlock(
                     landlock_cli,
-                    codex_linux_sandbox_exe,
+                    rune_linux_sandbox_exe,
                 )
                 .await?;
             }
@@ -738,9 +738,9 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
                     &mut windows_cli.config_overrides,
                     root_config_overrides.clone(),
                 );
-                codex_cli::debug_sandbox::run_command_under_windows(
+                rune_cli::debug_sandbox::run_command_under_windows(
                     windows_cli,
-                    codex_linux_sandbox_exe,
+                    rune_linux_sandbox_exe,
                 )
                 .await?;
             }
@@ -761,12 +761,12 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
             run_apply_command(apply_cli, None).await?;
         }
         Some(Subcommand::ResponsesApiProxy(args)) => {
-            tokio::task::spawn_blocking(move || codex_responses_api_proxy::run_main(args))
+            tokio::task::spawn_blocking(move || rune_responses_api_proxy::run_main(args))
                 .await??;
         }
         Some(Subcommand::StdioToUds(cmd)) => {
             let socket_path = cmd.socket_path;
-            tokio::task::spawn_blocking(move || codex_stdio_to_uds::run(socket_path.as_path()))
+            tokio::task::spawn_blocking(move || rune_stdio_to_uds::run(socket_path.as_path()))
                 .await??;
         }
         Some(Subcommand::Features(FeaturesCli { sub })) => match sub {
@@ -795,10 +795,10 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
                     overrides,
                 )
                 .await?;
-                let mut rows = Vec::with_capacity(codex_core::features::FEATURES.len());
+                let mut rows = Vec::with_capacity(rune_core::features::FEATURES.len());
                 let mut name_width = 0;
                 let mut stage_width = 0;
-                for def in codex_core::features::FEATURES.iter() {
+                for def in rune_core::features::FEATURES.iter() {
                     let name = def.key;
                     let stage = stage_str(def.stage);
                     let enabled = config.features.enabled(def.id);
@@ -825,21 +825,21 @@ async fn cli_main(codex_linux_sandbox_exe: Option<PathBuf>) -> anyhow::Result<()
 
 async fn enable_feature_in_config(interactive: &TuiCli, feature: &str) -> anyhow::Result<()> {
     FeatureToggles::validate_feature(feature)?;
-    let codex_home = find_codex_home()?;
-    ConfigEditsBuilder::new(&codex_home)
+    let rune_home = find_rune_home()?;
+    ConfigEditsBuilder::new(&rune_home)
         .with_profile(interactive.config_profile.as_deref())
         .set_feature_enabled(feature, true)
         .apply()
         .await?;
     println!("Enabled feature `{feature}` in config.toml.");
-    maybe_print_under_development_feature_warning(&codex_home, interactive, feature);
+    maybe_print_under_development_feature_warning(&rune_home, interactive, feature);
     Ok(())
 }
 
 async fn disable_feature_in_config(interactive: &TuiCli, feature: &str) -> anyhow::Result<()> {
     FeatureToggles::validate_feature(feature)?;
-    let codex_home = find_codex_home()?;
-    ConfigEditsBuilder::new(&codex_home)
+    let rune_home = find_rune_home()?;
+    ConfigEditsBuilder::new(&rune_home)
         .with_profile(interactive.config_profile.as_deref())
         .set_feature_enabled(feature, false)
         .apply()
@@ -849,7 +849,7 @@ async fn disable_feature_in_config(interactive: &TuiCli, feature: &str) -> anyho
 }
 
 fn maybe_print_under_development_feature_warning(
-    codex_home: &std::path::Path,
+    rune_home: &std::path::Path,
     interactive: &TuiCli,
     feature: &str,
 ) {
@@ -857,7 +857,7 @@ fn maybe_print_under_development_feature_warning(
         return;
     }
 
-    let Some(spec) = codex_core::features::FEATURES
+    let Some(spec) = rune_core::features::FEATURES
         .iter()
         .find(|spec| spec.key == feature)
     else {
@@ -867,7 +867,7 @@ fn maybe_print_under_development_feature_warning(
         return;
     }
 
-    let config_path = codex_home.join(codex_core::config::CONFIG_TOML_FILE);
+    let config_path = rune_home.join(rune_core::config::CONFIG_TOML_FILE);
     eprintln!(
         "Under-development features enabled: {feature}. Under-development features are incomplete and may behave unpredictably. To suppress this warning, set `suppress_unstable_features_warning = true` in {}.",
         config_path.display()
@@ -887,14 +887,14 @@ fn prepend_config_flags(
 
 async fn run_interactive_tui(
     mut interactive: TuiCli,
-    codex_linux_sandbox_exe: Option<PathBuf>,
+    rune_linux_sandbox_exe: Option<PathBuf>,
 ) -> std::io::Result<AppExitInfo> {
     if let Some(prompt) = interactive.prompt.take() {
         // Normalize CRLF/CR to LF so CLI-provided text can't leak `\r` into TUI state.
         interactive.prompt = Some(prompt.replace("\r\n", "\n").replace('\r', "\n"));
     }
 
-    let terminal_info = codex_core::terminal::terminal_info();
+    let terminal_info = rune_core::terminal::terminal_info();
     if terminal_info.name == TerminalName::Dumb {
         if !(std::io::stdin().is_terminal() && std::io::stderr().is_terminal()) {
             return Ok(AppExitInfo::fatal(
@@ -903,7 +903,7 @@ async fn run_interactive_tui(
         }
 
         eprintln!(
-            "WARNING: TERM is set to \"dumb\". Codex's interactive TUI may not work in this terminal."
+            "WARNING: TERM is set to \"dumb\". Rune's interactive TUI may not work in this terminal."
         );
         if !confirm("Continue anyway? [y/N]: ")? {
             return Ok(AppExitInfo::fatal(
@@ -912,7 +912,7 @@ async fn run_interactive_tui(
         }
     }
 
-    codex_tui::run_main(interactive, codex_linux_sandbox_exe).await
+    rune_tui::run_main(interactive, rune_linux_sandbox_exe).await
 }
 
 fn confirm(prompt: &str) -> std::io::Result<bool> {
@@ -924,7 +924,7 @@ fn confirm(prompt: &str) -> std::io::Result<bool> {
     Ok(answer.eq_ignore_ascii_case("y") || answer.eq_ignore_ascii_case("yes"))
 }
 
-/// Build the final `TuiCli` for a `codex resume` invocation.
+/// Build the final `TuiCli` for a `rune resume` invocation.
 fn finalize_resume_interactive(
     mut interactive: TuiCli,
     root_config_overrides: CliConfigOverrides,
@@ -934,7 +934,7 @@ fn finalize_resume_interactive(
     resume_cli: TuiCli,
 ) -> TuiCli {
     // Start with the parsed interactive CLI so resume shares the same
-    // configuration surface area as `codex` without additional flags.
+    // configuration surface area as `rune` without additional flags.
     let resume_session_id = session_id;
     interactive.resume_picker = resume_session_id.is_none() && !last;
     interactive.resume_last = last;
@@ -950,7 +950,7 @@ fn finalize_resume_interactive(
     interactive
 }
 
-/// Build the final `TuiCli` for a `codex fork` invocation.
+/// Build the final `TuiCli` for a `rune fork` invocation.
 fn finalize_fork_interactive(
     mut interactive: TuiCli,
     root_config_overrides: CliConfigOverrides,
@@ -960,7 +960,7 @@ fn finalize_fork_interactive(
     fork_cli: TuiCli,
 ) -> TuiCli {
     // Start with the parsed interactive CLI so fork shares the same
-    // configuration surface area as `codex` without additional flags.
+    // configuration surface area as `rune` without additional flags.
     let fork_session_id = session_id;
     interactive.fork_picker = fork_session_id.is_none() && !last;
     interactive.fork_last = last;
@@ -976,7 +976,7 @@ fn finalize_fork_interactive(
     interactive
 }
 
-/// Merge flags provided to `codex resume`/`codex fork` so they take precedence over any
+/// Merge flags provided to `rune resume`/`rune fork` so they take precedence over any
 /// root-level flags. Only overrides fields explicitly set on the subcommand-scoped
 /// CLI. Also appends `-c key=value` overrides with highest precedence.
 fn merge_interactive_cli_flags(interactive: &mut TuiCli, subcommand_cli: TuiCli) {
@@ -1026,7 +1026,7 @@ fn merge_interactive_cli_flags(interactive: &mut TuiCli, subcommand_cli: TuiCli)
 
 fn print_completion(cmd: CompletionCommand) {
     let mut app = MultitoolCli::command();
-    let name = "codex";
+    let name = "rune";
     generate(cmd.shell, &mut app, name, &mut std::io::stdout());
 }
 
@@ -1034,8 +1034,8 @@ fn print_completion(cmd: CompletionCommand) {
 mod tests {
     use super::*;
     use assert_matches::assert_matches;
-    use codex_core::protocol::TokenUsage;
-    use codex_protocol::ThreadId;
+    use rune_core::protocol::TokenUsage;
+    use rune_protocol::ThreadId;
     use pretty_assertions::assert_eq;
 
     fn finalize_resume_from_args(args: &[&str]) -> TuiCli {
@@ -1092,13 +1092,13 @@ mod tests {
     #[test]
     fn exec_resume_last_accepts_prompt_positional() {
         let cli =
-            MultitoolCli::try_parse_from(["codex", "exec", "--json", "resume", "--last", "2+2"])
+            MultitoolCli::try_parse_from(["rune", "exec", "--json", "resume", "--last", "2+2"])
                 .expect("parse should succeed");
 
         let Some(Subcommand::Exec(exec)) = cli.subcommand else {
             panic!("expected exec subcommand");
         };
-        let Some(codex_exec::Command::Resume(args)) = exec.command else {
+        let Some(rune_exec::Command::Resume(args)) = exec.command else {
             panic!("expected exec resume");
         };
 
@@ -1153,7 +1153,7 @@ mod tests {
             lines,
             vec![
                 "Token usage: total=2 input=0 output=2".to_string(),
-                "To continue this session, run codex resume 123e4567-e89b-12d3-a456-426614174000"
+                "To continue this session, run rune resume 123e4567-e89b-12d3-a456-426614174000"
                     .to_string(),
             ]
         );
@@ -1178,7 +1178,7 @@ mod tests {
             lines,
             vec![
                 "Token usage: total=2 input=0 output=2".to_string(),
-                "To continue this session, run codex resume my-thread".to_string(),
+                "To continue this session, run rune resume my-thread".to_string(),
             ]
         );
     }
@@ -1186,7 +1186,7 @@ mod tests {
     #[test]
     fn resume_model_flag_applies_when_no_root_flags() {
         let interactive =
-            finalize_resume_from_args(["codex", "resume", "-m", "gpt-5.1-test"].as_ref());
+            finalize_resume_from_args(["rune", "resume", "-m", "gpt-5.1-test"].as_ref());
 
         assert_eq!(interactive.model.as_deref(), Some("gpt-5.1-test"));
         assert!(interactive.resume_picker);
@@ -1196,7 +1196,7 @@ mod tests {
 
     #[test]
     fn resume_picker_logic_none_and_not_last() {
-        let interactive = finalize_resume_from_args(["codex", "resume"].as_ref());
+        let interactive = finalize_resume_from_args(["rune", "resume"].as_ref());
         assert!(interactive.resume_picker);
         assert!(!interactive.resume_last);
         assert_eq!(interactive.resume_session_id, None);
@@ -1205,7 +1205,7 @@ mod tests {
 
     #[test]
     fn resume_picker_logic_last() {
-        let interactive = finalize_resume_from_args(["codex", "resume", "--last"].as_ref());
+        let interactive = finalize_resume_from_args(["rune", "resume", "--last"].as_ref());
         assert!(!interactive.resume_picker);
         assert!(interactive.resume_last);
         assert_eq!(interactive.resume_session_id, None);
@@ -1214,7 +1214,7 @@ mod tests {
 
     #[test]
     fn resume_picker_logic_with_session_id() {
-        let interactive = finalize_resume_from_args(["codex", "resume", "1234"].as_ref());
+        let interactive = finalize_resume_from_args(["rune", "resume", "1234"].as_ref());
         assert!(!interactive.resume_picker);
         assert!(!interactive.resume_last);
         assert_eq!(interactive.resume_session_id.as_deref(), Some("1234"));
@@ -1223,7 +1223,7 @@ mod tests {
 
     #[test]
     fn resume_all_flag_sets_show_all() {
-        let interactive = finalize_resume_from_args(["codex", "resume", "--all"].as_ref());
+        let interactive = finalize_resume_from_args(["rune", "resume", "--all"].as_ref());
         assert!(interactive.resume_picker);
         assert!(interactive.resume_show_all);
     }
@@ -1232,7 +1232,7 @@ mod tests {
     fn resume_merges_option_flags_and_full_auto() {
         let interactive = finalize_resume_from_args(
             [
-                "codex",
+                "rune",
                 "resume",
                 "sid",
                 "--oss",
@@ -1259,11 +1259,11 @@ mod tests {
         assert_eq!(interactive.config_profile.as_deref(), Some("my-profile"));
         assert_matches!(
             interactive.sandbox_mode,
-            Some(codex_common::SandboxModeCliArg::WorkspaceWrite)
+            Some(rune_common::SandboxModeCliArg::WorkspaceWrite)
         );
         assert_matches!(
             interactive.approval_policy,
-            Some(codex_common::ApprovalModeCliArg::OnRequest)
+            Some(rune_common::ApprovalModeCliArg::OnRequest)
         );
         assert!(interactive.full_auto);
         assert_eq!(
@@ -1289,7 +1289,7 @@ mod tests {
     fn resume_merges_dangerously_bypass_flag() {
         let interactive = finalize_resume_from_args(
             [
-                "codex",
+                "rune",
                 "resume",
                 "--dangerously-bypass-approvals-and-sandbox",
             ]
@@ -1303,7 +1303,7 @@ mod tests {
 
     #[test]
     fn fork_picker_logic_none_and_not_last() {
-        let interactive = finalize_fork_from_args(["codex", "fork"].as_ref());
+        let interactive = finalize_fork_from_args(["rune", "fork"].as_ref());
         assert!(interactive.fork_picker);
         assert!(!interactive.fork_last);
         assert_eq!(interactive.fork_session_id, None);
@@ -1312,7 +1312,7 @@ mod tests {
 
     #[test]
     fn fork_picker_logic_last() {
-        let interactive = finalize_fork_from_args(["codex", "fork", "--last"].as_ref());
+        let interactive = finalize_fork_from_args(["rune", "fork", "--last"].as_ref());
         assert!(!interactive.fork_picker);
         assert!(interactive.fork_last);
         assert_eq!(interactive.fork_session_id, None);
@@ -1321,7 +1321,7 @@ mod tests {
 
     #[test]
     fn fork_picker_logic_with_session_id() {
-        let interactive = finalize_fork_from_args(["codex", "fork", "1234"].as_ref());
+        let interactive = finalize_fork_from_args(["rune", "fork", "1234"].as_ref());
         assert!(!interactive.fork_picker);
         assert!(!interactive.fork_last);
         assert_eq!(interactive.fork_session_id.as_deref(), Some("1234"));
@@ -1330,36 +1330,36 @@ mod tests {
 
     #[test]
     fn fork_all_flag_sets_show_all() {
-        let interactive = finalize_fork_from_args(["codex", "fork", "--all"].as_ref());
+        let interactive = finalize_fork_from_args(["rune", "fork", "--all"].as_ref());
         assert!(interactive.fork_picker);
         assert!(interactive.fork_show_all);
     }
 
     #[test]
     fn app_server_analytics_default_disabled_without_flag() {
-        let app_server = app_server_from_args(["codex", "app-server"].as_ref());
+        let app_server = app_server_from_args(["rune", "app-server"].as_ref());
         assert!(!app_server.analytics_default_enabled);
         assert_eq!(
             app_server.listen,
-            codex_app_server::AppServerTransport::Stdio
+            rune_app_server::AppServerTransport::Stdio
         );
     }
 
     #[test]
     fn app_server_analytics_default_enabled_with_flag() {
         let app_server =
-            app_server_from_args(["codex", "app-server", "--analytics-default-enabled"].as_ref());
+            app_server_from_args(["rune", "app-server", "--analytics-default-enabled"].as_ref());
         assert!(app_server.analytics_default_enabled);
     }
 
     #[test]
     fn app_server_listen_websocket_url_parses() {
         let app_server = app_server_from_args(
-            ["codex", "app-server", "--listen", "ws://127.0.0.1:4500"].as_ref(),
+            ["rune", "app-server", "--listen", "ws://127.0.0.1:4500"].as_ref(),
         );
         assert_eq!(
             app_server.listen,
-            codex_app_server::AppServerTransport::WebSocket {
+            rune_app_server::AppServerTransport::WebSocket {
                 bind_address: "127.0.0.1:4500".parse().expect("valid socket address"),
             }
         );
@@ -1368,23 +1368,23 @@ mod tests {
     #[test]
     fn app_server_listen_stdio_url_parses() {
         let app_server =
-            app_server_from_args(["codex", "app-server", "--listen", "stdio://"].as_ref());
+            app_server_from_args(["rune", "app-server", "--listen", "stdio://"].as_ref());
         assert_eq!(
             app_server.listen,
-            codex_app_server::AppServerTransport::Stdio
+            rune_app_server::AppServerTransport::Stdio
         );
     }
 
     #[test]
     fn app_server_listen_invalid_url_fails_to_parse() {
         let parse_result =
-            MultitoolCli::try_parse_from(["codex", "app-server", "--listen", "http://foo"]);
+            MultitoolCli::try_parse_from(["rune", "app-server", "--listen", "http://foo"]);
         assert!(parse_result.is_err());
     }
 
     #[test]
     fn features_enable_parses_feature_name() {
-        let cli = MultitoolCli::try_parse_from(["codex", "features", "enable", "unified_exec"])
+        let cli = MultitoolCli::try_parse_from(["rune", "features", "enable", "unified_exec"])
             .expect("parse should succeed");
         let Some(Subcommand::Features(FeaturesCli { sub })) = cli.subcommand else {
             panic!("expected features subcommand");
@@ -1397,7 +1397,7 @@ mod tests {
 
     #[test]
     fn features_disable_parses_feature_name() {
-        let cli = MultitoolCli::try_parse_from(["codex", "features", "disable", "shell_tool"])
+        let cli = MultitoolCli::try_parse_from(["rune", "features", "disable", "shell_tool"])
             .expect("parse should succeed");
         let Some(Subcommand::Features(FeaturesCli { sub })) = cli.subcommand else {
             panic!("expected features subcommand");

@@ -6,7 +6,7 @@ use serde::Deserialize;
 use serde::Serialize;
 
 /// 'exec-server escalate' reads this to find the inherited FD for the escalate socket.
-pub(super) const ESCALATE_SOCKET_ENV_VAR: &str = "CODEX_ESCALATE_SOCKET";
+pub(super) const ESCALATE_SOCKET_ENV_VAR: &str = "RUNE_ESCALATE_SOCKET";
 
 /// The patched bash uses this to wrap exec() calls.
 pub(super) const BASH_EXEC_WRAPPER_ENV_VAR: &str = "BASH_EXEC_WRAPPER";

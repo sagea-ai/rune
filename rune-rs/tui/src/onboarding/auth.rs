@@ -1,14 +1,14 @@
 #![allow(clippy::unwrap_used)]
 
-use codex_core::AuthManager;
-use codex_core::auth::AuthCredentialsStoreMode;
-use codex_core::auth::CLIENT_ID;
-use codex_core::auth::login_with_api_key;
-use codex_core::auth::read_openai_api_key_from_env;
-use codex_login::DeviceCode;
-use codex_login::ServerOptions;
-use codex_login::ShutdownHandle;
-use codex_login::run_login_server;
+use rune_core::AuthManager;
+use rune_core::auth::AuthCredentialsStoreMode;
+use rune_core::auth::CLIENT_ID;
+use rune_core::auth::login_with_api_key;
+use rune_core::auth::read_openai_api_key_from_env;
+use rune_login::DeviceCode;
+use rune_login::ServerOptions;
+use rune_login::ShutdownHandle;
+use rune_login::run_login_server;
 use crossterm::event::KeyCode;
 use crossterm::event::KeyEvent;
 use crossterm::event::KeyEventKind;
@@ -30,8 +30,8 @@ use ratatui::widgets::Paragraph;
 use ratatui::widgets::WidgetRef;
 use ratatui::widgets::Wrap;
 
-use codex_core::auth::AuthMode;
-use codex_protocol::config_types::ForcedLoginMethod;
+use rune_core::auth::AuthMode;
+use rune_protocol::config_types::ForcedLoginMethod;
 use std::sync::RwLock;
 
 use crate::LoginStatus;
@@ -163,7 +163,7 @@ pub(crate) struct AuthModeWidget {
     pub highlighted_mode: SignInOption,
     pub error: Option<String>,
     pub sign_in_state: Arc<RwLock<SignInState>>,
-    pub codex_home: PathBuf,
+    pub rune_home: PathBuf,
     pub cli_auth_credentials_store_mode: AuthCredentialsStoreMode,
     pub login_status: LoginStatus,
     pub auth_manager: Arc<AuthManager>,
@@ -259,7 +259,7 @@ impl AuthModeWidget {
         let mut lines: Vec<Line> = vec![
             Line::from(vec![
                 "  ".into(),
-                "Sign in with ChatGPT to use Codex as part of your paid plan".into(),
+                "Sign in with ChatGPT to use Rune as part of your paid plan".into(),
             ]),
             Line::from(vec![
                 "  ".into(),
@@ -400,14 +400,14 @@ impl AuthModeWidget {
             "".into(),
             "  Before you start:".into(),
             "".into(),
-            "  Decide how much autonomy you want to grant Codex".into(),
+            "  Decide how much autonomy you want to grant Rune".into(),
             Line::from(vec![
                 "  For more details see the ".into(),
-                "\u{1b}]8;;https://github.com/openai/codex\u{7}Codex docs\u{1b}]8;;\u{7}".underlined(),
+                "\u{1b}]8;;https://github.com/openai/rune\u{7}Rune docs\u{1b}]8;;\u{7}".underlined(),
             ])
             .dim(),
             "".into(),
-            "  Codex can make mistakes".into(),
+            "  Rune can make mistakes".into(),
             "  Review the code it writes and commands it runs".dim().into(),
             "".into(),
             "  Powered by your ChatGPT account".into(),
@@ -441,7 +441,7 @@ impl AuthModeWidget {
         let lines = vec![
             "✓ API key configured".fg(Color::Green).into(),
             "".into(),
-            "  Codex will use usage-based billing with your API key.".into(),
+            "  Rune will use usage-based billing with your API key.".into(),
         ];
 
         Paragraph::new(lines)
@@ -630,7 +630,7 @@ impl AuthModeWidget {
             return;
         }
         match login_with_api_key(
-            &self.codex_home,
+            &self.rune_home,
             &api_key,
             self.cli_auth_credentials_store_mode,
         ) {
@@ -680,7 +680,7 @@ impl AuthModeWidget {
 
         self.error = None;
         let opts = ServerOptions::new(
-            self.codex_home.clone(),
+            self.rune_home.clone(),
             CLIENT_ID.to_string(),
             self.forced_chatgpt_workspace_id.clone(),
             self.cli_auth_credentials_store_mode,
@@ -733,7 +733,7 @@ impl AuthModeWidget {
 
         self.error = None;
         let opts = ServerOptions::new(
-            self.codex_home.clone(),
+            self.rune_home.clone(),
             CLIENT_ID.to_string(),
             self.forced_chatgpt_workspace_id.clone(),
             self.cli_auth_credentials_store_mode,
@@ -791,21 +791,21 @@ mod tests {
     use pretty_assertions::assert_eq;
     use tempfile::TempDir;
 
-    use codex_core::auth::AuthCredentialsStoreMode;
+    use rune_core::auth::AuthCredentialsStoreMode;
 
     fn widget_forced_chatgpt() -> (AuthModeWidget, TempDir) {
-        let codex_home = TempDir::new().unwrap();
-        let codex_home_path = codex_home.path().to_path_buf();
+        let rune_home = TempDir::new().unwrap();
+        let rune_home_path = rune_home.path().to_path_buf();
         let widget = AuthModeWidget {
             request_frame: FrameRequester::test_dummy(),
             highlighted_mode: SignInOption::ChatGpt,
             error: None,
             sign_in_state: Arc::new(RwLock::new(SignInState::PickMode)),
-            codex_home: codex_home_path.clone(),
+            rune_home: rune_home_path.clone(),
             cli_auth_credentials_store_mode: AuthCredentialsStoreMode::File,
             login_status: LoginStatus::NotAuthenticated,
             auth_manager: AuthManager::shared(
-                codex_home_path,
+                rune_home_path,
                 false,
                 AuthCredentialsStoreMode::File,
             ),
@@ -813,7 +813,7 @@ mod tests {
             forced_login_method: Some(ForcedLoginMethod::Chatgpt),
             animations_enabled: true,
         };
-        (widget, codex_home)
+        (widget, rune_home)
     }
 
     #[test]

@@ -11,8 +11,8 @@ use std::time::Duration;
 
 use anyhow::Result;
 use anyhow::anyhow;
-use codex_protocol::ThreadId;
-use codex_protocol::protocol::SessionSource;
+use rune_protocol::ThreadId;
+use rune_protocol::protocol::SessionSource;
 use tracing::Event;
 use tracing::Level;
 use tracing::field::Visit;
@@ -29,17 +29,17 @@ const FEEDBACK_TAGS_TARGET: &str = "feedback_tags";
 const MAX_FEEDBACK_TAGS: usize = 64;
 
 #[derive(Clone)]
-pub struct CodexFeedback {
+pub struct RuneFeedback {
     inner: Arc<FeedbackInner>,
 }
 
-impl Default for CodexFeedback {
+impl Default for RuneFeedback {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl CodexFeedback {
+impl RuneFeedback {
     pub fn new() -> Self {
         Self::with_capacity(DEFAULT_MAX_BYTES)
     }
@@ -88,7 +88,7 @@ impl CodexFeedback {
         .with_filter(Targets::new().with_target(FEEDBACK_TAGS_TARGET, Level::TRACE))
     }
 
-    pub fn snapshot(&self, session_id: Option<ThreadId>) -> CodexLogSnapshot {
+    pub fn snapshot(&self, session_id: Option<ThreadId>) -> RuneLogSnapshot {
         let bytes = {
             let guard = self.inner.ring.lock().expect("mutex poisoned");
             guard.snapshot_bytes()
@@ -97,7 +97,7 @@ impl CodexFeedback {
             let guard = self.inner.tags.lock().expect("mutex poisoned");
             guard.clone()
         };
-        CodexLogSnapshot {
+        RuneLogSnapshot {
             bytes,
             tags,
             thread_id: session_id
@@ -199,13 +199,13 @@ impl RingBuffer {
     }
 }
 
-pub struct CodexLogSnapshot {
+pub struct RuneLogSnapshot {
     bytes: Vec<u8>,
     tags: BTreeMap<String, String>,
     pub thread_id: String,
 }
 
-impl CodexLogSnapshot {
+impl RuneLogSnapshot {
     pub(crate) fn as_bytes(&self) -> &[u8] {
         &self.bytes
     }
@@ -285,7 +285,7 @@ impl CodexLogSnapshot {
 
         let mut envelope = Envelope::new();
         let title = format!(
-            "[{}]: Codex session {}",
+            "[{}]: Rune session {}",
             display_classification(classification),
             self.thread_id
         );
@@ -423,7 +423,7 @@ mod tests {
 
     #[test]
     fn ring_buffer_drops_front_when_full() {
-        let fb = CodexFeedback::with_capacity(8);
+        let fb = RuneFeedback::with_capacity(8);
         {
             let mut w = fb.make_writer().make_writer();
             w.write_all(b"abcdefgh").unwrap();
@@ -436,7 +436,7 @@ mod tests {
 
     #[test]
     fn metadata_layer_records_tags_from_feedback_target() {
-        let fb = CodexFeedback::new();
+        let fb = RuneFeedback::new();
         let _guard = tracing_subscriber::registry()
             .with(fb.metadata_layer())
             .set_default();

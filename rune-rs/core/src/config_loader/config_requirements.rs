@@ -1,8 +1,8 @@
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::config_types::WebSearchMode;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_protocol::config_types::SandboxMode;
+use rune_protocol::config_types::WebSearchMode;
+use rune_protocol::protocol::AskForApproval;
+use rune_protocol::protocol::SandboxPolicy;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::fmt;
@@ -222,7 +222,7 @@ impl fmt::Display for WebSearchModeRequirement {
     }
 }
 
-/// Base config deserialized from /etc/codex/requirements.toml or MDM.
+/// Base config deserialized from /etc/rune/requirements.toml or MDM.
 #[derive(Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct ConfigRequirementsToml {
     pub allowed_approval_policies: Option<Vec<AskForApproval>>,
@@ -560,11 +560,11 @@ impl TryFrom<ConfigRequirementsWithSources> for ConfigRequirements {
 mod tests {
     use super::*;
     use anyhow::Result;
-    use codex_execpolicy::Decision;
-    use codex_execpolicy::Evaluation;
-    use codex_execpolicy::RuleMatch;
-    use codex_protocol::protocol::NetworkAccess;
-    use codex_utils_absolute_path::AbsolutePathBuf;
+    use rune_execpolicy::Decision;
+    use rune_execpolicy::Evaluation;
+    use rune_execpolicy::RuleMatch;
+    use rune_protocol::protocol::NetworkAccess;
+    use rune_utils_absolute_path::AbsolutePathBuf;
     use pretty_assertions::assert_eq;
     use toml::from_str;
 
@@ -657,7 +657,7 @@ mod tests {
         )?;
 
         let source_location = RequirementSource::MdmManagedPreferences {
-            domain: "com.codex".to_string(),
+            domain: "com.rune".to_string(),
             key: "allowed_approval_policies".to_string(),
         };
 
@@ -698,7 +698,7 @@ mod tests {
             "#,
         )?;
         let source_location = RequirementSource::MdmManagedPreferences {
-            domain: "com.codex".to_string(),
+            domain: "com.rune".to_string(),
             key: "allowed_approval_policies".to_string(),
         };
         populated_target.merge_unset_fields(source_location, source);
@@ -731,9 +731,9 @@ mod tests {
         )?;
 
         let requirements_toml_file = if cfg!(windows) {
-            "C:\\etc\\codex\\requirements.toml"
+            "C:\\etc\\rune\\requirements.toml"
         } else {
-            "/etc/codex/requirements.toml"
+            "/etc/rune/requirements.toml"
         };
         let requirements_toml_file = AbsolutePathBuf::from_absolute_path(requirements_toml_file)?;
         let source_location = RequirementSource::SystemRequirementsToml {
@@ -1153,7 +1153,7 @@ mod tests {
         "#;
         let config: ConfigRequirementsToml = from_str(toml_str)?;
         let requirements_toml_file =
-            AbsolutePathBuf::from_absolute_path("/etc/codex/requirements.toml")?;
+            AbsolutePathBuf::from_absolute_path("/etc/rune/requirements.toml")?;
         let source_location = RequirementSource::SystemRequirementsToml {
             file: requirements_toml_file,
         };

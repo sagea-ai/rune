@@ -1,3 +1,3 @@
 pub fn main() -> ! {
-    codex_apply_patch::main()
+    rune_apply_patch::main()
 }

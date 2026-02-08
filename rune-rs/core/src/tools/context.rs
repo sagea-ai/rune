@@ -1,15 +1,15 @@
-use crate::codex::Session;
-use crate::codex::TurnContext;
+use crate::rune::Session;
+use crate::rune::TurnContext;
 use crate::tools::TELEMETRY_PREVIEW_MAX_BYTES;
 use crate::tools::TELEMETRY_PREVIEW_MAX_LINES;
 use crate::tools::TELEMETRY_PREVIEW_TRUNCATION_NOTICE;
 use crate::turn_diff_tracker::TurnDiffTracker;
-use codex_protocol::mcp::CallToolResult;
-use codex_protocol::models::FunctionCallOutputBody;
-use codex_protocol::models::FunctionCallOutputPayload;
-use codex_protocol::models::ResponseInputItem;
-use codex_protocol::models::ShellToolCallParams;
-use codex_utils_string::take_bytes_at_char_boundary;
+use rune_protocol::mcp::CallToolResult;
+use rune_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputPayload;
+use rune_protocol::models::ResponseInputItem;
+use rune_protocol::models::ShellToolCallParams;
+use rune_utils_string::take_bytes_at_char_boundary;
 use std::borrow::Cow;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -160,7 +160,7 @@ fn telemetry_preview(content: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::models::FunctionCallOutputContentItem;
+    use rune_protocol::models::FunctionCallOutputContentItem;
     use pretty_assertions::assert_eq;
 
     #[test]

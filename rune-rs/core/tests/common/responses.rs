@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use anyhow::Result;
 use base64::Engine;
-use codex_protocol::openai_models::ModelsResponse;
+use rune_protocol::openai_models::ModelsResponse;
 use futures::SinkExt;
 use futures::StreamExt;
 use serde_json::Value;
@@ -30,7 +30,7 @@ use wiremock::http::HeaderValue;
 use wiremock::matchers::method;
 use wiremock::matchers::path_regex;
 
-use crate::test_codex::ApplyPatchModelOutput;
+use crate::test_rune::ApplyPatchModelOutput;
 
 #[derive(Debug, Clone)]
 pub struct ResponseMock {

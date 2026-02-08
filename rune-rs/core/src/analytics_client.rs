@@ -3,7 +3,7 @@ use crate::config::Config;
 use crate::default_client::create_client;
 use crate::git_info::collect_git_info;
 use crate::git_info::get_git_repo_root;
-use codex_protocol::protocol::SkillScope;
+use rune_protocol::protocol::SkillScope;
 use serde::Serialize;
 use sha1::Digest;
 use sha1::Sha1;
@@ -199,7 +199,7 @@ async fn send_track_skill_invocations(auth_manager: &AuthManager, job: TrackEven
     }
 
     let base_url = config.chatgpt_base_url.trim_end_matches('/');
-    let url = format!("{base_url}/codex/analytics-events/events");
+    let url = format!("{base_url}/rune/analytics-events/events");
     let payload = TrackEventsRequest { events };
 
     let response = create_client()
@@ -283,7 +283,7 @@ mod tests {
     #[test]
     fn normalize_path_for_skill_id_repo_scoped_uses_relative_path() {
         let repo_root = PathBuf::from("/repo/root");
-        let skill_path = PathBuf::from("/repo/root/.codex/skills/doc/SKILL.md");
+        let skill_path = PathBuf::from("/repo/root/.rune/skills/doc/SKILL.md");
 
         let path = normalize_path_for_skill_id(
             Some("https://example.com/repo.git"),
@@ -291,12 +291,12 @@ mod tests {
             skill_path.as_path(),
         );
 
-        assert_eq!(path, ".codex/skills/doc/SKILL.md");
+        assert_eq!(path, ".rune/skills/doc/SKILL.md");
     }
 
     #[test]
     fn normalize_path_for_skill_id_user_scoped_uses_absolute_path() {
-        let skill_path = PathBuf::from("/Users/abc/.codex/skills/doc/SKILL.md");
+        let skill_path = PathBuf::from("/Users/abc/.rune/skills/doc/SKILL.md");
 
         let path = normalize_path_for_skill_id(None, None, skill_path.as_path());
         let expected = expected_absolute_path(&skill_path);
@@ -306,7 +306,7 @@ mod tests {
 
     #[test]
     fn normalize_path_for_skill_id_admin_scoped_uses_absolute_path() {
-        let skill_path = PathBuf::from("/etc/codex/skills/doc/SKILL.md");
+        let skill_path = PathBuf::from("/etc/rune/skills/doc/SKILL.md");
 
         let path = normalize_path_for_skill_id(None, None, skill_path.as_path());
         let expected = expected_absolute_path(&skill_path);
@@ -317,7 +317,7 @@ mod tests {
     #[test]
     fn normalize_path_for_skill_id_repo_root_not_in_skill_path_uses_absolute_path() {
         let repo_root = PathBuf::from("/repo/root");
-        let skill_path = PathBuf::from("/other/path/.codex/skills/doc/SKILL.md");
+        let skill_path = PathBuf::from("/other/path/.rune/skills/doc/SKILL.md");
 
         let path = normalize_path_for_skill_id(
             Some("https://example.com/repo.git"),

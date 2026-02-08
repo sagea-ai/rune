@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [lib]
-name = "codex_arg0"
+name = "rune_arg0"
 path = "src/lib.rs"
 
 [lints]

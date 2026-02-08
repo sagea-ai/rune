@@ -21,7 +21,7 @@ fn get_notify_hook(config: &Config) -> Option<Hook> {
 }
 
 // Hooks are arbitrary, user-specified functions that are deterministically
-// executed after specific events in the Codex lifecycle.
+// executed after specific events in the Rune lifecycle.
 impl Hooks {
     // new creates a new Hooks instance from config.
     // For legacy compatibility, if config.notify is set, it will be added to
@@ -71,7 +71,7 @@ mod tests {
     use anyhow::Result;
     use chrono::TimeZone;
     use chrono::Utc;
-    use codex_protocol::ThreadId;
+    use rune_protocol::ThreadId;
     use pretty_assertions::assert_eq;
     use serde_json::to_string;
     use tempfile::tempdir;

@@ -1,7 +1,7 @@
 use crate::config_loader::ResidencyRequirement;
-use crate::spawn::CODEX_SANDBOX_ENV_VAR;
-use codex_client::CodexHttpClient;
-pub use codex_client::CodexRequestBuilder;
+use crate::spawn::RUNE_SANDBOX_ENV_VAR;
+use rune_client::RuneHttpClient;
+pub use rune_client::RuneRequestBuilder;
 use reqwest::header::HeaderMap;
 use reqwest::header::HeaderValue;
 use std::sync::LazyLock;
@@ -16,16 +16,16 @@ use std::sync::RwLock;
 /// However, future users of this should use this with caution as a result.
 /// In addition, we want to be confident that this value is used for ALL clients and doing that requires a
 /// lot of wiring and it's easy to miss code paths by doing so.
-/// See https://github.com/openai/codex/pull/3388/files for an example of what that would look like.
+/// See https://github.com/openai/rune/pull/3388/files for an example of what that would look like.
 /// Finally, we want to make sure this is set for ALL mcp clients without needing to know a special env var
 /// or having to set data that they already specified in the mcp initialize request somewhere else.
 ///
 /// A space is automatically added between the suffix and the rest of the User-Agent string.
 /// The full user agent string is returned from the mcp initialize response.
-/// Parenthesis will be added by Codex. This should only specify what goes inside of the parenthesis.
+/// Parenthesis will be added by Rune. This should only specify what goes inside of the parenthesis.
 pub static USER_AGENT_SUFFIX: LazyLock<Mutex<Option<String>>> = LazyLock::new(|| Mutex::new(None));
-pub const DEFAULT_ORIGINATOR: &str = "codex_cli_rs";
-pub const CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR: &str = "CODEX_INTERNAL_ORIGINATOR_OVERRIDE";
+pub const DEFAULT_ORIGINATOR: &str = "rune_cli_rs";
+pub const RUNE_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR: &str = "RUNE_INTERNAL_ORIGINATOR_OVERRIDE";
 pub const RESIDENCY_HEADER_NAME: &str = "x-openai-internal-rune-residency";
 
 #[derive(Debug, Clone)]
@@ -44,7 +44,7 @@ pub enum SetOriginatorError {
 }
 
 fn get_originator_value(provided: Option<String>) -> Originator {
-    let value = std::env::var(CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR)
+    let value = std::env::var(RUNE_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR)
         .ok()
         .or(provided)
         .unwrap_or(DEFAULT_ORIGINATOR.to_string());
@@ -94,7 +94,7 @@ pub fn originator() -> Originator {
         return originator.clone();
     }
 
-    if std::env::var(CODEX_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR).is_ok() {
+    if std::env::var(RUNE_INTERNAL_ORIGINATOR_OVERRIDE_ENV_VAR).is_ok() {
         let originator = get_originator_value(None);
         if let Ok(mut guard) = ORIGINATOR.write() {
             match guard.as_ref() {
@@ -110,11 +110,11 @@ pub fn originator() -> Originator {
 
 pub fn is_first_party_originator(originator_value: &str) -> bool {
     originator_value == DEFAULT_ORIGINATOR
-        || originator_value == "codex_vscode"
-        || originator_value.starts_with("Codex ")
+        || originator_value == "rune_vscode"
+        || originator_value.starts_with("Rune ")
 }
 
-pub fn get_codex_user_agent() -> String {
+pub fn get_rune_user_agent() -> String {
     let build_version = env!("CARGO_PKG_VERSION");
     let os_info = os_info::get();
     let originator = originator();
@@ -156,26 +156,26 @@ fn sanitize_user_agent(candidate: String, fallback: &str) -> String {
         .collect();
     if !sanitized.is_empty() && HeaderValue::from_str(sanitized.as_str()).is_ok() {
         tracing::warn!(
-            "Sanitized Codex user agent because provided suffix contained invalid header characters"
+            "Sanitized Rune user agent because provided suffix contained invalid header characters"
         );
         sanitized
     } else if HeaderValue::from_str(fallback).is_ok() {
         tracing::warn!(
-            "Falling back to base Codex user agent because provided suffix could not be sanitized"
+            "Falling back to base Rune user agent because provided suffix could not be sanitized"
         );
         fallback.to_string()
     } else {
         tracing::warn!(
-            "Falling back to default Codex originator because base user agent string is invalid"
+            "Falling back to default Rune originator because base user agent string is invalid"
         );
         originator().value
     }
 }
 
 /// Create an HTTP client with default `originator` and `User-Agent` headers set.
-pub fn create_client() -> CodexHttpClient {
+pub fn create_client() -> RuneHttpClient {
     let inner = build_reqwest_client();
-    CodexHttpClient::new(inner)
+    RuneHttpClient::new(inner)
 }
 
 pub fn build_reqwest_client() -> reqwest::Client {
@@ -190,7 +190,7 @@ pub fn build_reqwest_client() -> reqwest::Client {
         };
         headers.insert(RESIDENCY_HEADER_NAME, value);
     }
-    let ua = get_codex_user_agent();
+    let ua = get_rune_user_agent();
 
     let mut builder = reqwest::Client::builder()
         // Set UA via dedicated helper to avoid header validation pitfalls
@@ -204,7 +204,7 @@ pub fn build_reqwest_client() -> reqwest::Client {
 }
 
 fn is_sandboxed() -> bool {
-    std::env::var(CODEX_SANDBOX_ENV_VAR).as_deref() == Ok("seatbelt")
+    std::env::var(RUNE_SANDBOX_ENV_VAR).as_deref() == Ok("seatbelt")
 }
 
 #[cfg(test)]
@@ -214,8 +214,8 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     #[test]
-    fn test_get_codex_user_agent() {
-        let user_agent = get_codex_user_agent();
+    fn test_get_rune_user_agent() {
+        let user_agent = get_rune_user_agent();
         let originator = originator().value;
         let prefix = format!("{originator}/");
         assert!(user_agent.starts_with(&prefix));
@@ -224,9 +224,9 @@ mod tests {
     #[test]
     fn is_first_party_originator_matches_known_values() {
         assert_eq!(is_first_party_originator(DEFAULT_ORIGINATOR), true);
-        assert_eq!(is_first_party_originator("codex_vscode"), true);
-        assert_eq!(is_first_party_originator("Codex Something Else"), true);
-        assert_eq!(is_first_party_originator("codex_cli"), false);
+        assert_eq!(is_first_party_originator("rune_vscode"), true);
+        assert_eq!(is_first_party_originator("Rune Something Else"), true);
+        assert_eq!(is_first_party_originator("rune_cli"), false);
         assert_eq!(is_first_party_originator("Other"), false);
     }
 
@@ -272,8 +272,8 @@ mod tests {
             .expect("originator header missing");
         assert_eq!(originator_header.to_str().unwrap(), originator().value);
 
-        // User-Agent matches the computed Codex UA for that originator
-        let expected_ua = get_codex_user_agent();
+        // User-Agent matches the computed Rune UA for that originator
+        let expected_ua = get_rune_user_agent();
         let ua_header = headers
             .get("user-agent")
             .expect("user-agent header missing");
@@ -289,23 +289,23 @@ mod tests {
 
     #[test]
     fn test_invalid_suffix_is_sanitized() {
-        let prefix = "codex_cli_rs/0.0.0";
+        let prefix = "rune_cli_rs/0.0.0";
         let suffix = "bad\rsuffix";
 
         assert_eq!(
             sanitize_user_agent(format!("{prefix} ({suffix})"), prefix),
-            "codex_cli_rs/0.0.0 (bad_suffix)"
+            "rune_cli_rs/0.0.0 (bad_suffix)"
         );
     }
 
     #[test]
     fn test_invalid_suffix_is_sanitized2() {
-        let prefix = "codex_cli_rs/0.0.0";
+        let prefix = "rune_cli_rs/0.0.0";
         let suffix = "bad\0suffix";
 
         assert_eq!(
             sanitize_user_agent(format!("{prefix} ({suffix})"), prefix),
-            "codex_cli_rs/0.0.0 (bad_suffix)"
+            "rune_cli_rs/0.0.0 (bad_suffix)"
         );
     }
 
@@ -313,7 +313,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     fn test_macos() {
         use regex_lite::Regex;
-        let user_agent = get_codex_user_agent();
+        let user_agent = get_rune_user_agent();
         let originator = regex_lite::escape(originator().value.as_str());
         let re = Regex::new(&format!(
             r"^{originator}/\d+\.\d+\.\d+ \(Mac OS \d+\.\d+\.\d+; (x86_64|arm64)\) (\S+)$"

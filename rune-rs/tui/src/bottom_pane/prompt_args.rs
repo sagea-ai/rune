@@ -1,7 +1,7 @@
-use codex_protocol::custom_prompts::CustomPrompt;
-use codex_protocol::custom_prompts::PROMPTS_CMD_PREFIX;
-use codex_protocol::user_input::ByteRange;
-use codex_protocol::user_input::TextElement;
+use rune_protocol::custom_prompts::CustomPrompt;
+use rune_protocol::custom_prompts::PROMPTS_CMD_PREFIX;
+use rune_protocol::user_input::ByteRange;
+use rune_protocol::user_input::TextElement;
 use lazy_static::lazy_static;
 use regex_lite::Regex;
 use shlex::Shlex;
@@ -409,7 +409,7 @@ fn replace_text_elements_with_sentinels(
         let start = elem.byte_range.start;
         let end = elem.byte_range.end;
         out.push_str(&rest[cursor..start]);
-        let mut sentinel = format!("__CODEX_ELEM_{idx}__");
+        let mut sentinel = format!("__RUNE_ELEM_{idx}__");
         // Ensure we never collide with user content so a sentinel can't be mistaken for text.
         while rest.contains(&sentinel) {
             sentinel.push('_');

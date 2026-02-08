@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use anyhow::Result;
-use codex_core::features::Feature;
+use rune_core::features::Feature;
 use core_test_support::assert_regex_match;
 use core_test_support::responses::ev_assistant_message;
 use core_test_support::responses::ev_completed;
@@ -11,9 +11,9 @@ use core_test_support::responses::mount_sse_sequence;
 use core_test_support::responses::sse;
 use core_test_support::skip_if_no_network;
 use core_test_support::skip_if_windows;
-use core_test_support::test_codex::TestCodexBuilder;
-use core_test_support::test_codex::TestCodexHarness;
-use core_test_support::test_codex::test_codex;
+use core_test_support::test_rune::TestRuneBuilder;
+use core_test_support::test_rune::TestRuneHarness;
+use core_test_support::test_rune::test_rune;
 use serde_json::json;
 use test_case::test_case;
 
@@ -54,16 +54,16 @@ fn shell_responses(call_id: &str, command: &str, login: Option<bool>) -> Vec<Str
 }
 
 async fn shell_command_harness_with(
-    configure: impl FnOnce(TestCodexBuilder) -> TestCodexBuilder,
-) -> Result<TestCodexHarness> {
-    let builder = configure(test_codex()).with_config(|config| {
+    configure: impl FnOnce(TestRuneBuilder) -> TestRuneBuilder,
+) -> Result<TestRuneHarness> {
+    let builder = configure(test_rune()).with_config(|config| {
         config.include_apply_patch_tool = true;
     });
-    TestCodexHarness::with_builder(builder).await
+    TestRuneHarness::with_builder(builder).await
 }
 
 async fn mount_shell_responses(
-    harness: &TestCodexHarness,
+    harness: &TestRuneHarness,
     call_id: &str,
     command: &str,
     login: Option<bool>,
@@ -72,7 +72,7 @@ async fn mount_shell_responses(
 }
 
 async fn mount_shell_responses_with_timeout(
-    harness: &TestCodexHarness,
+    harness: &TestRuneHarness,
     call_id: &str,
     command: &str,
     login: Option<bool>,

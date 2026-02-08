@@ -12,11 +12,11 @@ use crate::shimmer::shimmer_spans;
 use crate::wrapping::RtOptions;
 use crate::wrapping::word_wrap_line;
 use crate::wrapping::word_wrap_lines;
-use codex_ansi_escape::ansi_escape_line;
-use codex_common::elapsed::format_duration;
-use codex_core::bash::extract_bash_command;
-use codex_core::protocol::ExecCommandSource;
-use codex_protocol::parse_command::ParsedCommand;
+use rune_ansi_escape::ansi_escape_line;
+use rune_common::elapsed::format_duration;
+use rune_core::bash::extract_bash_command;
+use rune_core::protocol::ExecCommandSource;
+use rune_protocol::parse_command::ParsedCommand;
 use itertools::Itertools;
 use ratatui::prelude::*;
 use ratatui::style::Modifier;
@@ -611,7 +611,7 @@ const EXEC_DISPLAY_LAYOUT: ExecDisplayLayout = ExecDisplayLayout::new(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_core::protocol::ExecCommandSource;
+    use rune_core::protocol::ExecCommandSource;
 
     #[test]
     fn user_shell_output_is_limited_by_screen_lines() {

@@ -32,45 +32,45 @@ use crate::resume_picker::SessionSelection;
 use crate::tui;
 use crate::tui::TuiEvent;
 use crate::update_action::UpdateAction;
-use codex_ansi_escape::ansi_escape_line;
-use codex_app_server_protocol::ConfigLayerSource;
-use codex_core::AuthManager;
-use codex_core::CodexAuth;
-use codex_core::ThreadManager;
-use codex_core::config::Config;
-use codex_core::config::ConfigBuilder;
-use codex_core::config::ConfigOverrides;
-use codex_core::config::edit::ConfigEdit;
-use codex_core::config::edit::ConfigEditsBuilder;
-use codex_core::config_loader::ConfigLayerStackOrdering;
-use codex_core::features::Feature;
-use codex_core::models_manager::manager::RefreshStrategy;
-use codex_core::models_manager::model_presets::HIDE_GPT_5_1_CODEX_MAX_MIGRATION_PROMPT_CONFIG;
-use codex_core::models_manager::model_presets::HIDE_GPT5_1_MIGRATION_PROMPT_CONFIG;
-use codex_core::protocol::AskForApproval;
-use codex_core::protocol::Event;
-use codex_core::protocol::EventMsg;
-use codex_core::protocol::FinalOutput;
-use codex_core::protocol::ListSkillsResponseEvent;
-use codex_core::protocol::Op;
-use codex_core::protocol::SandboxPolicy;
-use codex_core::protocol::SessionSource;
-use codex_core::protocol::SkillErrorInfo;
-use codex_core::protocol::TokenUsage;
+use rune_ansi_escape::ansi_escape_line;
+use rune_app_server_protocol::ConfigLayerSource;
+use rune_core::AuthManager;
+use rune_core::RuneAuth;
+use rune_core::ThreadManager;
+use rune_core::config::Config;
+use rune_core::config::ConfigBuilder;
+use rune_core::config::ConfigOverrides;
+use rune_core::config::edit::ConfigEdit;
+use rune_core::config::edit::ConfigEditsBuilder;
+use rune_core::config_loader::ConfigLayerStackOrdering;
+use rune_core::features::Feature;
+use rune_core::models_manager::manager::RefreshStrategy;
+use rune_core::models_manager::model_presets::HIDE_GPT_5_1_RUNE_MAX_MIGRATION_PROMPT_CONFIG;
+use rune_core::models_manager::model_presets::HIDE_GPT5_1_MIGRATION_PROMPT_CONFIG;
+use rune_core::protocol::AskForApproval;
+use rune_core::protocol::Event;
+use rune_core::protocol::EventMsg;
+use rune_core::protocol::FinalOutput;
+use rune_core::protocol::ListSkillsResponseEvent;
+use rune_core::protocol::Op;
+use rune_core::protocol::SandboxPolicy;
+use rune_core::protocol::SessionSource;
+use rune_core::protocol::SkillErrorInfo;
+use rune_core::protocol::TokenUsage;
 #[cfg(target_os = "windows")]
-use codex_core::windows_sandbox::WindowsSandboxLevelExt;
-use codex_otel::OtelManager;
-use codex_otel::TelemetryAuthMode;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::Personality;
+use rune_core::windows_sandbox::WindowsSandboxLevelExt;
+use rune_otel::OtelManager;
+use rune_otel::TelemetryAuthMode;
+use rune_protocol::ThreadId;
+use rune_protocol::config_types::Personality;
 #[cfg(target_os = "windows")]
-use codex_protocol::config_types::WindowsSandboxLevel;
-use codex_protocol::items::TurnItem;
-use codex_protocol::openai_models::ModelPreset;
-use codex_protocol::openai_models::ModelUpgrade;
-use codex_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
-use codex_protocol::protocol::SessionConfiguredEvent;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_protocol::config_types::WindowsSandboxLevel;
+use rune_protocol::items::TurnItem;
+use rune_protocol::openai_models::ModelPreset;
+use rune_protocol::openai_models::ModelUpgrade;
+use rune_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use rune_protocol::protocol::SessionConfiguredEvent;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use color_eyre::eyre::Result;
 use color_eyre::eyre::WrapErr;
 use crossterm::event::KeyCode;
@@ -152,7 +152,7 @@ fn session_summary(
     }
 
     let usage_line = FinalOutput::from(token_usage).to_string();
-    let resume_command = codex_core::util::resume_command(thread_name.as_deref(), thread_id);
+    let resume_command = rune_core::util::resume_command(thread_name.as_deref(), thread_id);
     Some(SessionSummary {
         usage_line,
         resume_command,
@@ -196,14 +196,14 @@ fn emit_project_config_warnings(app_event_tx: &AppEventSender, config: &Config) 
         .config_layer_stack
         .get_layers(ConfigLayerStackOrdering::LowestPrecedenceFirst, true)
     {
-        let ConfigLayerSource::Project { dot_codex_folder } = &layer.name else {
+        let ConfigLayerSource::Project { dot_rune_folder } = &layer.name else {
             continue;
         };
         if layer.disabled_reason.is_none() {
             continue;
         }
         disabled_folders.push((
-            dot_codex_folder.as_path().display().to_string(),
+            dot_rune_folder.as_path().display().to_string(),
             layer
                 .disabled_reason
                 .as_ref()
@@ -384,9 +384,9 @@ fn should_show_model_migration_prompt(
 
 fn migration_prompt_hidden(config: &Config, migration_config_key: &str) -> bool {
     match migration_config_key {
-        HIDE_GPT_5_1_CODEX_MAX_MIGRATION_PROMPT_CONFIG => config
+        HIDE_GPT_5_1_RUNE_MAX_MIGRATION_PROMPT_CONFIG => config
             .notices
-            .hide_gpt_5_1_codex_max_migration_prompt
+            .hide_gpt_5_1_rune_max_migration_prompt
             .unwrap_or(false),
         HIDE_GPT5_1_MIGRATION_PROMPT_CONFIG => {
             config.notices.hide_gpt5_1_migration_prompt.unwrap_or(false)
@@ -546,7 +546,7 @@ pub(crate) struct App {
     /// This is used after a confirmed thread rollback to ensure scrollback reflects the trimmed
     /// transcript cells.
     pub(crate) backtrack_render_pending: bool,
-    pub(crate) feedback: codex_feedback::CodexFeedback,
+    pub(crate) feedback: rune_feedback::RuneFeedback,
     feedback_audience: FeedbackAudience,
     /// Set when the user confirms an update; propagated on exit.
     pub(crate) pending_update_action: Option<UpdateAction>,
@@ -593,7 +593,7 @@ impl App {
     pub fn chatwidget_init_for_forked_or_resumed_thread(
         &self,
         tui: &mut tui::Tui,
-        cfg: codex_core::config::Config,
+        cfg: rune_core::config::Config,
     ) -> crate::chatwidget::ChatWidgetInit {
         crate::chatwidget::ChatWidgetInit {
             config: cfg,
@@ -618,7 +618,7 @@ impl App {
         overrides.cwd = Some(cwd.clone());
         let cwd_display = cwd.display().to_string();
         ConfigBuilder::default()
-            .codex_home(self.config.codex_home.clone())
+            .rune_home(self.config.rune_home.clone())
             .cli_overrides(self.cli_kv_overrides.clone())
             .harness_overrides(overrides)
             .build()
@@ -844,8 +844,8 @@ impl App {
         self.active_thread_rx = Some(receiver);
 
         let init = self.chatwidget_init_for_forked_or_resumed_thread(tui, self.config.clone());
-        let codex_op_tx = crate::chatwidget::spawn_op_forwarder(thread);
-        self.chat_widget = ChatWidget::new_with_op_sender(init, codex_op_tx);
+        let rune_op_tx = crate::chatwidget::spawn_op_forwarder(thread);
+        self.chat_widget = ChatWidget::new_with_op_sender(init, rune_op_tx);
 
         self.reset_for_thread_switch(tui)?;
         self.replay_thread_snapshot(snapshot);
@@ -882,7 +882,7 @@ impl App {
         let mut disconnected = false;
         loop {
             match rx.try_recv() {
-                Ok(event) => self.handle_codex_event_now(event),
+                Ok(event) => self.handle_rune_event_now(event),
                 Err(TryRecvError::Empty) => break,
                 Err(TryRecvError::Disconnected) => {
                     disconnected = true;
@@ -905,10 +905,10 @@ impl App {
 
     fn replay_thread_snapshot(&mut self, snapshot: ThreadEventSnapshot) {
         if let Some(event) = snapshot.session_configured {
-            self.handle_codex_event_replay(event);
+            self.handle_rune_event_replay(event);
         }
         for event in snapshot.events {
-            self.handle_codex_event_replay(event);
+            self.handle_rune_event_replay(event);
         }
         self.refresh_status_line();
     }
@@ -924,7 +924,7 @@ impl App {
         initial_prompt: Option<String>,
         initial_images: Vec<PathBuf>,
         session_selection: SessionSelection,
-        feedback: codex_feedback::CodexFeedback,
+        feedback: rune_feedback::RuneFeedback,
         is_first_run: bool,
     ) -> Result<AppExitInfo> {
         use tokio_stream::StreamExt;
@@ -936,7 +936,7 @@ impl App {
         let harness_overrides =
             normalize_harness_overrides_for_cwd(harness_overrides, &config.cwd)?;
         let thread_manager = Arc::new(ThreadManager::new(
-            config.codex_home.clone(),
+            config.rune_home.clone(),
             auth_manager.clone(),
             SessionSource::Cli,
         ));
@@ -969,7 +969,7 @@ impl App {
         // `@openai.com` emails as employees and default to `External` when the
         // email is unavailable (for example, API key auth).
         let feedback_audience = if auth_ref
-            .and_then(CodexAuth::get_account_email)
+            .and_then(RuneAuth::get_account_email)
             .is_some_and(|email| email.ends_with("@openai.com"))
         {
             FeedbackAudience::OpenAiEmployee
@@ -977,18 +977,18 @@ impl App {
             FeedbackAudience::External
         };
         let auth_mode = auth_ref
-            .map(CodexAuth::auth_mode)
+            .map(RuneAuth::auth_mode)
             .map(TelemetryAuthMode::from);
         let otel_manager = OtelManager::new(
             ThreadId::new(),
             model.as_str(),
             model.as_str(),
-            auth_ref.and_then(CodexAuth::get_account_id),
-            auth_ref.and_then(CodexAuth::get_account_email),
+            auth_ref.and_then(RuneAuth::get_account_id),
+            auth_ref.and_then(RuneAuth::get_account_email),
             auth_mode,
-            codex_core::default_client::originator().value,
+            rune_core::default_client::originator().value,
             config.otel.log_user_prompt,
-            codex_core::terminal::user_agent(),
+            rune_core::terminal::user_agent(),
             SessionSource::Cli,
         );
         if config
@@ -996,7 +996,7 @@ impl App {
             .as_ref()
             .is_some_and(|cmd| !cmd.is_empty())
         {
-            otel_manager.counter("codex.status_line", 1, &[]);
+            otel_manager.counter("rune.status_line", 1, &[]);
         }
 
         let status_line_invalid_items_warned = Arc::new(AtomicBool::new(false));
@@ -1057,7 +1057,7 @@ impl App {
                 ChatWidget::new_from_existing(init, resumed.thread, resumed.session_configured)
             }
             SessionSelection::Fork(path) => {
-                otel_manager.counter("codex.thread.fork", 1, &[("source", "cli_subcommand")]);
+                otel_manager.counter("rune.thread.fork", 1, &[("source", "cli_subcommand")]);
                 let forked = thread_manager
                     .fork_thread(usize::MAX, config.clone(), path.clone())
                     .await
@@ -1137,8 +1137,8 @@ impl App {
                 != WindowsSandboxLevel::Disabled
                 && matches!(
                     app.config.sandbox_policy.get(),
-                    codex_core::protocol::SandboxPolicy::WorkspaceWrite { .. }
-                        | codex_core::protocol::SandboxPolicy::ReadOnly
+                    rune_core::protocol::SandboxPolicy::WorkspaceWrite { .. }
+                        | rune_core::protocol::SandboxPolicy::ReadOnly
                 )
                 && !app
                     .config
@@ -1149,7 +1149,7 @@ impl App {
                 let cwd = app.config.cwd.clone();
                 let env_map: std::collections::HashMap<String, String> = std::env::vars().collect();
                 let tx = app.app_event_tx.clone();
-                let logs_base_dir = app.config.codex_home.clone();
+                let logs_base_dir = app.config.rune_home.clone();
                 let sandbox_policy = app.config.sandbox_policy.get().clone();
                 Self::spawn_world_writable_scan(cwd, env_map, logs_base_dir, sandbox_policy, tx);
             }
@@ -1341,7 +1341,7 @@ impl App {
             AppEvent::OpenResumePicker => {
                 match crate::resume_picker::run_resume_picker(
                     tui,
-                    &self.config.codex_home,
+                    &self.config.rune_home,
                     &self.config.model_provider_id,
                     false,
                 )
@@ -1436,7 +1436,7 @@ impl App {
             }
             AppEvent::ForkCurrentSession => {
                 self.otel_manager
-                    .counter("codex.thread.fork", 1, &[("source", "slash_command")]);
+                    .counter("rune.thread.fork", 1, &[("source", "slash_command")]);
                 let summary = session_summary(
                     self.chat_widget.token_usage(),
                     self.chat_widget.thread_id(),
@@ -1548,7 +1548,7 @@ impl App {
             AppEvent::CommitTick => {
                 self.chat_widget.on_commit_tick();
             }
-            AppEvent::CodexEvent(event) => {
+            AppEvent::RuneEvent(event) => {
                 self.enqueue_primary_event(event).await?;
             }
             AppEvent::Exit(mode) => match mode {
@@ -1560,7 +1560,7 @@ impl App {
             AppEvent::FatalExitRequest(message) => {
                 return Ok(AppRunControl::Exit(ExitReason::Fatal(message)));
             }
-            AppEvent::CodexOp(op) => {
+            AppEvent::RuneOp(op) => {
                 self.chat_widget.submit_op(op);
             }
             AppEvent::DiffResult(text) => {
@@ -1666,11 +1666,11 @@ impl App {
             }
             AppEvent::OpenWindowsSandboxFallbackPrompt { preset, reason } => {
                 self.otel_manager
-                    .counter("codex.windows_sandbox.fallback_prompt_shown", 1, &[]);
+                    .counter("rune.windows_sandbox.fallback_prompt_shown", 1, &[]);
                 self.chat_widget.clear_windows_sandbox_setup_status();
                 if let Some(started_at) = self.windows_sandbox.setup_started_at.take() {
                     self.otel_manager.record_duration(
-                        "codex.windows_sandbox.elevated_setup_duration_ms",
+                        "rune.windows_sandbox.elevated_setup_duration_ms",
                         started_at.elapsed(),
                         &[("result", "failure")],
                     );
@@ -1686,12 +1686,12 @@ impl App {
                     let command_cwd = policy_cwd.clone();
                     let env_map: std::collections::HashMap<String, String> =
                         std::env::vars().collect();
-                    let codex_home = self.config.codex_home.clone();
+                    let rune_home = self.config.rune_home.clone();
                     let tx = self.app_event_tx.clone();
 
                     // If the elevated setup already ran on this machine, don't prompt for
                     // elevation again - just flip the config to use the elevated path.
-                    if codex_core::windows_sandbox::sandbox_setup_is_complete(codex_home.as_path())
+                    if rune_core::windows_sandbox::sandbox_setup_is_complete(rune_home.as_path())
                     {
                         tx.send(AppEvent::EnableWindowsSandboxForAgentMode {
                             preset,
@@ -1704,17 +1704,17 @@ impl App {
                     self.windows_sandbox.setup_started_at = Some(Instant::now());
                     let otel_manager = self.otel_manager.clone();
                     tokio::task::spawn_blocking(move || {
-                        let result = codex_core::windows_sandbox::run_elevated_setup(
+                        let result = rune_core::windows_sandbox::run_elevated_setup(
                             &policy,
                             policy_cwd.as_path(),
                             command_cwd.as_path(),
                             &env_map,
-                            codex_home.as_path(),
+                            rune_home.as_path(),
                         );
                         let event = match result {
                             Ok(()) => {
                                 otel_manager.counter(
-                                    "codex.windows_sandbox.elevated_setup_success",
+                                    "rune.windows_sandbox.elevated_setup_success",
                                     1,
                                     &[],
                                 );
@@ -1727,7 +1727,7 @@ impl App {
                                 let mut code_tag: Option<String> = None;
                                 let mut message_tag: Option<String> = None;
                                 if let Some((code, message)) =
-                                    codex_core::windows_sandbox::elevated_setup_failure_details(
+                                    rune_core::windows_sandbox::elevated_setup_failure_details(
                                         &err,
                                     )
                                 {
@@ -1742,7 +1742,7 @@ impl App {
                                     tags.push(("message", message));
                                 }
                                 otel_manager.counter(
-                                    codex_core::windows_sandbox::elevated_setup_failure_metric_name(
+                                    rune_core::windows_sandbox::elevated_setup_failure_metric_name(
                                         &err,
                                     ),
                                     1,
@@ -1772,7 +1772,7 @@ impl App {
                     self.chat_widget.clear_windows_sandbox_setup_status();
                     if let Some(started_at) = self.windows_sandbox.setup_started_at.take() {
                         self.otel_manager.record_duration(
-                            "codex.windows_sandbox.elevated_setup_duration_ms",
+                            "rune.windows_sandbox.elevated_setup_duration_ms",
                             started_at.elapsed(),
                             &[("result", "success")],
                         );
@@ -1782,7 +1782,7 @@ impl App {
                     let elevated_key = Feature::WindowsSandboxElevated.key();
                     let elevated_enabled = matches!(mode, WindowsSandboxEnableMode::Elevated);
                     let mut builder =
-                        ConfigEditsBuilder::new(&self.config.codex_home).with_profile(profile);
+                        ConfigEditsBuilder::new(&self.config.rune_home).with_profile(profile);
                     if elevated_enabled {
                         builder = builder.set_feature_enabled(elevated_key, true);
                     } else {
@@ -1810,7 +1810,7 @@ impl App {
                             if let Some((sample_paths, extra_count, failed_scan)) =
                                 self.chat_widget.world_writable_warning_details()
                             {
-                                self.app_event_tx.send(AppEvent::CodexOp(
+                                self.app_event_tx.send(AppEvent::RuneOp(
                                     Op::OverrideTurnContext {
                                         cwd: None,
                                         approval_policy: None,
@@ -1832,7 +1832,7 @@ impl App {
                                     },
                                 );
                             } else {
-                                self.app_event_tx.send(AppEvent::CodexOp(
+                                self.app_event_tx.send(AppEvent::RuneOp(
                                     Op::OverrideTurnContext {
                                         cwd: None,
                                         approval_policy: Some(preset.approval),
@@ -1880,7 +1880,7 @@ impl App {
             }
             AppEvent::PersistModelSelection { model, effort } => {
                 let profile = self.active_profile.as_deref();
-                match ConfigEditsBuilder::new(&self.config.codex_home)
+                match ConfigEditsBuilder::new(&self.config.rune_home)
                     .with_profile(profile)
                     .set_model(Some(model.as_str()), effort)
                     .apply()
@@ -1917,7 +1917,7 @@ impl App {
             }
             AppEvent::PersistPersonalitySelection { personality } => {
                 let profile = self.active_profile.as_deref();
-                match ConfigEditsBuilder::new(&self.config.codex_home)
+                match ConfigEditsBuilder::new(&self.config.rune_home)
                     .with_profile(profile)
                     .set_personality(Some(personality))
                     .apply()
@@ -1964,8 +1964,8 @@ impl App {
                 #[cfg(target_os = "windows")]
                 let policy_is_workspace_write_or_ro = matches!(
                     &policy,
-                    codex_core::protocol::SandboxPolicy::WorkspaceWrite { .. }
-                        | codex_core::protocol::SandboxPolicy::ReadOnly
+                    rune_core::protocol::SandboxPolicy::WorkspaceWrite { .. }
+                        | rune_core::protocol::SandboxPolicy::ReadOnly
                 );
 
                 if let Err(err) = self.config.sandbox_policy.set(policy.clone()) {
@@ -1975,7 +1975,7 @@ impl App {
                     return Ok(AppRunControl::Continue);
                 }
                 #[cfg(target_os = "windows")]
-                if !matches!(&policy, codex_core::protocol::SandboxPolicy::ReadOnly)
+                if !matches!(&policy, rune_core::protocol::SandboxPolicy::ReadOnly)
                     || WindowsSandboxLevel::from_config(&self.config)
                         != WindowsSandboxLevel::Disabled
                 {
@@ -2008,7 +2008,7 @@ impl App {
                         let env_map: std::collections::HashMap<String, String> =
                             std::env::vars().collect();
                         let tx = self.app_event_tx.clone();
-                        let logs_base_dir = self.config.codex_home.clone();
+                        let logs_base_dir = self.config.rune_home.clone();
                         let sandbox_policy = self.config.sandbox_policy.get().clone();
                         Self::spawn_world_writable_scan(
                             cwd,
@@ -2030,7 +2030,7 @@ impl App {
                         Feature::WindowsSandbox | Feature::WindowsSandboxElevated
                     )
                 });
-                let mut builder = ConfigEditsBuilder::new(&self.config.codex_home)
+                let mut builder = ConfigEditsBuilder::new(&self.config.rune_home)
                     .with_profile(self.active_profile.as_deref());
                 for (feature, enabled) in &updates {
                     let feature_key = feature.key();
@@ -2060,7 +2060,7 @@ impl App {
                     {
                         let windows_sandbox_level = WindowsSandboxLevel::from_config(&self.config);
                         self.app_event_tx
-                            .send(AppEvent::CodexOp(Op::OverrideTurnContext {
+                            .send(AppEvent::RuneOp(Op::OverrideTurnContext {
                                 cwd: None,
                                 approval_policy: None,
                                 sandbox_policy: None,
@@ -2094,7 +2094,7 @@ impl App {
                 self.chat_widget.set_rate_limit_switch_prompt_hidden(hidden);
             }
             AppEvent::PersistFullAccessWarningAcknowledged => {
-                if let Err(err) = ConfigEditsBuilder::new(&self.config.codex_home)
+                if let Err(err) = ConfigEditsBuilder::new(&self.config.rune_home)
                     .set_hide_full_access_warning(true)
                     .apply()
                     .await
@@ -2109,7 +2109,7 @@ impl App {
                 }
             }
             AppEvent::PersistWorldWritableWarningAcknowledged => {
-                if let Err(err) = ConfigEditsBuilder::new(&self.config.codex_home)
+                if let Err(err) = ConfigEditsBuilder::new(&self.config.rune_home)
                     .set_hide_world_writable_warning(true)
                     .apply()
                     .await
@@ -2124,7 +2124,7 @@ impl App {
                 }
             }
             AppEvent::PersistRateLimitSwitchPromptHidden => {
-                if let Err(err) = ConfigEditsBuilder::new(&self.config.codex_home)
+                if let Err(err) = ConfigEditsBuilder::new(&self.config.rune_home)
                     .set_hide_rate_limit_model_nudge(true)
                     .apply()
                     .await
@@ -2142,7 +2142,7 @@ impl App {
                 from_model,
                 to_model,
             } => {
-                if let Err(err) = ConfigEditsBuilder::new(&self.config.codex_home)
+                if let Err(err) = ConfigEditsBuilder::new(&self.config.rune_home)
                     .record_model_migration_seen(from_model.as_str(), to_model.as_str())
                     .apply()
                     .await
@@ -2176,7 +2176,7 @@ impl App {
                     path: path.clone(),
                     enabled,
                 }];
-                match ConfigEditsBuilder::new(&self.config.codex_home)
+                match ConfigEditsBuilder::new(&self.config.rune_home)
                     .with_edits(edits)
                     .apply()
                     .await
@@ -2252,8 +2252,8 @@ impl App {
             },
             AppEvent::StatusLineSetup { items } => {
                 let ids = items.iter().map(ToString::to_string).collect::<Vec<_>>();
-                let edit = codex_core::config::edit::status_line_items_edit(&ids);
-                let apply_result = ConfigEditsBuilder::new(&self.config.codex_home)
+                let edit = rune_core::config::edit::status_line_items_edit(&ids);
+                let apply_result = ConfigEditsBuilder::new(&self.config.rune_home)
                     .with_edits([edit])
                     .apply()
                     .await;
@@ -2284,7 +2284,7 @@ impl App {
         Ok(AppRunControl::Continue)
     }
 
-    fn handle_codex_event_now(&mut self, event: Event) {
+    fn handle_rune_event_now(&mut self, event: Event) {
         let needs_refresh = matches!(
             event.msg,
             EventMsg::SessionConfigured(_) | EventMsg::TokenCount(_)
@@ -2299,20 +2299,20 @@ impl App {
             emit_skill_load_warnings(&self.app_event_tx, &errors);
         }
         self.handle_backtrack_event(&event.msg);
-        self.chat_widget.handle_codex_event(event);
+        self.chat_widget.handle_rune_event(event);
 
         if needs_refresh {
             self.refresh_status_line();
         }
     }
 
-    fn handle_codex_event_replay(&mut self, event: Event) {
+    fn handle_rune_event_replay(&mut self, event: Event) {
         self.handle_backtrack_event(&event.msg);
-        self.chat_widget.handle_codex_event_replay(event);
+        self.chat_widget.handle_rune_event_replay(event);
     }
 
     fn handle_active_thread_event(&mut self, tui: &mut tui::Tui, event: Event) -> Result<()> {
-        self.handle_codex_event_now(event);
+        self.handle_rune_event_now(event);
         if self.backtrack_render_pending {
             tui.frame_requester().schedule_frame();
         }
@@ -2395,7 +2395,7 @@ impl App {
         (!model.starts_with("rune-auto-")).then(|| Self::reasoning_label(reasoning_effort))
     }
 
-    pub(crate) fn token_usage(&self) -> codex_core::protocol::TokenUsage {
+    pub(crate) fn token_usage(&self) -> rune_core::protocol::TokenUsage {
         self.chat_widget.token_usage()
     }
 
@@ -2425,7 +2425,7 @@ impl App {
             Err(external_editor::EditorError::MissingEditor) => {
                 self.chat_widget
                     .add_to_history(history_cell::new_error_event(
-                    "Cannot open external editor: set $VISUAL or $EDITOR before starting Codex."
+                    "Cannot open external editor: set $VISUAL or $EDITOR before starting Rune."
                         .to_string(),
                 ));
                 self.reset_external_editor_state(tui);
@@ -2567,11 +2567,11 @@ impl App {
         cwd: PathBuf,
         env_map: std::collections::HashMap<String, String>,
         logs_base_dir: PathBuf,
-        sandbox_policy: codex_core::protocol::SandboxPolicy,
+        sandbox_policy: rune_core::protocol::SandboxPolicy,
         tx: AppEventSender,
     ) {
         tokio::task::spawn_blocking(move || {
-            let result = codex_windows_sandbox::apply_world_writable_scan_and_denies(
+            let result = rune_windows_sandbox::apply_world_writable_scan_and_denies(
                 &logs_base_dir,
                 &cwd,
                 &env_map,
@@ -2602,21 +2602,21 @@ mod tests {
     use crate::history_cell::HistoryCell;
     use crate::history_cell::UserHistoryCell;
     use crate::history_cell::new_session_info;
-    use codex_core::AuthManager;
-    use codex_core::CodexAuth;
-    use codex_core::ThreadManager;
-    use codex_core::config::ConfigBuilder;
-    use codex_core::config::ConfigOverrides;
-    use codex_core::models_manager::manager::ModelsManager;
-    use codex_core::protocol::AskForApproval;
-    use codex_core::protocol::Event;
-    use codex_core::protocol::EventMsg;
-    use codex_core::protocol::SandboxPolicy;
-    use codex_core::protocol::SessionConfiguredEvent;
-    use codex_core::protocol::SessionSource;
-    use codex_otel::OtelManager;
-    use codex_protocol::ThreadId;
-    use codex_protocol::user_input::TextElement;
+    use rune_core::AuthManager;
+    use rune_core::RuneAuth;
+    use rune_core::ThreadManager;
+    use rune_core::config::ConfigBuilder;
+    use rune_core::config::ConfigOverrides;
+    use rune_core::models_manager::manager::ModelsManager;
+    use rune_core::protocol::AskForApproval;
+    use rune_core::protocol::Event;
+    use rune_core::protocol::EventMsg;
+    use rune_core::protocol::SandboxPolicy;
+    use rune_core::protocol::SessionConfiguredEvent;
+    use rune_core::protocol::SessionSource;
+    use rune_otel::OtelManager;
+    use rune_protocol::ThreadId;
+    use rune_protocol::user_input::TextElement;
     use insta::assert_snapshot;
     use pretty_assertions::assert_eq;
     use ratatui::prelude::Line;
@@ -2690,11 +2690,11 @@ mod tests {
         let (chat_widget, app_event_tx, _rx, _op_rx) = make_chatwidget_manual_with_sender().await;
         let config = chat_widget.config_ref().clone();
         let server = Arc::new(ThreadManager::with_models_provider(
-            CodexAuth::from_api_key("Test API Key"),
+            RuneAuth::from_api_key("Test API Key"),
             config.model_provider.clone(),
         ));
         let auth_manager =
-            AuthManager::from_auth_for_testing(CodexAuth::from_api_key("Test API Key"));
+            AuthManager::from_auth_for_testing(RuneAuth::from_api_key("Test API Key"));
         let file_search = FileSearchManager::new(config.cwd.clone(), app_event_tx.clone());
         let model = ModelsManager::get_model_offline(config.model.as_deref());
         let otel_manager = test_otel_manager(&config, model.as_str());
@@ -2721,7 +2721,7 @@ mod tests {
             status_line_invalid_items_warned: Arc::new(AtomicBool::new(false)),
             backtrack: BacktrackState::default(),
             backtrack_render_pending: false,
-            feedback: codex_feedback::CodexFeedback::new(),
+            feedback: rune_feedback::RuneFeedback::new(),
             feedback_audience: FeedbackAudience::External,
             pending_update_action: None,
             suppress_shutdown_complete: false,
@@ -2743,11 +2743,11 @@ mod tests {
         let (chat_widget, app_event_tx, rx, op_rx) = make_chatwidget_manual_with_sender().await;
         let config = chat_widget.config_ref().clone();
         let server = Arc::new(ThreadManager::with_models_provider(
-            CodexAuth::from_api_key("Test API Key"),
+            RuneAuth::from_api_key("Test API Key"),
             config.model_provider.clone(),
         ));
         let auth_manager =
-            AuthManager::from_auth_for_testing(CodexAuth::from_api_key("Test API Key"));
+            AuthManager::from_auth_for_testing(RuneAuth::from_api_key("Test API Key"));
         let file_search = FileSearchManager::new(config.cwd.clone(), app_event_tx.clone());
         let model = ModelsManager::get_model_offline(config.model.as_deref());
         let otel_manager = test_otel_manager(&config, model.as_str());
@@ -2775,7 +2775,7 @@ mod tests {
                 status_line_invalid_items_warned: Arc::new(AtomicBool::new(false)),
                 backtrack: BacktrackState::default(),
                 backtrack_render_pending: false,
-                feedback: codex_feedback::CodexFeedback::new(),
+                feedback: rune_feedback::RuneFeedback::new(),
                 feedback_audience: FeedbackAudience::External,
                 pending_update_action: None,
                 suppress_shutdown_complete: false,
@@ -2809,7 +2809,7 @@ mod tests {
     }
 
     fn all_model_presets() -> Vec<ModelPreset> {
-        codex_core::models_manager::model_presets::all_model_presets().clone()
+        rune_core::models_manager::model_presets::all_model_presets().clone()
     }
 
     fn model_migration_copy_to_plain_text(
@@ -2843,8 +2843,8 @@ mod tests {
             &all_model_presets()
         ));
         assert!(should_show_model_migration_prompt(
-            "gpt-5-codex",
-            "gpt-5.1-codex",
+            "gpt-5-rune",
+            "gpt-5.1-rune",
             &seen,
             &all_model_presets()
         ));
@@ -2855,14 +2855,14 @@ mod tests {
             &all_model_presets()
         ));
         assert!(should_show_model_migration_prompt(
-            "gpt-5.1-codex",
+            "gpt-5.1-rune",
             "gpt-5.1-rune-max",
             &seen,
             &all_model_presets()
         ));
         assert!(!should_show_model_migration_prompt(
-            "gpt-5.1-codex",
-            "gpt-5.1-codex",
+            "gpt-5.1-rune",
+            "gpt-5.1-rune",
             &seen,
             &all_model_presets()
         ));
@@ -2891,7 +2891,7 @@ mod tests {
         let mut available = all_model_presets();
         let mut current = available
             .iter()
-            .find(|preset| preset.model == "gpt-5-codex")
+            .find(|preset| preset.model == "gpt-5-rune")
             .cloned()
             .expect("preset present");
         current.upgrade = Some(ModelUpgrade {
@@ -2902,7 +2902,7 @@ mod tests {
             upgrade_copy: None,
             migration_markdown: None,
         });
-        available.retain(|preset| preset.model != "gpt-5-codex");
+        available.retain(|preset| preset.model != "gpt-5-rune");
         available.push(current.clone());
 
         assert!(should_show_model_migration_prompt(
@@ -2917,9 +2917,9 @@ mod tests {
 
     #[tokio::test]
     async fn model_migration_prompt_shows_for_hidden_model() {
-        let codex_home = tempdir().expect("temp codex home");
+        let rune_home = tempdir().expect("temp rune home");
         let config = ConfigBuilder::default()
-            .codex_home(codex_home.path().to_path_buf())
+            .rune_home(rune_home.path().to_path_buf())
             .build()
             .await
             .expect("config");
@@ -2927,12 +2927,12 @@ mod tests {
         let available_models = all_model_presets();
         let current = available_models
             .iter()
-            .find(|preset| preset.model == "gpt-5.1-codex")
+            .find(|preset| preset.model == "gpt-5.1-rune")
             .cloned()
-            .expect("gpt-5.1-codex preset present");
+            .expect("gpt-5.1-rune preset present");
         assert!(
             !current.show_in_picker,
-            "expected gpt-5.1-codex to be hidden from picker for this test"
+            "expected gpt-5.1-rune to be hidden from picker for this test"
         );
 
         let upgrade = current.upgrade.as_ref().expect("upgrade configured");
@@ -3061,7 +3061,7 @@ mod tests {
         assert_eq!(user_count(&app.transcript_cells), 2);
 
         let base_id = ThreadId::new();
-        app.chat_widget.handle_codex_event(Event {
+        app.chat_widget.handle_rune_event(Event {
             id: String::new(),
             msg: EventMsg::SessionConfigured(SessionConfiguredEvent {
                 session_id: base_id,
@@ -3125,7 +3125,7 @@ mod tests {
             rollout_path: Some(PathBuf::new()),
         };
 
-        app.chat_widget.handle_codex_event(Event {
+        app.chat_widget.handle_rune_event(Event {
             id: String::new(),
             msg: EventMsg::SessionConfigured(event),
         });
@@ -3164,7 +3164,7 @@ mod tests {
         );
         assert_eq!(
             summary.resume_command,
-            Some("codex resume 123e4567-e89b-12d3-a456-426614174000".to_string())
+            Some("rune resume 123e4567-e89b-12d3-a456-426614174000".to_string())
         );
     }
 
@@ -3182,7 +3182,7 @@ mod tests {
             .expect("summary");
         assert_eq!(
             summary.resume_command,
-            Some("codex resume my-session".to_string())
+            Some("rune resume my-session".to_string())
         );
     }
 }

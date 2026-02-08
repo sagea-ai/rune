@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
-use codex_network_proxy::Args;
-use codex_network_proxy::NetworkProxy;
+use rune_network_proxy::Args;
+use rune_network_proxy::NetworkProxy;
 
 #[tokio::main]
 async fn main() -> Result<()> {

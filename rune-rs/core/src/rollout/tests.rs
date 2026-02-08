@@ -27,16 +27,16 @@ use crate::rollout::list::read_head_for_summary;
 use crate::rollout::recorder::RolloutRecorder;
 use crate::rollout::rollout_date_parts;
 use anyhow::Result;
-use codex_protocol::ThreadId;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::EventMsg;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::SessionMeta;
-use codex_protocol::protocol::SessionMetaLine;
-use codex_protocol::protocol::SessionSource;
-use codex_protocol::protocol::UserMessageEvent;
+use rune_protocol::ThreadId;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::protocol::EventMsg;
+use rune_protocol::protocol::RolloutItem;
+use rune_protocol::protocol::RolloutLine;
+use rune_protocol::protocol::SessionMeta;
+use rune_protocol::protocol::SessionMetaLine;
+use rune_protocol::protocol::SessionSource;
+use rune_protocol::protocol::UserMessageEvent;
 
 const NO_SOURCE_FILTER: &[SessionSource] = &[];
 const TEST_PROVIDER: &str = "test-provider";
@@ -59,7 +59,7 @@ async fn insert_state_db_thread(
     archived: bool,
 ) {
     let runtime =
-        codex_state::StateRuntime::init(home.to_path_buf(), TEST_PROVIDER.to_string(), None)
+        rune_state::StateRuntime::init(home.to_path_buf(), TEST_PROVIDER.to_string(), None)
             .await
             .expect("state db should initialize");
     runtime
@@ -70,7 +70,7 @@ async fn insert_state_db_thread(
         .with_ymd_and_hms(2025, 1, 3, 12, 0, 0)
         .single()
         .expect("valid datetime");
-    let mut builder = codex_state::ThreadMetadataBuilder::new(
+    let mut builder = rune_state::ThreadMetadataBuilder::new(
         thread_id,
         rollout_path.to_path_buf(),
         created_at,
@@ -281,7 +281,7 @@ async fn find_thread_path_repairs_missing_db_row_after_filesystem_fallback() {
 
     // Create an empty state DB so lookup takes the DB-first path and then falls back to files.
     let _runtime =
-        codex_state::StateRuntime::init(home.to_path_buf(), TEST_PROVIDER.to_string(), None)
+        rune_state::StateRuntime::init(home.to_path_buf(), TEST_PROVIDER.to_string(), None)
             .await
             .expect("state db should initialize");
     _runtime
@@ -312,7 +312,7 @@ async fn assert_state_db_rollout_path(
     expected_path: Option<&Path>,
 ) {
     let runtime =
-        codex_state::StateRuntime::init(home.to_path_buf(), TEST_PROVIDER.to_string(), None)
+        rune_state::StateRuntime::init(home.to_path_buf(), TEST_PROVIDER.to_string(), None)
             .await
             .expect("state db should initialize");
     let path = runtime

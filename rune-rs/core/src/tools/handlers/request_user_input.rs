@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use codex_protocol::models::FunctionCallOutputBody;
+use rune_protocol::models::FunctionCallOutputBody;
 
 use crate::function_tool::FunctionCallError;
 use crate::tools::context::ToolInvocation;
@@ -8,9 +8,9 @@ use crate::tools::context::ToolPayload;
 use crate::tools::handlers::parse_arguments;
 use crate::tools::registry::ToolHandler;
 use crate::tools::registry::ToolKind;
-use codex_protocol::config_types::ModeKind;
-use codex_protocol::config_types::TUI_VISIBLE_COLLABORATION_MODES;
-use codex_protocol::request_user_input::RequestUserInputArgs;
+use rune_protocol::config_types::ModeKind;
+use rune_protocol::config_types::TUI_VISIBLE_COLLABORATION_MODES;
+use rune_protocol::request_user_input::RequestUserInputArgs;
 
 fn format_allowed_modes() -> String {
     let mode_names: Vec<&str> = TUI_VISIBLE_COLLABORATION_MODES

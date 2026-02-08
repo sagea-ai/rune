@@ -3,7 +3,7 @@ use crate::harness::build_metrics_with_defaults;
 use crate::harness::find_metric;
 use crate::harness::histogram_data;
 use crate::harness::latest_metrics;
-use codex_otel::metrics::Result;
+use rune_otel::metrics::Result;
 use pretty_assertions::assert_eq;
 use std::collections::BTreeMap;
 
@@ -13,13 +13,13 @@ fn send_builds_payload_with_tags_and_histograms() -> Result<()> {
     let (metrics, exporter) =
         build_metrics_with_defaults(&[("service", "rune-cli"), ("env", "prod")])?;
 
-    metrics.counter("codex.turns", 1, &[("model", "gpt-5.1"), ("env", "dev")])?;
-    metrics.histogram("codex.tool_latency", 25, &[("tool", "shell")])?;
+    metrics.counter("rune.turns", 1, &[("model", "gpt-5.1"), ("env", "dev")])?;
+    metrics.histogram("rune.tool_latency", 25, &[("tool", "shell")])?;
     metrics.shutdown()?;
 
     let resource_metrics = latest_metrics(&exporter);
 
-    let counter = find_metric(&resource_metrics, "codex.turns").expect("counter metric missing");
+    let counter = find_metric(&resource_metrics, "rune.turns").expect("counter metric missing");
     let counter_attributes = match counter.data() {
         opentelemetry_sdk::metrics::data::AggregatedMetrics::U64(data) => match data {
             opentelemetry_sdk::metrics::data::MetricData::Sum(sum) => {
@@ -41,14 +41,14 @@ fn send_builds_payload_with_tags_and_histograms() -> Result<()> {
     assert_eq!(counter_attributes, expected_counter_attributes);
 
     let (bounds, bucket_counts, sum, count) =
-        histogram_data(&resource_metrics, "codex.tool_latency");
+        histogram_data(&resource_metrics, "rune.tool_latency");
     assert!(!bounds.is_empty());
     assert_eq!(bucket_counts.iter().sum::<u64>(), 1);
     assert_eq!(sum, 25.0);
     assert_eq!(count, 1);
 
     let histogram_attrs = attributes_to_map(
-        match find_metric(&resource_metrics, "codex.tool_latency").and_then(|metric| {
+        match find_metric(&resource_metrics, "rune.tool_latency").and_then(|metric| {
             match metric.data() {
                 opentelemetry_sdk::metrics::data::AggregatedMetrics::F64(
                     opentelemetry_sdk::metrics::data::MetricData::Histogram(histogram),
@@ -82,9 +82,9 @@ fn send_merges_default_tags_per_line() -> Result<()> {
         ("region", "us"),
     ])?;
 
-    metrics.counter("codex.alpha", 1, &[("env", "dev"), ("component", "alpha")])?;
+    metrics.counter("rune.alpha", 1, &[("env", "dev"), ("component", "alpha")])?;
     metrics.counter(
-        "codex.beta",
+        "rune.beta",
         2,
         &[("service", "worker"), ("component", "beta")],
     )?;
@@ -92,7 +92,7 @@ fn send_merges_default_tags_per_line() -> Result<()> {
 
     let resource_metrics = latest_metrics(&exporter);
     let alpha_metric =
-        find_metric(&resource_metrics, "codex.alpha").expect("codex.alpha metric missing");
+        find_metric(&resource_metrics, "rune.alpha").expect("rune.alpha metric missing");
     let alpha_point = match alpha_metric.data() {
         opentelemetry_sdk::metrics::data::AggregatedMetrics::U64(data) => match data {
             opentelemetry_sdk::metrics::data::MetricData::Sum(sum) => {
@@ -115,7 +115,7 @@ fn send_merges_default_tags_per_line() -> Result<()> {
     assert_eq!(alpha_attrs, expected_alpha_attrs);
 
     let beta_metric =
-        find_metric(&resource_metrics, "codex.beta").expect("codex.beta metric missing");
+        find_metric(&resource_metrics, "rune.beta").expect("rune.beta metric missing");
     let beta_point = match beta_metric.data() {
         opentelemetry_sdk::metrics::data::AggregatedMetrics::U64(data) => match data {
             opentelemetry_sdk::metrics::data::MetricData::Sum(sum) => {
@@ -145,11 +145,11 @@ fn send_merges_default_tags_per_line() -> Result<()> {
 fn client_sends_enqueued_metric() -> Result<()> {
     let (metrics, exporter) = build_metrics_with_defaults(&[])?;
 
-    metrics.counter("codex.turns", 1, &[("model", "gpt-5.1")])?;
+    metrics.counter("rune.turns", 1, &[("model", "gpt-5.1")])?;
     metrics.shutdown()?;
 
     let resource_metrics = latest_metrics(&exporter);
-    let counter = find_metric(&resource_metrics, "codex.turns").expect("counter metric missing");
+    let counter = find_metric(&resource_metrics, "rune.turns").expect("counter metric missing");
     let points = match counter.data() {
         opentelemetry_sdk::metrics::data::AggregatedMetrics::U64(data) => match data {
             opentelemetry_sdk::metrics::data::MetricData::Sum(sum) => {
@@ -173,11 +173,11 @@ fn client_sends_enqueued_metric() -> Result<()> {
 fn shutdown_flushes_in_memory_exporter() -> Result<()> {
     let (metrics, exporter) = build_metrics_with_defaults(&[])?;
 
-    metrics.counter("codex.turns", 1, &[])?;
+    metrics.counter("rune.turns", 1, &[])?;
     metrics.shutdown()?;
 
     let resource_metrics = latest_metrics(&exporter);
-    let counter = find_metric(&resource_metrics, "codex.turns").expect("counter metric missing");
+    let counter = find_metric(&resource_metrics, "rune.turns").expect("counter metric missing");
     let points = match counter.data() {
         opentelemetry_sdk::metrics::data::AggregatedMetrics::U64(data) => match data {
             opentelemetry_sdk::metrics::data::MetricData::Sum(sum) => {

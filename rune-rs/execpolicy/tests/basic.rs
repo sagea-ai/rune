@@ -4,17 +4,17 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use anyhow::Result;
-use codex_execpolicy::Decision;
-use codex_execpolicy::Error;
-use codex_execpolicy::Evaluation;
-use codex_execpolicy::Policy;
-use codex_execpolicy::PolicyParser;
-use codex_execpolicy::RuleMatch;
-use codex_execpolicy::RuleRef;
-use codex_execpolicy::blocking_append_allow_prefix_rule;
-use codex_execpolicy::rule::PatternToken;
-use codex_execpolicy::rule::PrefixPattern;
-use codex_execpolicy::rule::PrefixRule;
+use rune_execpolicy::Decision;
+use rune_execpolicy::Error;
+use rune_execpolicy::Evaluation;
+use rune_execpolicy::Policy;
+use rune_execpolicy::PolicyParser;
+use rune_execpolicy::RuleMatch;
+use rune_execpolicy::RuleRef;
+use rune_execpolicy::blocking_append_allow_prefix_rule;
+use rune_execpolicy::rule::PatternToken;
+use rune_execpolicy::rule::PrefixPattern;
+use rune_execpolicy::rule::PrefixRule;
 use pretty_assertions::assert_eq;
 use tempfile::tempdir;
 

@@ -2,19 +2,19 @@ use anyhow::Result;
 use app_test_support::McpProcess;
 use app_test_support::test_tmp_path;
 use app_test_support::to_response;
-use codex_app_server_protocol::GetUserSavedConfigResponse;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::Profile;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::SandboxSettings;
-use codex_app_server_protocol::Tools;
-use codex_app_server_protocol::UserSavedConfig;
-use codex_core::protocol::AskForApproval;
-use codex_protocol::config_types::ForcedLoginMethod;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::config_types::SandboxMode;
-use codex_protocol::config_types::Verbosity;
-use codex_protocol::openai_models::ReasoningEffort;
+use rune_app_server_protocol::GetUserSavedConfigResponse;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::Profile;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::SandboxSettings;
+use rune_app_server_protocol::Tools;
+use rune_app_server_protocol::UserSavedConfig;
+use rune_core::protocol::AskForApproval;
+use rune_protocol::config_types::ForcedLoginMethod;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::config_types::SandboxMode;
+use rune_protocol::config_types::Verbosity;
+use rune_protocol::openai_models::ReasoningEffort;
 use pretty_assertions::assert_eq;
 use std::collections::HashMap;
 use std::path::Path;
@@ -23,9 +23,9 @@ use tokio::time::timeout;
 
 const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
-fn create_config_toml(codex_home: &Path) -> std::io::Result<()> {
+fn create_config_toml(rune_home: &Path) -> std::io::Result<()> {
     let writable_root = test_tmp_path();
-    let config_toml = codex_home.join("config.toml");
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(
@@ -66,10 +66,10 @@ chatgpt_base_url = "https://api.chatgpt.com"
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn get_config_toml_parses_all_fields() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp.send_get_user_saved_config_request().await?;
@@ -123,9 +123,9 @@ async fn get_config_toml_parses_all_fields() -> Result<()> {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn get_config_toml_empty() -> Result<()> {
-    let codex_home = TempDir::new()?;
+    let rune_home = TempDir::new()?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp.send_get_user_saved_config_request().await?;

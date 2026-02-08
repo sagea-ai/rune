@@ -3,30 +3,30 @@ use app_test_support::McpProcess;
 use app_test_support::create_fake_rollout;
 use app_test_support::rollout_path;
 use app_test_support::to_response;
-use codex_app_server_protocol::AddConversationListenerParams;
-use codex_app_server_protocol::AddConversationSubscriptionResponse;
-use codex_app_server_protocol::InputItem;
-use codex_app_server_protocol::JSONRPCNotification;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::NewConversationParams;
-use codex_app_server_protocol::NewConversationResponse;
-use codex_app_server_protocol::RequestId;
-use codex_app_server_protocol::ResumeConversationParams;
-use codex_app_server_protocol::ResumeConversationResponse;
-use codex_app_server_protocol::SendUserMessageParams;
-use codex_app_server_protocol::SendUserMessageResponse;
-use codex_execpolicy::Policy;
-use codex_protocol::ThreadId;
-use codex_protocol::config_types::ReasoningSummary;
-use codex_protocol::models::ContentItem;
-use codex_protocol::models::DeveloperInstructions;
-use codex_protocol::models::ResponseItem;
-use codex_protocol::protocol::AskForApproval;
-use codex_protocol::protocol::RawResponseItemEvent;
-use codex_protocol::protocol::RolloutItem;
-use codex_protocol::protocol::RolloutLine;
-use codex_protocol::protocol::SandboxPolicy;
-use codex_protocol::protocol::TurnContextItem;
+use rune_app_server_protocol::AddConversationListenerParams;
+use rune_app_server_protocol::AddConversationSubscriptionResponse;
+use rune_app_server_protocol::InputItem;
+use rune_app_server_protocol::JSONRPCNotification;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::NewConversationParams;
+use rune_app_server_protocol::NewConversationResponse;
+use rune_app_server_protocol::RequestId;
+use rune_app_server_protocol::ResumeConversationParams;
+use rune_app_server_protocol::ResumeConversationResponse;
+use rune_app_server_protocol::SendUserMessageParams;
+use rune_app_server_protocol::SendUserMessageResponse;
+use rune_execpolicy::Policy;
+use rune_protocol::ThreadId;
+use rune_protocol::config_types::ReasoningSummary;
+use rune_protocol::models::ContentItem;
+use rune_protocol::models::DeveloperInstructions;
+use rune_protocol::models::ResponseItem;
+use rune_protocol::protocol::AskForApproval;
+use rune_protocol::protocol::RawResponseItemEvent;
+use rune_protocol::protocol::RolloutItem;
+use rune_protocol::protocol::RolloutLine;
+use rune_protocol::protocol::SandboxPolicy;
+use rune_protocol::protocol::TurnContextItem;
 use core_test_support::responses;
 use pretty_assertions::assert_eq;
 use std::io::Write;
@@ -39,8 +39,8 @@ const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs
 
 #[tokio::test]
 async fn test_send_message_success() -> Result<()> {
-    // Spin up a mock responses server that immediately ends the Codex turn.
-    // Two Codex turns hit the mock model (session start + send-user-message). Provide two SSE responses.
+    // Spin up a mock responses server that immediately ends the Rune turn.
+    // Two Rune turns hit the mock model (session start + send-user-message). Provide two SSE responses.
     let server = responses::start_mock_server().await;
     let body1 = responses::sse(vec![
         responses::ev_response_created("resp-1"),
@@ -55,12 +55,12 @@ async fn test_send_message_success() -> Result<()> {
     let _response_mock1 = responses::mount_sse_once(&server, body1).await;
     let _response_mock2 = responses::mount_sse_once(&server, body2).await;
 
-    // Create a temporary Codex home with config pointing at the mock server.
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    // Create a temporary Rune home with config pointing at the mock server.
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
     // Start MCP server process and initialize.
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     // Start a conversation using the new wire API.
@@ -128,7 +128,7 @@ async fn send_message(
     // Note this also ensures that the final request to the server was made.
     let task_finished_notification: JSONRPCNotification = timeout(
         DEFAULT_READ_TIMEOUT,
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await??;
     let serde_json::Value::Object(map) = task_finished_notification
@@ -145,7 +145,7 @@ async fn send_message(
 
     let raw_attempt = tokio::time::timeout(
         std::time::Duration::from_millis(200),
-        mcp.read_stream_until_notification_message("codex/event/raw_response_item"),
+        mcp.read_stream_until_notification_message("rune/event/raw_response_item"),
     )
     .await;
     assert!(
@@ -165,10 +165,10 @@ async fn test_send_message_raw_notifications_opt_in() -> Result<()> {
     ]);
     let _response_mock = responses::mount_sse_once(&server, body).await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let new_conv_id = mcp
@@ -237,7 +237,7 @@ async fn test_send_message_raw_notifications_opt_in() -> Result<()> {
 
     let _ = tokio::time::timeout(
         std::time::Duration::from_millis(250),
-        mcp.read_stream_until_notification_message("codex/event/task_complete"),
+        mcp.read_stream_until_notification_message("rune/event/task_complete"),
     )
     .await;
 
@@ -246,9 +246,9 @@ async fn test_send_message_raw_notifications_opt_in() -> Result<()> {
 
 #[tokio::test]
 async fn test_send_message_session_not_found() -> Result<()> {
-    // Start MCP without creating a Codex session
-    let codex_home = TempDir::new()?;
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    // Start MCP without creating a Rune session
+    let rune_home = TempDir::new()?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let unknown = ThreadId::new();
@@ -292,24 +292,24 @@ async fn resume_with_model_mismatch_appends_model_switch_once() -> Result<()> {
     )
     .await;
 
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path(), &server.uri())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path(), &server.uri())?;
 
     let filename_ts = "2025-01-02T12-00-00";
     let meta_rfc3339 = "2025-01-02T12:00:00Z";
     let preview = "Resume me";
     let conversation_id = create_fake_rollout(
-        codex_home.path(),
+        rune_home.path(),
         filename_ts,
         meta_rfc3339,
         preview,
         Some("mock_provider"),
         None,
     )?;
-    let rollout_path = rollout_path(codex_home.path(), filename_ts, &conversation_id);
+    let rollout_path = rollout_path(rune_home.path(), filename_ts, &conversation_id);
     append_rollout_turn_context(&rollout_path, meta_rfc3339, "previous-model")?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let resume_id = mcp
@@ -318,7 +318,7 @@ async fn resume_with_model_mismatch_appends_model_switch_once() -> Result<()> {
             conversation_id: None,
             history: None,
             overrides: Some(NewConversationParams {
-                model: Some("gpt-5.2-codex".to_string()),
+                model: Some("gpt-5.2-rune".to_string()),
                 ..Default::default()
             }),
         })
@@ -384,8 +384,8 @@ async fn resume_with_model_mismatch_appends_model_switch_once() -> Result<()> {
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn create_config_toml(codex_home: &Path, server_uri: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &Path, server_uri: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         format!(
@@ -409,21 +409,21 @@ stream_max_retries = 0
 
 #[expect(clippy::expect_used)]
 async fn read_raw_response_item(mcp: &mut McpProcess, conversation_id: ThreadId) -> ResponseItem {
-    // TODO: Switch to rawResponseItem/completed once we migrate to app server v2 in codex web.
+    // TODO: Switch to rawResponseItem/completed once we migrate to app server v2 in rune web.
     loop {
         let raw_notification: JSONRPCNotification = timeout(
             DEFAULT_READ_TIMEOUT,
-            mcp.read_stream_until_notification_message("codex/event/raw_response_item"),
+            mcp.read_stream_until_notification_message("rune/event/raw_response_item"),
         )
         .await
-        .expect("codex/event/raw_response_item notification timeout")
-        .expect("codex/event/raw_response_item notification resp");
+        .expect("rune/event/raw_response_item notification timeout")
+        .expect("rune/event/raw_response_item notification resp");
 
         let serde_json::Value::Object(params) = raw_notification
             .params
-            .expect("codex/event/raw_response_item should have params")
+            .expect("rune/event/raw_response_item should have params")
         else {
-            panic!("codex/event/raw_response_item should have params");
+            panic!("rune/event/raw_response_item should have params");
         };
 
         let conversation_id_value = params

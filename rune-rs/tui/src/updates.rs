@@ -5,14 +5,14 @@ use crate::update_action::UpdateAction;
 use chrono::DateTime;
 use chrono::Duration;
 use chrono::Utc;
-use codex_core::config::Config;
-use codex_core::default_client::create_client;
+use rune_core::config::Config;
+use rune_core::default_client::create_client;
 use serde::Deserialize;
 use serde::Serialize;
 use std::path::Path;
 use std::path::PathBuf;
 
-use crate::version::CODEX_CLI_VERSION;
+use crate::version::RUNE_CLI_VERSION;
 
 pub fn get_upgrade_version(config: &Config) -> Option<String> {
     if !config.check_for_update_on_startup {
@@ -37,7 +37,7 @@ pub fn get_upgrade_version(config: &Config) -> Option<String> {
     }
 
     info.and_then(|info| {
-        if is_newer(&info.latest_version, CODEX_CLI_VERSION).unwrap_or(false) {
+        if is_newer(&info.latest_version, RUNE_CLI_VERSION).unwrap_or(false) {
             Some(info.latest_version)
         } else {
             None
@@ -56,8 +56,8 @@ struct VersionInfo {
 
 const VERSION_FILENAME: &str = "version.json";
 // We use the latest version from the cask if installation is via homebrew - homebrew does not immediately pick up the latest release and can lag behind.
-const HOMEBREW_CASK_API_URL: &str = "https://formulae.brew.sh/api/cask/codex.json";
-const LATEST_RELEASE_URL: &str = "https://api.github.com/repos/openai/codex/releases/latest";
+const HOMEBREW_CASK_API_URL: &str = "https://formulae.brew.sh/api/cask/rune.json";
+const LATEST_RELEASE_URL: &str = "https://api.github.com/repos/openai/rune/releases/latest";
 
 #[derive(Deserialize, Debug, Clone)]
 struct ReleaseInfo {
@@ -70,7 +70,7 @@ struct HomebrewCaskInfo {
 }
 
 fn version_filepath(config: &Config) -> PathBuf {
-    config.codex_home.join(VERSION_FILENAME)
+    config.rune_home.join(VERSION_FILENAME)
 }
 
 fn read_version_info(version_file: &Path) -> anyhow::Result<VersionInfo> {
@@ -184,10 +184,10 @@ mod tests {
     #[test]
     fn extract_version_from_brew_api_json() {
         //
-        // https://formulae.brew.sh/api/cask/codex.json
+        // https://formulae.brew.sh/api/cask/rune.json
         let cask_json = r#"{
-            "token": "codex",
-            "full_token": "codex",
+            "token": "rune",
+            "full_token": "rune",
             "tap": "homebrew/cask",
             "version": "0.96.0",
         }"#;

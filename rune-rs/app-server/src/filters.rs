@@ -1,7 +1,7 @@
-use codex_app_server_protocol::ThreadSourceKind;
-use codex_core::INTERACTIVE_SESSION_SOURCES;
-use codex_protocol::protocol::SessionSource as CoreSessionSource;
-use codex_protocol::protocol::SubAgentSource as CoreSubAgentSource;
+use rune_app_server_protocol::ThreadSourceKind;
+use rune_core::INTERACTIVE_SESSION_SOURCES;
+use rune_protocol::protocol::SessionSource as CoreSessionSource;
+use rune_protocol::protocol::SubAgentSource as CoreSubAgentSource;
 
 pub(crate) fn compute_source_filters(
     source_kinds: Option<Vec<ThreadSourceKind>>,
@@ -84,7 +84,7 @@ pub(crate) fn source_kind_matches(source: &CoreSessionSource, filter: &[ThreadSo
 #[cfg(test)]
 mod tests {
     use super::*;
-    use codex_protocol::ThreadId;
+    use rune_protocol::ThreadId;
     use pretty_assertions::assert_eq;
     use uuid::Uuid;
 

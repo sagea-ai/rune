@@ -6,8 +6,8 @@ use std::sync::LazyLock;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 
-use codex_core::config::Config;
-use codex_core::protocol::Op;
+use rune_core::config::Config;
+use rune_core::protocol::Op;
 use serde::Serialize;
 use serde_json::json;
 
@@ -78,17 +78,17 @@ fn now_ts() -> String {
 }
 
 pub(crate) fn maybe_init(config: &Config) {
-    let enabled = std::env::var("CODEX_TUI_RECORD_SESSION")
+    let enabled = std::env::var("RUNE_TUI_RECORD_SESSION")
         .map(|v| matches!(v.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"))
         .unwrap_or(false);
     if !enabled {
         return;
     }
 
-    let path = if let Ok(path) = std::env::var("CODEX_TUI_SESSION_LOG_PATH") {
+    let path = if let Ok(path) = std::env::var("RUNE_TUI_SESSION_LOG_PATH") {
         PathBuf::from(path)
     } else {
-        let mut p = match codex_core::config::log_dir(config) {
+        let mut p = match rune_core::config::log_dir(config) {
             Ok(dir) => dir,
             Err(_) => std::env::temp_dir(),
         };
@@ -125,8 +125,8 @@ pub(crate) fn log_inbound_app_event(event: &AppEvent) {
     }
 
     match event {
-        AppEvent::CodexEvent(ev) => {
-            write_record("to_tui", "codex_event", ev);
+        AppEvent::RuneEvent(ev) => {
+            write_record("to_tui", "rune_event", ev);
         }
         AppEvent::NewSession => {
             let value = json!({

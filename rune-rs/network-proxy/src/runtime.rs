@@ -12,7 +12,7 @@ use crate::state::build_config_state;
 use crate::state::validate_policy_against_constraints;
 use anyhow::Context;
 use anyhow::Result;
-use codex_utils_absolute_path::AbsolutePathBuf;
+use rune_utils_absolute_path::AbsolutePathBuf;
 use globset::GlobSet;
 use serde::Serialize;
 use std::collections::HashSet;
@@ -151,7 +151,7 @@ impl NetworkProxyState {
 
     pub async fn current_cfg(&self) -> Result<NetworkProxyConfig> {
         // Callers treat `NetworkProxyState` as a live view of policy. We reload-on-demand so edits to
-        // `config.toml` (including Codex-managed writes) take effect without a restart.
+        // `config.toml` (including Rune-managed writes) take effect without a restart.
         self.reload_if_needed().await?;
         let guard = self.state.read().await;
         Ok(guard.config.clone())

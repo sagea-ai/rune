@@ -1,15 +1,15 @@
 use anyhow::Result;
 use app_test_support::McpProcess;
 use app_test_support::to_response;
-use codex_app_server_protocol::GetAuthStatusParams;
-use codex_app_server_protocol::GetAuthStatusResponse;
-use codex_app_server_protocol::JSONRPCError;
-use codex_app_server_protocol::JSONRPCResponse;
-use codex_app_server_protocol::LoginChatGptResponse;
-use codex_app_server_protocol::LogoutChatGptResponse;
-use codex_app_server_protocol::RequestId;
-use codex_core::auth::AuthCredentialsStoreMode;
-use codex_login::login_with_api_key;
+use rune_app_server_protocol::GetAuthStatusParams;
+use rune_app_server_protocol::GetAuthStatusResponse;
+use rune_app_server_protocol::JSONRPCError;
+use rune_app_server_protocol::JSONRPCResponse;
+use rune_app_server_protocol::LoginChatGptResponse;
+use rune_app_server_protocol::LogoutChatGptResponse;
+use rune_app_server_protocol::RequestId;
+use rune_core::auth::AuthCredentialsStoreMode;
+use rune_login::login_with_api_key;
 use serial_test::serial;
 use std::path::Path;
 use tempfile::TempDir;
@@ -18,8 +18,8 @@ use tokio::time::timeout;
 const DEFAULT_READ_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
 
 // Helper to create a config.toml; mirrors create_conversation.rs
-fn create_config_toml(codex_home: &Path) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml(rune_home: &Path) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     std::fs::write(
         config_toml,
         r#"
@@ -41,16 +41,16 @@ stream_max_retries = 0
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn logout_chatgpt_removes_auth() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    create_config_toml(codex_home.path())?;
+    let rune_home = TempDir::new()?;
+    create_config_toml(rune_home.path())?;
     login_with_api_key(
-        codex_home.path(),
+        rune_home.path(),
         "sk-test-key",
         AuthCredentialsStoreMode::File,
     )?;
-    assert!(codex_home.path().join("auth.json").exists());
+    assert!(rune_home.path().join("auth.json").exists());
 
-    let mut mcp = McpProcess::new_with_env(codex_home.path(), &[("OPENAI_API_KEY", None)]).await?;
+    let mut mcp = McpProcess::new_with_env(rune_home.path(), &[("OPENAI_API_KEY", None)]).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let id = mcp.send_logout_chat_gpt_request().await?;
@@ -62,7 +62,7 @@ async fn logout_chatgpt_removes_auth() -> Result<()> {
     let _ok: LogoutChatGptResponse = to_response(resp)?;
 
     assert!(
-        !codex_home.path().join("auth.json").exists(),
+        !rune_home.path().join("auth.json").exists(),
         "auth.json should be deleted"
     );
 
@@ -84,8 +84,8 @@ async fn logout_chatgpt_removes_auth() -> Result<()> {
     Ok(())
 }
 
-fn create_config_toml_forced_login(codex_home: &Path, forced_method: &str) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+fn create_config_toml_forced_login(rune_home: &Path, forced_method: &str) -> std::io::Result<()> {
+    let config_toml = rune_home.join("config.toml");
     let contents = format!(
         r#"
 model = "mock-model"
@@ -98,10 +98,10 @@ forced_login_method = "{forced_method}"
 }
 
 fn create_config_toml_forced_workspace(
-    codex_home: &Path,
+    rune_home: &Path,
     workspace_id: &str,
 ) -> std::io::Result<()> {
-    let config_toml = codex_home.join("config.toml");
+    let config_toml = rune_home.join("config.toml");
     let contents = format!(
         r#"
 model = "mock-model"
@@ -115,10 +115,10 @@ forced_chatgpt_workspace_id = "{workspace_id}"
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn login_chatgpt_rejected_when_forced_api() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    create_config_toml_forced_login(codex_home.path(), "api")?;
+    let rune_home = TempDir::new()?;
+    create_config_toml_forced_login(rune_home.path(), "api")?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp.send_login_chat_gpt_request().await?;
@@ -139,10 +139,10 @@ async fn login_chatgpt_rejected_when_forced_api() -> Result<()> {
 // Serialize tests that launch the login server since it binds to a fixed port.
 #[serial(login_port)]
 async fn login_chatgpt_includes_forced_workspace_query_param() -> Result<()> {
-    let codex_home = TempDir::new()?;
-    create_config_toml_forced_workspace(codex_home.path(), "ws-forced")?;
+    let rune_home = TempDir::new()?;
+    create_config_toml_forced_workspace(rune_home.path(), "ws-forced")?;
 
-    let mut mcp = McpProcess::new(codex_home.path()).await?;
+    let mut mcp = McpProcess::new(rune_home.path()).await?;
     timeout(DEFAULT_READ_TIMEOUT, mcp.initialize()).await??;
 
     let request_id = mcp.send_login_chat_gpt_request().await?;
