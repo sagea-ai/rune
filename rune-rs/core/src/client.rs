@@ -231,4 +231,20 @@ impl ModelClientSession {
         // Returning error is better to signal it's not ready
         Err(crate::error::RuneErr::InvalidRequest("Ollama integration not yet implemented in ModelClient".to_string()))
     }
+
+    pub async fn update_token_usage_info(
+        &self,
+        _turn_context: &crate::rune::TurnContext,
+        _usage: Option<&rune_protocol::models::TokenUsage>,
+    ) {
+        // Stub
+    }
+
+    pub async fn update_rate_limits(
+        &self,
+        _turn_context: &crate::rune::TurnContext,
+        _rate_limits: Option<&rune_protocol::models::RateLimitSnapshot>,
+    ) {
+        // Stub
+    }
 }
