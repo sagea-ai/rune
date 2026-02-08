@@ -405,7 +405,7 @@ const fn default_enabled() -> bool {
     true
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS, ExperimentalApi)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]  // Removed ExperimentalApi
 #[serde(rename_all = "snake_case")]
 #[ts(export_to = "v2/")]
 pub struct Config {
@@ -528,7 +528,7 @@ pub struct ConfigReadResponse {
     pub layers: Option<Vec<ConfigLayer>>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS, ExperimentalApi)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]  // Removed ExperimentalApi
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
 pub struct ConfigRequirements {
@@ -888,7 +888,7 @@ pub enum Account {
     Chatgpt { email: String, plan_type: PlanType },
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS, ExperimentalApi)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema, TS)]  // Removed ExperimentalApi
 #[serde(tag = "type")]
 #[ts(tag = "type")]
 #[ts(export_to = "v2/")]
@@ -1303,7 +1303,7 @@ pub struct CommandExecResponse {
 // === Threads, Turns, and Items ===
 // Thread APIs
 #[derive(
-    Serialize, Deserialize, Debug, Clone, PartialEq, Default, JsonSchema, TS, ExperimentalApi,
+    Serialize, Deserialize, Debug, Clone, PartialEq, Default, JsonSchema, TS, // Removed ExperimentalApi
 )]
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
@@ -1374,7 +1374,7 @@ pub struct ThreadStartResponse {
 }
 
 #[derive(
-    Serialize, Deserialize, Debug, Default, Clone, PartialEq, JsonSchema, TS, ExperimentalApi,
+    Serialize, Deserialize, Debug, Default, Clone, PartialEq, JsonSchema, TS,  // Removed ExperimentalApi
 )]
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
@@ -1438,7 +1438,7 @@ pub struct ThreadResumeResponse {
 }
 
 #[derive(
-    Serialize, Deserialize, Debug, Default, Clone, PartialEq, JsonSchema, TS, ExperimentalApi,
+    Serialize, Deserialize, Debug, Default, Clone, PartialEq, JsonSchema, TS,  // Removed ExperimentalApi
 )]
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
@@ -2056,7 +2056,7 @@ pub enum TurnStatus {
 
 // Turn APIs
 #[derive(
-    Serialize, Deserialize, Debug, Default, Clone, PartialEq, JsonSchema, TS, ExperimentalApi,
+    Serialize, Deserialize, Debug, Default, Clone, PartialEq, JsonSchema, TS,  // Removed ExperimentalApi
 )]
 #[serde(rename_all = "camelCase")]
 #[ts(export_to = "v2/")]
