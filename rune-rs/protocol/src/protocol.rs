@@ -54,6 +54,7 @@ pub use crate::approvals::ElicitationAction;
 pub use crate::approvals::ExecApprovalRequestEvent;
 pub use crate::approvals::ExecPolicyAmendment;
 pub use crate::request_user_input::RequestUserInputEvent;
+pub use crate::models::{RateLimitSnapshot, TokenUsage};
 
 /// Open/close tags for special user-input blocks. Used across crates to avoid
 /// duplicated hardcoded strings.
