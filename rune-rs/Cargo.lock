@@ -385,11 +385,11 @@ dependencies = [
  "anyhow",
  "base64 0.22.1",
  "chrono",
- "codex-app-server-protocol",
- "codex-core",
- "codex-protocol",
- "codex-utils-cargo-bin",
  "core_test_support",
+ "rune-app-server-protocol",
+ "rune-core",
+ "rune-protocol",
+ "rune-utils-cargo-bin",
  "serde",
  "serde_json",
  "shlex",
@@ -1197,1072 +1197,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e9b18233253483ce2f65329a24072ec414db782531bdbb7d0bbc4bd2ce6b7e21"
 
 [[package]]
-name = "codex-ansi-escape"
-version = "0.0.0"
-dependencies = [
- "ansi-to-tui",
- "ratatui",
- "tracing",
-]
-
-[[package]]
-name = "codex-api"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "assert_matches",
- "async-trait",
- "bytes",
- "codex-client",
- "codex-protocol",
- "eventsource-stream",
- "futures",
- "http 1.4.0",
- "pretty_assertions",
- "regex-lite",
- "reqwest",
- "rustls",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tokio-test",
- "tokio-tungstenite",
- "tokio-util",
- "tracing",
- "tungstenite",
- "url",
- "wiremock",
-]
-
-[[package]]
-name = "codex-app-server"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "app_test_support",
- "async-trait",
- "axum",
- "base64 0.22.1",
- "chrono",
- "clap",
- "codex-app-server-protocol",
- "codex-arg0",
- "codex-backend-client",
- "codex-chatgpt",
- "codex-cloud-requirements",
- "codex-common",
- "codex-core",
- "codex-execpolicy",
- "codex-feedback",
- "codex-file-search",
- "codex-login",
- "codex-protocol",
- "codex-rmcp-client",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "codex-utils-json-to-toml",
- "core_test_support",
- "futures",
- "os_info",
- "owo-colors",
- "pretty_assertions",
- "rmcp",
- "serde",
- "serde_json",
- "serial_test",
- "shlex",
- "tempfile",
- "time",
- "tokio",
- "tokio-tungstenite",
- "toml 0.9.11+spec-1.1.0",
- "tracing",
- "tracing-subscriber",
- "uuid",
- "wiremock",
-]
-
-[[package]]
-name = "codex-app-server-protocol"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-experimental-api-macros",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "inventory",
- "pretty_assertions",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "similar",
- "strum_macros 0.27.2",
- "tempfile",
- "thiserror 2.0.18",
- "ts-rs",
- "uuid",
-]
-
-[[package]]
-name = "codex-app-server-test-client"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-app-server-protocol",
- "codex-protocol",
- "serde",
- "serde_json",
- "uuid",
-]
-
-[[package]]
-name = "codex-apply-patch"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "assert_matches",
- "codex-utils-cargo-bin",
- "pretty_assertions",
- "similar",
- "tempfile",
- "thiserror 2.0.18",
- "tree-sitter",
- "tree-sitter-bash",
-]
-
-[[package]]
-name = "codex-arg0"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-apply-patch",
- "codex-core",
- "codex-linux-sandbox",
- "dotenvy",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "codex-async-utils"
-version = "0.0.0"
-dependencies = [
- "async-trait",
- "pretty_assertions",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
-name = "codex-backend-client"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-backend-openapi-models",
- "codex-core",
- "codex-protocol",
- "pretty_assertions",
- "reqwest",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "codex-backend-openapi-models"
-version = "0.0.0"
-dependencies = [
- "serde",
- "serde_json",
- "serde_with",
-]
-
-[[package]]
-name = "codex-chatgpt"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-common",
- "codex-core",
- "codex-git",
- "codex-utils-cargo-bin",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "urlencoding",
-]
-
-[[package]]
-name = "codex-client"
-version = "0.0.0"
-dependencies = [
- "async-trait",
- "bytes",
- "eventsource-stream",
- "futures",
- "http 1.4.0",
- "opentelemetry",
- "opentelemetry_sdk",
- "rand 0.9.2",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
- "zstd",
-]
-
-[[package]]
-name = "codex-cloud-requirements"
-version = "0.0.0"
-dependencies = [
- "async-trait",
- "base64 0.22.1",
- "codex-backend-client",
- "codex-core",
- "codex-otel",
- "codex-protocol",
- "pretty_assertions",
- "serde_json",
- "tempfile",
- "tokio",
- "toml 0.9.11+spec-1.1.0",
- "tracing",
-]
-
-[[package]]
-name = "codex-cloud-tasks"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "base64 0.22.1",
- "chrono",
- "clap",
- "codex-cloud-tasks-client",
- "codex-common",
- "codex-core",
- "codex-login",
- "codex-tui",
- "crossterm",
- "owo-colors",
- "pretty_assertions",
- "ratatui",
- "reqwest",
- "serde",
- "serde_json",
- "supports-color 3.0.2",
- "tokio",
- "tokio-stream",
- "tracing",
- "tracing-subscriber",
- "unicode-width 0.2.1",
-]
-
-[[package]]
-name = "codex-cloud-tasks-client"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "codex-backend-client",
- "codex-git",
- "diffy",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "codex-common"
-version = "0.0.0"
-dependencies = [
- "clap",
- "codex-core",
- "codex-lmstudio",
- "codex-ollama",
- "codex-protocol",
- "codex-utils-absolute-path",
- "pretty_assertions",
- "serde",
- "toml 0.9.11+spec-1.1.0",
-]
-
-[[package]]
-name = "codex-core"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "arc-swap",
- "assert_cmd",
- "assert_matches",
- "async-channel",
- "async-trait",
- "base64 0.22.1",
- "chardetng",
- "chrono",
- "clap",
- "codex-api",
- "codex-app-server-protocol",
- "codex-apply-patch",
- "codex-arg0",
- "codex-async-utils",
- "codex-client",
- "codex-core",
- "codex-execpolicy",
- "codex-file-search",
- "codex-git",
- "codex-keyring-store",
- "codex-otel",
- "codex-protocol",
- "codex-rmcp-client",
- "codex-state",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "codex-utils-home-dir",
- "codex-utils-pty",
- "codex-utils-readiness",
- "codex-utils-string",
- "codex-windows-sandbox",
- "core-foundation 0.9.4",
- "core_test_support",
- "ctor 0.6.3",
- "dirs",
- "dunce",
- "encoding_rs",
- "env-flags",
- "eventsource-stream",
- "futures",
- "http 1.4.0",
- "image",
- "include_dir",
- "indexmap 2.13.0",
- "indoc",
- "keyring",
- "landlock",
- "libc",
- "maplit",
- "multimap",
- "notify",
- "once_cell",
- "openssl-sys",
- "opentelemetry_sdk",
- "os_info",
- "predicates",
- "pretty_assertions",
- "rand 0.9.2",
- "regex",
- "regex-lite",
- "reqwest",
- "rmcp",
- "schemars 0.8.22",
- "seccompiler",
- "serde",
- "serde_json",
- "serde_path_to_error",
- "serde_yaml",
- "serial_test",
- "sha1",
- "sha2",
- "shlex",
- "similar",
- "tempfile",
- "test-case",
- "test-log",
- "thiserror 2.0.18",
- "time",
- "tokio",
- "tokio-tungstenite",
- "tokio-util",
- "toml 0.9.11+spec-1.1.0",
- "toml_edit 0.24.0+spec-1.1.0",
- "tracing",
- "tracing-subscriber",
- "tracing-test",
- "tree-sitter",
- "tree-sitter-bash",
- "url",
- "uuid",
- "walkdir",
- "which",
- "wildmatch",
- "wiremock",
- "zip",
- "zstd",
-]
-
-[[package]]
-name = "codex-debug-client"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-app-server-protocol",
- "pretty_assertions",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "codex-exec"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "clap",
- "codex-arg0",
- "codex-cloud-requirements",
- "codex-common",
- "codex-core",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "core_test_support",
- "libc",
- "owo-colors",
- "predicates",
- "pretty_assertions",
- "rmcp",
- "serde",
- "serde_json",
- "shlex",
- "supports-color 3.0.2",
- "tempfile",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "ts-rs",
- "uuid",
- "walkdir",
- "wiremock",
-]
-
-[[package]]
-name = "codex-exec-server"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "clap",
- "codex-core",
- "codex-execpolicy",
- "codex-utils-cargo-bin",
- "exec_server_test_support",
- "libc",
- "maplit",
- "path-absolutize",
- "pretty_assertions",
- "rmcp",
- "serde",
- "serde_json",
- "shlex",
- "socket2 0.6.2",
- "tempfile",
- "tokio",
- "tokio-util",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "codex-execpolicy"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "multimap",
- "pretty_assertions",
- "serde",
- "serde_json",
- "shlex",
- "starlark",
- "tempfile",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "codex-execpolicy-legacy"
-version = "0.0.0"
-dependencies = [
- "allocative",
- "anyhow",
- "clap",
- "derive_more 2.1.1",
- "env_logger",
- "log",
- "multimap",
- "path-absolutize",
- "regex-lite",
- "serde",
- "serde_json",
- "serde_with",
- "starlark",
- "tempfile",
-]
-
-[[package]]
-name = "codex-experimental-api-macros"
-version = "0.0.0"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.114",
-]
-
-[[package]]
-name = "codex-feedback"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-protocol",
- "pretty_assertions",
- "sentry",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "codex-file-search"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "crossbeam-channel",
- "ignore",
- "nucleo",
- "pretty_assertions",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "codex-git"
-version = "0.0.0"
-dependencies = [
- "assert_matches",
- "once_cell",
- "pretty_assertions",
- "regex",
- "schemars 0.8.22",
- "serde",
- "tempfile",
- "thiserror 2.0.18",
- "ts-rs",
- "walkdir",
-]
-
-[[package]]
-name = "codex-keyring-store"
-version = "0.0.0"
-dependencies = [
- "keyring",
- "tracing",
-]
-
-[[package]]
-name = "codex-linux-sandbox"
-version = "0.0.0"
-dependencies = [
- "cc",
- "clap",
- "codex-core",
- "codex-utils-absolute-path",
- "landlock",
- "libc",
- "pkg-config",
- "pretty_assertions",
- "seccompiler",
- "serde_json",
- "tempfile",
- "tokio",
-]
-
-[[package]]
-name = "codex-lmstudio"
-version = "0.0.0"
-dependencies = [
- "codex-core",
- "reqwest",
- "serde_json",
- "tokio",
- "tracing",
- "which",
- "wiremock",
-]
-
-[[package]]
-name = "codex-login"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "chrono",
- "codex-app-server-protocol",
- "codex-core",
- "core_test_support",
- "rand 0.9.2",
- "reqwest",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "tiny_http",
- "tokio",
- "url",
- "urlencoding",
- "webbrowser",
- "wiremock",
-]
-
-[[package]]
-name = "codex-mcp-server"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-arg0",
- "codex-common",
- "codex-core",
- "codex-protocol",
- "codex-utils-json-to-toml",
- "core_test_support",
- "mcp_test_support",
- "os_info",
- "pretty_assertions",
- "rmcp",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "shlex",
- "tempfile",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "wiremock",
-]
-
-[[package]]
-name = "codex-network-proxy"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "clap",
- "codex-app-server-protocol",
- "codex-core",
- "codex-utils-absolute-path",
- "globset",
- "pretty_assertions",
- "rama-core",
- "rama-http",
- "rama-http-backend",
- "rama-net",
- "rama-socks5",
- "rama-tcp",
- "rama-tls-rustls",
- "rama-unix",
- "serde",
- "serde_json",
- "tempfile",
- "time",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "url",
-]
-
-[[package]]
-name = "codex-ollama"
-version = "0.0.0"
-dependencies = [
- "assert_matches",
- "async-stream",
- "bytes",
- "codex-core",
- "futures",
- "pretty_assertions",
- "reqwest",
- "semver",
- "serde_json",
- "tokio",
- "tracing",
- "wiremock",
-]
-
-[[package]]
-name = "codex-otel"
-version = "0.0.0"
-dependencies = [
- "chrono",
- "codex-api",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-string",
- "eventsource-stream",
- "http 1.4.0",
- "opentelemetry",
- "opentelemetry-appender-tracing",
- "opentelemetry-otlp",
- "opentelemetry-semantic-conventions",
- "opentelemetry_sdk",
- "os_info",
- "pretty_assertions",
- "reqwest",
- "serde",
- "serde_json",
- "strum_macros 0.27.2",
- "thiserror 2.0.18",
- "tokio",
- "tokio-tungstenite",
- "tracing",
- "tracing-opentelemetry",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "codex-process-hardening"
-version = "0.0.0"
-dependencies = [
- "libc",
- "pretty_assertions",
-]
-
-[[package]]
-name = "codex-protocol"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "codex-execpolicy",
- "codex-git",
- "codex-utils-absolute-path",
- "codex-utils-image",
- "icu_decimal",
- "icu_locale_core",
- "icu_provider",
- "mime_guess",
- "pretty_assertions",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "serde_with",
- "strum 0.27.2",
- "strum_macros 0.27.2",
- "sys-locale",
- "tempfile",
- "tracing",
- "ts-rs",
- "uuid",
-]
-
-[[package]]
-name = "codex-responses-api-proxy"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "clap",
- "codex-process-hardening",
- "ctor 0.6.3",
- "libc",
- "reqwest",
- "serde",
- "serde_json",
- "tiny_http",
- "zeroize",
-]
-
-[[package]]
-name = "codex-rmcp-client"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "axum",
- "codex-keyring-store",
- "codex-protocol",
- "codex-utils-cargo-bin",
- "codex-utils-home-dir",
- "codex-utils-pty",
- "futures",
- "keyring",
- "oauth2",
- "pretty_assertions",
- "reqwest",
- "rmcp",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "serial_test",
- "sha2",
- "tempfile",
- "tiny_http",
- "tokio",
- "tracing",
- "urlencoding",
- "webbrowser",
- "which",
-]
-
-[[package]]
-name = "codex-secrets"
-version = "0.0.0"
-dependencies = [
- "age",
- "anyhow",
- "base64 0.22.1",
- "codex-keyring-store",
- "keyring",
- "pretty_assertions",
- "rand 0.9.2",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "tracing",
-]
-
-[[package]]
-name = "codex-state"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "chrono",
- "clap",
- "codex-otel",
- "codex-protocol",
- "dirs",
- "log",
- "owo-colors",
- "pretty_assertions",
- "serde",
- "serde_json",
- "sqlx",
- "tokio",
- "tracing",
- "tracing-subscriber",
- "uuid",
-]
-
-[[package]]
-name = "codex-stdio-to-uds"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "assert_cmd",
- "codex-utils-cargo-bin",
- "pretty_assertions",
- "tempfile",
- "uds_windows",
-]
-
-[[package]]
-name = "codex-tui"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "arboard",
- "assert_matches",
- "base64 0.22.1",
- "chrono",
- "clap",
- "codex-ansi-escape",
- "codex-app-server-protocol",
- "codex-arg0",
- "codex-backend-client",
- "codex-chatgpt",
- "codex-cloud-requirements",
- "codex-common",
- "codex-core",
- "codex-feedback",
- "codex-file-search",
- "codex-login",
- "codex-otel",
- "codex-protocol",
- "codex-state",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
- "codex-utils-pty",
- "codex-windows-sandbox",
- "color-eyre",
- "crossterm",
- "derive_more 2.1.1",
- "diffy",
- "dirs",
- "dunce",
- "image",
- "insta",
- "itertools 0.14.0",
- "lazy_static",
- "libc",
- "pathdiff",
- "pretty_assertions",
- "pulldown-cmark",
- "rand 0.9.2",
- "ratatui",
- "ratatui-macros",
- "regex-lite",
- "reqwest",
- "rmcp",
- "rune-cli",
- "serde",
- "serde_json",
- "serial_test",
- "shlex",
- "strum 0.27.2",
- "strum_macros 0.27.2",
- "supports-color 3.0.2",
- "tempfile",
- "textwrap 0.16.2",
- "thiserror 2.0.18",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "toml 0.9.11+spec-1.1.0",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "tree-sitter-bash",
- "tree-sitter-highlight",
- "unicode-segmentation",
- "unicode-width 0.2.1",
- "url",
- "uuid",
- "vt100",
- "which",
- "windows-sys 0.52.0",
- "winsplit",
-]
-
-[[package]]
-name = "codex-utils-absolute-path"
-version = "0.0.0"
-dependencies = [
- "dirs",
- "path-absolutize",
- "pretty_assertions",
- "schemars 0.8.22",
- "serde",
- "serde_json",
- "tempfile",
- "ts-rs",
-]
-
-[[package]]
-name = "codex-utils-cache"
-version = "0.0.0"
-dependencies = [
- "lru 0.16.3",
- "sha1",
- "tokio",
-]
-
-[[package]]
-name = "codex-utils-cargo-bin"
-version = "0.0.0"
-dependencies = [
- "assert_cmd",
- "runfiles",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "codex-utils-home-dir"
-version = "0.0.0"
-dependencies = [
- "dirs",
- "pretty_assertions",
- "tempfile",
-]
-
-[[package]]
-name = "codex-utils-image"
-version = "0.0.0"
-dependencies = [
- "base64 0.22.1",
- "codex-utils-cache",
- "image",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
-]
-
-[[package]]
-name = "codex-utils-json-to-toml"
-version = "0.0.0"
-dependencies = [
- "pretty_assertions",
- "serde_json",
- "toml 0.9.11+spec-1.1.0",
-]
-
-[[package]]
-name = "codex-utils-pty"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "filedescriptor",
- "lazy_static",
- "libc",
- "log",
- "portable-pty",
- "pretty_assertions",
- "shared_library",
- "tokio",
- "winapi",
-]
-
-[[package]]
-name = "codex-utils-readiness"
-version = "0.0.0"
-dependencies = [
- "assert_matches",
- "async-trait",
- "thiserror 2.0.18",
- "time",
- "tokio",
-]
-
-[[package]]
-name = "codex-utils-string"
-version = "0.0.0"
-dependencies = [
- "pretty_assertions",
-]
-
-[[package]]
-name = "codex-windows-sandbox"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "chrono",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-string",
- "dirs-next",
- "dunce",
- "pretty_assertions",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "tempfile",
- "windows 0.58.0",
- "windows-sys 0.52.0",
- "winres",
-]
-
-[[package]]
 name = "color-eyre"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2444,15 +1378,15 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "base64 0.22.1",
- "codex-core",
- "codex-protocol",
- "codex-utils-absolute-path",
- "codex-utils-cargo-bin",
  "futures",
  "notify",
  "pretty_assertions",
  "regex-lite",
  "reqwest",
+ "rune-core",
+ "rune-protocol",
+ "rune-utils-absolute-path",
+ "rune-utils-cargo-bin",
  "serde_json",
  "shlex",
  "tempfile",
@@ -3273,9 +2207,9 @@ name = "exec_server_test_support"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "codex-core",
- "codex-utils-cargo-bin",
  "rmcp",
+ "rune-core",
+ "rune-utils-cargo-bin",
  "serde_json",
  "tokio",
 ]
@@ -3413,7 +2347,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b375d6465b98090a5f25b1c7703f3859783755aa9a80433b36e0379a3ec2f369"
 dependencies = [
  "crc32fast",
- "libz-sys",
  "miniz_oxide",
 ]
 
@@ -4839,17 +3772,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libz-sys"
-version = "1.1.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15d118bbf3771060e7311cc7bb0545b01d08a8b4a7de949198dec1fa0ca1c0f7"
-dependencies = [
- "cc",
- "pkg-config",
- "vcpkg",
-]
-
-[[package]]
 name = "linux-keyutils"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5027,13 +3949,13 @@ name = "mcp_test_support"
 version = "0.0.0"
 dependencies = [
  "anyhow",
- "codex-core",
- "codex-mcp-server",
- "codex-utils-cargo-bin",
  "core_test_support",
  "os_info",
  "pretty_assertions",
  "rmcp",
+ "rune-core",
+ "rune-mcp-server",
+ "rune-utils-cargo-bin",
  "serde",
  "serde_json",
  "shlex",
@@ -7139,6 +6061,134 @@ dependencies = [
 ]
 
 [[package]]
+name = "rune-ansi-escape"
+version = "0.0.0"
+dependencies = [
+ "ansi-to-tui",
+ "ratatui",
+ "tracing",
+]
+
+[[package]]
+name = "rune-app-server"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "app_test_support",
+ "async-trait",
+ "axum",
+ "base64 0.22.1",
+ "chrono",
+ "clap",
+ "core_test_support",
+ "futures",
+ "os_info",
+ "owo-colors",
+ "pretty_assertions",
+ "rmcp",
+ "rune-app-server-protocol",
+ "rune-arg0",
+ "rune-cloud-requirements",
+ "rune-common",
+ "rune-core",
+ "rune-execpolicy",
+ "rune-feedback",
+ "rune-file-search",
+ "rune-protocol",
+ "rune-rmcp-client",
+ "rune-utils-absolute-path",
+ "rune-utils-cargo-bin",
+ "rune-utils-json-to-toml",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "shlex",
+ "tempfile",
+ "time",
+ "tokio",
+ "tokio-tungstenite",
+ "toml 0.9.11+spec-1.1.0",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+ "wiremock",
+]
+
+[[package]]
+name = "rune-app-server-protocol"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "inventory",
+ "pretty_assertions",
+ "rune-protocol",
+ "rune-utils-absolute-path",
+ "rune-utils-cargo-bin",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "similar",
+ "strum_macros 0.27.2",
+ "tempfile",
+ "thiserror 2.0.18",
+ "ts-rs",
+ "uuid",
+]
+
+[[package]]
+name = "rune-app-server-test-client"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "rune-app-server-protocol",
+ "rune-protocol",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
+name = "rune-apply-patch"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "assert_matches",
+ "pretty_assertions",
+ "rune-utils-cargo-bin",
+ "similar",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tree-sitter",
+ "tree-sitter-bash",
+]
+
+[[package]]
+name = "rune-arg0"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "dotenvy",
+ "rune-apply-patch",
+ "rune-core",
+ "rune-linux-sandbox",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "rune-async-utils"
+version = "0.0.0"
+dependencies = [
+ "async-trait",
+ "pretty_assertions",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
 name = "rune-cli"
 version = "0.0.0"
 dependencies = [
@@ -7147,36 +6197,832 @@ dependencies = [
  "assert_matches",
  "clap",
  "clap_complete",
- "codex-app-server",
- "codex-app-server-protocol",
- "codex-app-server-test-client",
- "codex-arg0",
- "codex-chatgpt",
- "codex-cloud-tasks",
- "codex-common",
- "codex-core",
- "codex-exec",
- "codex-execpolicy",
- "codex-login",
- "codex-mcp-server",
- "codex-protocol",
- "codex-responses-api-proxy",
- "codex-rmcp-client",
- "codex-stdio-to-uds",
- "codex-tui",
- "codex-utils-cargo-bin",
- "codex-windows-sandbox",
  "libc",
  "owo-colors",
  "predicates",
  "pretty_assertions",
  "regex-lite",
+ "rune-app-server",
+ "rune-app-server-protocol",
+ "rune-app-server-test-client",
+ "rune-arg0",
+ "rune-cloud-tasks",
+ "rune-common",
+ "rune-core",
+ "rune-exec",
+ "rune-execpolicy",
+ "rune-mcp-server",
+ "rune-protocol",
+ "rune-responses-api-proxy",
+ "rune-rmcp-client",
+ "rune-stdio-to-uds",
+ "rune-tui",
+ "rune-utils-cargo-bin",
+ "rune-windows-sandbox",
  "serde_json",
  "supports-color 3.0.2",
  "tempfile",
  "tokio",
  "toml 0.9.11+spec-1.1.0",
  "tracing",
+]
+
+[[package]]
+name = "rune-cloud-requirements"
+version = "0.0.0"
+dependencies = [
+ "async-trait",
+ "base64 0.22.1",
+ "pretty_assertions",
+ "rune-core",
+ "rune-otel",
+ "rune-protocol",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "toml 0.9.11+spec-1.1.0",
+ "tracing",
+]
+
+[[package]]
+name = "rune-cloud-tasks"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "base64 0.22.1",
+ "chrono",
+ "clap",
+ "crossterm",
+ "owo-colors",
+ "pretty_assertions",
+ "ratatui",
+ "reqwest",
+ "rune-cloud-tasks-client",
+ "rune-common",
+ "rune-core",
+ "rune-tui",
+ "serde",
+ "serde_json",
+ "supports-color 3.0.2",
+ "tokio",
+ "tokio-stream",
+ "tracing",
+ "tracing-subscriber",
+ "unicode-width 0.2.1",
+]
+
+[[package]]
+name = "rune-cloud-tasks-client"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "diffy",
+ "rune-git",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "rune-common"
+version = "0.0.0"
+dependencies = [
+ "clap",
+ "pretty_assertions",
+ "rune-core",
+ "rune-lmstudio",
+ "rune-ollama",
+ "rune-protocol",
+ "rune-utils-absolute-path",
+ "serde",
+ "toml 0.9.11+spec-1.1.0",
+]
+
+[[package]]
+name = "rune-core"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "assert_cmd",
+ "assert_matches",
+ "async-channel",
+ "async-trait",
+ "base64 0.22.1",
+ "chardetng",
+ "chrono",
+ "clap",
+ "core-foundation 0.9.4",
+ "core_test_support",
+ "ctor 0.6.3",
+ "dirs",
+ "dunce",
+ "encoding_rs",
+ "env-flags",
+ "eventsource-stream",
+ "futures",
+ "http 1.4.0",
+ "image",
+ "include_dir",
+ "indexmap 2.13.0",
+ "indoc",
+ "keyring",
+ "landlock",
+ "libc",
+ "maplit",
+ "multimap",
+ "notify",
+ "once_cell",
+ "openssl-sys",
+ "opentelemetry_sdk",
+ "os_info",
+ "predicates",
+ "pretty_assertions",
+ "rand 0.9.2",
+ "regex",
+ "regex-lite",
+ "reqwest",
+ "rmcp",
+ "rune-app-server-protocol",
+ "rune-apply-patch",
+ "rune-arg0",
+ "rune-async-utils",
+ "rune-core",
+ "rune-execpolicy",
+ "rune-file-search",
+ "rune-git",
+ "rune-keyring-store",
+ "rune-otel",
+ "rune-protocol",
+ "rune-rmcp-client",
+ "rune-state",
+ "rune-utils-absolute-path",
+ "rune-utils-cargo-bin",
+ "rune-utils-home-dir",
+ "rune-utils-pty",
+ "rune-utils-readiness",
+ "rune-utils-string",
+ "rune-windows-sandbox",
+ "schemars 0.8.22",
+ "seccompiler",
+ "serde",
+ "serde_json",
+ "serde_path_to_error",
+ "serde_yaml",
+ "serial_test",
+ "sha1",
+ "sha2",
+ "shlex",
+ "similar",
+ "tempfile",
+ "test-case",
+ "test-log",
+ "thiserror 2.0.18",
+ "time",
+ "tokio",
+ "tokio-tungstenite",
+ "tokio-util",
+ "toml 0.9.11+spec-1.1.0",
+ "toml_edit 0.24.0+spec-1.1.0",
+ "tracing",
+ "tracing-subscriber",
+ "tracing-test",
+ "tree-sitter",
+ "tree-sitter-bash",
+ "url",
+ "uuid",
+ "walkdir",
+ "which",
+ "wildmatch",
+ "wiremock",
+ "zip",
+ "zstd",
+]
+
+[[package]]
+name = "rune-debug-client"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "pretty_assertions",
+ "rune-app-server-protocol",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "rune-exec"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "clap",
+ "core_test_support",
+ "libc",
+ "owo-colors",
+ "predicates",
+ "pretty_assertions",
+ "rmcp",
+ "rune-arg0",
+ "rune-cloud-requirements",
+ "rune-common",
+ "rune-core",
+ "rune-protocol",
+ "rune-utils-absolute-path",
+ "rune-utils-cargo-bin",
+ "serde",
+ "serde_json",
+ "shlex",
+ "supports-color 3.0.2",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "ts-rs",
+ "uuid",
+ "walkdir",
+ "wiremock",
+]
+
+[[package]]
+name = "rune-exec-server"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "clap",
+ "exec_server_test_support",
+ "libc",
+ "maplit",
+ "path-absolutize",
+ "pretty_assertions",
+ "rmcp",
+ "rune-core",
+ "rune-execpolicy",
+ "rune-utils-cargo-bin",
+ "serde",
+ "serde_json",
+ "shlex",
+ "socket2 0.6.2",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "rune-execpolicy"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "multimap",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "shlex",
+ "starlark",
+ "tempfile",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "rune-execpolicy-legacy"
+version = "0.0.0"
+dependencies = [
+ "allocative",
+ "anyhow",
+ "clap",
+ "derive_more 2.1.1",
+ "env_logger",
+ "log",
+ "multimap",
+ "path-absolutize",
+ "regex-lite",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "starlark",
+ "tempfile",
+]
+
+[[package]]
+name = "rune-feedback"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "pretty_assertions",
+ "rune-protocol",
+ "sentry",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "rune-file-search"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "crossbeam-channel",
+ "ignore",
+ "nucleo",
+ "pretty_assertions",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "rune-git"
+version = "0.0.0"
+dependencies = [
+ "assert_matches",
+ "once_cell",
+ "pretty_assertions",
+ "regex",
+ "schemars 0.8.22",
+ "serde",
+ "tempfile",
+ "thiserror 2.0.18",
+ "ts-rs",
+ "walkdir",
+]
+
+[[package]]
+name = "rune-keyring-store"
+version = "0.0.0"
+dependencies = [
+ "keyring",
+ "tracing",
+]
+
+[[package]]
+name = "rune-linux-sandbox"
+version = "0.0.0"
+dependencies = [
+ "cc",
+ "clap",
+ "landlock",
+ "libc",
+ "pkg-config",
+ "pretty_assertions",
+ "rune-core",
+ "rune-utils-absolute-path",
+ "seccompiler",
+ "serde_json",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
+name = "rune-lmstudio"
+version = "0.0.0"
+dependencies = [
+ "reqwest",
+ "rune-core",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "which",
+ "wiremock",
+]
+
+[[package]]
+name = "rune-mcp-server"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "core_test_support",
+ "mcp_test_support",
+ "os_info",
+ "pretty_assertions",
+ "rmcp",
+ "rune-arg0",
+ "rune-common",
+ "rune-core",
+ "rune-protocol",
+ "rune-utils-json-to-toml",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "shlex",
+ "tempfile",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "wiremock",
+]
+
+[[package]]
+name = "rune-network-proxy"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "clap",
+ "globset",
+ "pretty_assertions",
+ "rama-core",
+ "rama-http",
+ "rama-http-backend",
+ "rama-net",
+ "rama-socks5",
+ "rama-tcp",
+ "rama-tls-rustls",
+ "rama-unix",
+ "rune-app-server-protocol",
+ "rune-core",
+ "rune-utils-absolute-path",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "time",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+]
+
+[[package]]
+name = "rune-ollama"
+version = "0.0.0"
+dependencies = [
+ "assert_matches",
+ "async-stream",
+ "bytes",
+ "futures",
+ "pretty_assertions",
+ "reqwest",
+ "rune-core",
+ "semver",
+ "serde_json",
+ "tokio",
+ "tracing",
+ "wiremock",
+]
+
+[[package]]
+name = "rune-otel"
+version = "0.0.0"
+dependencies = [
+ "chrono",
+ "eventsource-stream",
+ "http 1.4.0",
+ "opentelemetry",
+ "opentelemetry-appender-tracing",
+ "opentelemetry-otlp",
+ "opentelemetry-semantic-conventions",
+ "opentelemetry_sdk",
+ "os_info",
+ "pretty_assertions",
+ "reqwest",
+ "rune-protocol",
+ "rune-utils-absolute-path",
+ "rune-utils-string",
+ "serde",
+ "serde_json",
+ "strum_macros 0.27.2",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-tungstenite",
+ "tracing",
+ "tracing-opentelemetry",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "rune-process-hardening"
+version = "0.0.0"
+dependencies = [
+ "libc",
+ "pretty_assertions",
+]
+
+[[package]]
+name = "rune-protocol"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "icu_decimal",
+ "icu_locale_core",
+ "icu_provider",
+ "mime_guess",
+ "pretty_assertions",
+ "rune-execpolicy",
+ "rune-git",
+ "rune-utils-absolute-path",
+ "rune-utils-image",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "strum 0.27.2",
+ "strum_macros 0.27.2",
+ "sys-locale",
+ "tempfile",
+ "tracing",
+ "ts-rs",
+ "uuid",
+]
+
+[[package]]
+name = "rune-responses-api-proxy"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "ctor 0.6.3",
+ "libc",
+ "reqwest",
+ "rune-process-hardening",
+ "serde",
+ "serde_json",
+ "tiny_http",
+ "zeroize",
+]
+
+[[package]]
+name = "rune-rmcp-client"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "futures",
+ "keyring",
+ "oauth2",
+ "pretty_assertions",
+ "reqwest",
+ "rmcp",
+ "rune-keyring-store",
+ "rune-protocol",
+ "rune-utils-cargo-bin",
+ "rune-utils-home-dir",
+ "rune-utils-pty",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "sha2",
+ "tempfile",
+ "tiny_http",
+ "tokio",
+ "tracing",
+ "urlencoding",
+ "webbrowser",
+ "which",
+]
+
+[[package]]
+name = "rune-secrets"
+version = "0.0.0"
+dependencies = [
+ "age",
+ "anyhow",
+ "base64 0.22.1",
+ "keyring",
+ "pretty_assertions",
+ "rand 0.9.2",
+ "rune-keyring-store",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tracing",
+]
+
+[[package]]
+name = "rune-state"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "dirs",
+ "log",
+ "owo-colors",
+ "pretty_assertions",
+ "rune-otel",
+ "rune-protocol",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
+name = "rune-stdio-to-uds"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "assert_cmd",
+ "pretty_assertions",
+ "rune-utils-cargo-bin",
+ "tempfile",
+ "uds_windows",
+]
+
+[[package]]
+name = "rune-tui"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "arboard",
+ "assert_matches",
+ "base64 0.22.1",
+ "chrono",
+ "clap",
+ "color-eyre",
+ "crossterm",
+ "derive_more 2.1.1",
+ "diffy",
+ "dirs",
+ "dunce",
+ "image",
+ "insta",
+ "itertools 0.14.0",
+ "lazy_static",
+ "libc",
+ "pathdiff",
+ "pretty_assertions",
+ "pulldown-cmark",
+ "rand 0.9.2",
+ "ratatui",
+ "ratatui-macros",
+ "regex-lite",
+ "reqwest",
+ "rmcp",
+ "rune-ansi-escape",
+ "rune-app-server-protocol",
+ "rune-arg0",
+ "rune-cli",
+ "rune-cloud-requirements",
+ "rune-common",
+ "rune-core",
+ "rune-feedback",
+ "rune-file-search",
+ "rune-otel",
+ "rune-protocol",
+ "rune-state",
+ "rune-utils-absolute-path",
+ "rune-utils-cargo-bin",
+ "rune-utils-pty",
+ "rune-windows-sandbox",
+ "serde",
+ "serde_json",
+ "serial_test",
+ "shlex",
+ "strum 0.27.2",
+ "strum_macros 0.27.2",
+ "supports-color 3.0.2",
+ "tempfile",
+ "textwrap 0.16.2",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "toml 0.9.11+spec-1.1.0",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "tree-sitter-bash",
+ "tree-sitter-highlight",
+ "unicode-segmentation",
+ "unicode-width 0.2.1",
+ "url",
+ "uuid",
+ "vt100",
+ "which",
+ "windows-sys 0.52.0",
+ "winsplit",
+]
+
+[[package]]
+name = "rune-utils-absolute-path"
+version = "0.0.0"
+dependencies = [
+ "dirs",
+ "path-absolutize",
+ "pretty_assertions",
+ "schemars 0.8.22",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "ts-rs",
+]
+
+[[package]]
+name = "rune-utils-cache"
+version = "0.0.0"
+dependencies = [
+ "lru 0.16.3",
+ "sha1",
+ "tokio",
+]
+
+[[package]]
+name = "rune-utils-cargo-bin"
+version = "0.0.0"
+dependencies = [
+ "assert_cmd",
+ "runfiles",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "rune-utils-home-dir"
+version = "0.0.0"
+dependencies = [
+ "dirs",
+ "pretty_assertions",
+ "tempfile",
+]
+
+[[package]]
+name = "rune-utils-image"
+version = "0.0.0"
+dependencies = [
+ "base64 0.22.1",
+ "image",
+ "rune-utils-cache",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+]
+
+[[package]]
+name = "rune-utils-json-to-toml"
+version = "0.0.0"
+dependencies = [
+ "pretty_assertions",
+ "serde_json",
+ "toml 0.9.11+spec-1.1.0",
+]
+
+[[package]]
+name = "rune-utils-pty"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "filedescriptor",
+ "lazy_static",
+ "libc",
+ "log",
+ "portable-pty",
+ "pretty_assertions",
+ "shared_library",
+ "tokio",
+ "winapi",
+]
+
+[[package]]
+name = "rune-utils-readiness"
+version = "0.0.0"
+dependencies = [
+ "assert_matches",
+ "async-trait",
+ "thiserror 2.0.18",
+ "time",
+ "tokio",
+]
+
+[[package]]
+name = "rune-utils-string"
+version = "0.0.0"
+dependencies = [
+ "pretty_assertions",
+]
+
+[[package]]
+name = "rune-windows-sandbox"
+version = "0.0.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "chrono",
+ "dirs-next",
+ "dunce",
+ "pretty_assertions",
+ "rand 0.8.5",
+ "rune-protocol",
+ "rune-utils-absolute-path",
+ "rune-utils-string",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "windows 0.58.0",
+ "windows-sys 0.52.0",
+ "winres",
 ]
 
 [[package]]
@@ -9388,7 +9234,6 @@ source = "git+https://github.com/openai-oss-forks/tungstenite-rs?rev=9200079d3b5
 dependencies = [
  "bytes",
  "data-encoding",
- "flate2",
  "headers",
  "http 1.4.0",
  "httparse",

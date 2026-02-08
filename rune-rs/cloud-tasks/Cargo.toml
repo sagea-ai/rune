@@ -18,7 +18,6 @@ chrono = { workspace = true, features = ["serde"] }
 clap = { workspace = true, features = ["derive"] }
 rune-cloud-tasks-client = { path = "../cloud-tasks-client", features = [
     "mock",
-    "online",
 ] }
 rune-common = { path = "../common", features = ["cli"] }
 rune-core = { path = "../core" }

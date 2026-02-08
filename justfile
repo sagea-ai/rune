@@ -1,27 +1,27 @@
-set working-directory := "codex-rs"
+set working-directory := "rune-rs"
 set positional-arguments
 
 # Display help
 help:
     just -l
 
-# `codex`
-alias c := codex
-codex *args:
-    cargo run --bin codex -- "$@"
+# `rune`
+alias c := rune
+rune *args:
+    cargo run --bin rune -- "$@"
 
-# `codex exec`
+# `rune exec`
 exec *args:
-    cargo run --bin codex -- exec "$@"
+    cargo run --bin rune -- exec "$@"
 
 # Run the CLI version of the file-search crate.
 file-search *args:
-    cargo run --bin codex-file-search -- "$@"
+    cargo run --bin rune-file-search -- "$@"
 
 # Build the CLI and run the app-server test client
 app-server-test-client *args:
-    cargo build -p codex-cli
-    cargo run -p codex-app-server-test-client -- --codex-bin ./target/debug/codex "$@"
+    cargo build -p rune-cli
+    cargo run -p rune-app-server-test-client -- --rune-bin ./target/debug/rune "$@"
 
 # format code
 fmt:
@@ -44,12 +44,12 @@ install:
 test:
     cargo nextest run --no-fail-fast
 
-# Build and run Codex from source using Bazel.
+# Build and run Rune from source using Bazel.
 # Note we have to use the combination of `[no-cd]` and `--run_under="cd $PWD &&"`
 # to ensure that Bazel runs the command in the current working directory.
 [no-cd]
-bazel-codex *args:
-    bazel run //codex-rs/cli:codex --run_under="cd $PWD &&" -- "$@"
+bazel-rune *args:
+    bazel run //rune-rs/cli:rune --run_under="cd $PWD &&" -- "$@"
 
 bazel-test:
     bazel test //... --keep_going
@@ -58,20 +58,49 @@ bazel-remote-test:
     bazel test //... --config=remote --platforms=//:rbe --keep_going
 
 build-for-release:
-    bazel build //codex-rs/cli:release_binaries --config=remote
+    bazel build //rune-rs/cli:release_binaries --config=remote
 
 # Run the MCP server
 mcp-server-run *args:
-    cargo run -p codex-mcp-server -- "$@"
+    cargo run -p rune-mcp-server -- "$@"
 
-# Regenerate the json schema for config.toml from the current config types.
+# Regenerate the json schema for rune.toml from the current config types.
 write-config-schema:
-    cargo run -p codex-core --bin codex-write-config-schema
+    cargo run -p rune-core --bin rune-write-config-schema
 
 # Regenerate vendored app-server protocol schema artifacts.
 write-app-server-schema *args:
-    cargo run -p codex-app-server-protocol --bin write_schema_fixtures -- "$@"
+    cargo run -p rune-app-server-protocol --bin write_schema_fixtures -- "$@"
 
 # Tail logs from the state SQLite database
 log *args:
-    if [ "${1:-}" = "--" ]; then shift; fi; cargo run -p codex-state --bin logs_client -- "$@"
+    if [ "${1:-}" = "--" ]; then shift; fi; cargo run -p rune-state --bin logs_client -- "$@"
+
+# Model Selection - List available sage-reasoning models
+models:
+    @echo "Available sage-reasoning models:"
+    @echo "  3b  - comethrusws/sage-reasoning:3b (default, fastest)"
+    @echo "  8b  - comethrusws/sage-reasoning:8b (balanced)"
+    @echo "  14b - comethrusws/sage-reasoning:14b (most capable)"
+    @echo ""
+    @echo "Usage:"
+    @echo "  rune --model comethrusws/sage-reasoning:3b"
+    @echo "  rune --model comethrusws/sage-reasoning:8b"
+    @echo "  rune --model comethrusws/sage-reasoning:14b"
+    @echo ""
+    @echo "Quick launch commands:"
+    @echo "  just rune-3b  - Run with 3b model"
+    @echo "  just rune-8b  - Run with 8b model"
+    @echo "  just rune-14b - Run with 14b model"
+
+# Run Rune with sage-reasoning:3b (default)
+rune-3b *args:
+    cargo run --bin rune -- --model comethrusws/sage-reasoning:3b "$@"
+
+# Run Rune with sage-reasoning:8b
+rune-8b *args:
+    cargo run --bin rune -- --model comethrusws/sage-reasoning:8b "$@"
+
+# Run Rune with sage-reasoning:14b
+rune-14b *args:
+    cargo run --bin rune -- --model comethrusws/sage-reasoning:14b "$@"
