@@ -1706,23 +1706,3 @@ mod tests {
         Ok(())
     }
 }
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, JsonSchema, TS)]
-#[serde(rename_all = "snake_case")]
-pub struct TokenUsage {
-    pub input_tokens: i64,
-    pub output_tokens: i64,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub cached_tokens: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub reasoning_tokens: Option<i64>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, JsonSchema, TS)]
-#[serde(rename_all = "snake_case")]
-pub struct RateLimitSnapshot {
-    // Empty for now as we don't have active rate limit logic dependent on fields yet
-}
-
