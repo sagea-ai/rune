@@ -7,8 +7,8 @@
 
 use crate::auth::AuthMode;
 use crate::error::EnvVarError;
-use rune_api::Provider as ApiProvider;
-use rune_api::provider::RetryConfig as ApiRetryConfig;
+// use rune_api::Provider as ApiProvider;
+// use rune_api::provider::RetryConfig as ApiRetryConfig;
 use http::HeaderMap;
 use http::header::HeaderName;
 use http::header::HeaderValue;
@@ -140,6 +140,7 @@ impl ModelProviderInfo {
         Ok(headers)
     }
 
+    /*
     pub(crate) fn to_api_provider(
         &self,
         auth_mode: Option<AuthMode>,
@@ -172,7 +173,7 @@ impl ModelProviderInfo {
             stream_idle_timeout: self.stream_idle_timeout(),
         })
     }
-
+    */
     /// If `env_key` is Some, returns the API key for this provider if present
     /// (and non-empty) in the environment. If `env_key` is required but
     /// cannot be found, returns an error.

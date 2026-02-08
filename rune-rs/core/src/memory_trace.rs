@@ -4,13 +4,26 @@ use std::path::PathBuf;
 use crate::ModelClient;
 use crate::error::RuneErr;
 use crate::error::Result;
-use rune_api::MemoryTrace as ApiMemoryTrace;
-use rune_api::MemoryTraceMetadata as ApiMemoryTraceMetadata;
+// use rune_api::MemoryTrace as ApiMemoryTrace;
+// use rune_api::MemoryTraceMetadata as ApiMemoryTraceMetadata;
 use rune_otel::OtelManager;
 use rune_protocol::openai_models::ModelInfo;
 use rune_protocol::openai_models::ReasoningEffort as ReasoningEffortConfig;
+use serde::{Deserialize, Serialize};
 use serde_json::Map;
 use serde_json::Value;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiMemoryTraceMetadata {
+    pub source_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiMemoryTrace {
+    pub id: String,
+    pub metadata: ApiMemoryTraceMetadata,
+    pub items: Vec<Value>,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BuiltTraceMemory {
