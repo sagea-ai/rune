@@ -15,18 +15,18 @@ for item in core_builtins_deps[2] + acp_builtins_deps[2]:
 binaries = core_builtins_deps[1] + acp_builtins_deps[1]
 
 a = Analysis(
-    ['vibe/acp/entrypoint.py'],
+    ['rune/acp/entrypoint.py'],
     pathex=[],
     binaries=binaries,
     datas=[
         # By default, pyinstaller doesn't include the .md files
-        ('vibe/core/prompts/*.md', 'vibe/core/prompts'),
-        ('vibe/core/tools/builtins/prompts/*.md', 'vibe/core/tools/builtins/prompts'),
+        ('rune/core/prompts/*.md', 'rune/core/prompts'),
+        ('rune/core/tools/builtins/prompts/*.md', 'rune/core/tools/builtins/prompts'),
         # We also need to add all setup files
-        ('vibe/setup/*', 'vibe/setup'),
-        # This is necessary because tools are dynamically called in vibe, meaning there is no static reference to those files
-        ('vibe/core/tools/builtins/*.py', 'vibe/core/tools/builtins'),
-        ('vibe/acp/tools/builtins/*.py', 'vibe/acp/tools/builtins'),
+        ('rune/setup/*', 'rune/setup'),
+        # This is necessary because tools are dynamically called in rune, meaning there is no static reference to those files
+        ('rune/core/tools/builtins/*.py', 'rune/core/tools/builtins'),
+        ('rune/acp/tools/builtins/*.py', 'rune/acp/tools/builtins'),
     ],
     hiddenimports=hidden_imports,
     hookspath=[],

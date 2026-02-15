@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from rune.core.agents.models import BUILTIN_AGENTS, AgentProfile, BuiltinAgentName
-from rune.core.config import RuneConfig
+from rune.core.config import VibeConfig
 from rune.core.middleware import (
     PLAN_AGENT_REMINDER,
     ConversationContext,
@@ -15,8 +15,8 @@ from rune.core.types import AgentStats
 
 
 @pytest.fixture
-def ctx(rune_config: RuneConfig) -> ConversationContext:
-    return ConversationContext(messages=[], stats=AgentStats(), config=rune_config)
+def ctx(vibe_config: VibeConfig) -> ConversationContext:
+    return ConversationContext(messages=[], stats=AgentStats(), config=vibe_config)
 
 
 class TestPlanAgentMiddleware:

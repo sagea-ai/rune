@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 import pytest
 
-from tests.conftest import build_test_agent_loop, build_test_rune_config
+from tests.conftest import build_test_agent_loop, build_test_vibe_config
 from tests.mock.utils import mock_llm_chunk
 from tests.stubs.fake_backend import FakeBackend
 from rune.core.agents.models import BuiltinAgentName
@@ -13,7 +13,7 @@ from rune.core.config import (
     ModelConfig,
     ProviderConfig,
     SessionLoggingConfig,
-    RuneConfig,
+    VibeConfig,
 )
 from rune.core.tools.base import BaseToolConfig, ToolPermission
 from rune.core.types import (
@@ -41,7 +41,7 @@ def make_config(
     include_prompt_detail: bool = False,
     enabled_tools: list[str] | None = None,
     todo_permission: ToolPermission = ToolPermission.ALWAYS,
-) -> RuneConfig:
+) -> VibeConfig:
     models = [
         ModelConfig(
             name="rune-cli-cli-latest",
@@ -79,7 +79,7 @@ def make_config(
             backend=Backend.RUNE,
         ),
     ]
-    return build_test_rune_config(
+    return build_test_vibe_config(
         session_logging=SessionLoggingConfig(enabled=not disable_logging),
         auto_compact_threshold=auto_compact_threshold,
         system_prompt_id=system_prompt_id,
@@ -510,7 +510,7 @@ class TestAutoCompactIntegration:
             [mock_llm_chunk(content="<summary>")],
             [mock_llm_chunk(content="<final>")],
         ])
-        cfg = build_test_rune_config(auto_compact_threshold=1)
+        cfg = build_test_vibe_config(auto_compact_threshold=1)
         agent = build_test_agent_loop(
             config=cfg, message_observer=observer, backend=backend
         )

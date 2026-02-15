@@ -4,7 +4,7 @@ import sys
 
 import pytest
 
-from tests.conftest import build_test_rune_config
+from tests.conftest import build_test_vibe_config
 from rune.core.agents import AgentManager
 from rune.core.skills.manager import SkillManager
 from rune.core.system_prompt import get_universal_system_prompt
@@ -17,7 +17,7 @@ def test_get_universal_system_prompt_includes_windows_prompt_on_windows(
     monkeypatch.setattr(sys, "platform", "win32")
     monkeypatch.setenv("COMSPEC", "C:\\Windows\\System32\\cmd.exe")
 
-    config = build_test_rune_config(
+    config = build_test_vibe_config(
         system_prompt_id="tests",
         include_project_context=False,
         include_prompt_detail=True,
