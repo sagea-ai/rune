@@ -12,22 +12,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Incremental load of long sessions: windowing (20 messages), "Load more" to fetch older messages, scroll to bottom when resuming
 - ACP support for thinking (agent-client-protocol 0.8.0)
 - Support for FIFO path for env file
+- Enhanced Ollama integration with improved model management
 
 ### Changed
 
-- **UI redesign**: new look and layout for the CLI
+- **UI redesign**: new look and layout for the CLI with refined color scheme
 - Textual UI optimizations: ChatScroll to reduce style recalculations, VerticalGroup for messages, stream layout for streaming blocks, cached DOM queries
 - Bumped agent-client-protocol to 0.8.0
 - Use UTC date for timestamps
 - Clipboard behavior improvements
 - Docs updated for GitHub discussions
-- Made the Upgrade to Pro banner less prominent
+- Streamlined configuration for Ollama-based workflows
 
 ### Fixed
 
 - Fixed inaccurate token count in UI in some cases
 - Fixed agent prompt overrides being ignored
 - Terminal setup: avoid overwriting Wezterm config
+- Improved session resume reliability
 
 ### Removed
 
@@ -40,13 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Allow environment variables to be overridden by dotenv files
-- Display custom rate limit messages depending on plan type
+- Enhanced local model support
 
 ### Changed
 
-- Made plan offer message more discreet in UI
 - Speed up latest session scan and harden validation
 - Updated pytest-xdist configuration to schedule single test chunks
+- Improved configuration management
 
 ### Fixed
 
@@ -88,9 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use shell environment to determine shell in bash tool
 - Expanded user input handling
 - Bumped agent-client-protocol to 0.7.1
-- Refactored UI to require AgentLoop at VibeApp construction
 - Updated README with new MCP server config
-- Improved readability of the AskUserQuerstion tool output
+- Improved readability of the AskUserQuestion tool output
 
 ### Fixed
 
@@ -115,6 +116,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - bash tool not discovered by rune-acp
 
+
 ## [1.3.4] - 2026-01-07
 
 ### Fixed
@@ -124,11 +126,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - explicit permissions to GitHub Actions workflows
 - improve render performance in long sessions
 
+
 ## [1.3.3] - 2025-12-26
 
 ### Fixed
 
 - Fix config desyncing issues
+
 
 ## [1.3.2] - 2025-12-24
 
@@ -140,12 +144,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix rendering issue with spinner
 
+
 ## [1.3.1] - 2025-12-24
 
 ### Fixed
 
 - Fix crash when continuing conversation
 - Fix Nix flake to not export python
+
 
 ## [1.3.0] - 2025-12-23
 
@@ -169,13 +175,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix crash when switching mode
 - Fix some cases where clipboard copy didn't work
 
+
 ## [1.2.2] - 2025-12-22
 
 ### Fixed
 
 - Remove dead code
-- Fix artefacts automatically attached to the release
+- Fix artifacts automatically attached to the release
 - Refactor agent post streaming
+
 
 ## [1.2.1] - 2025-12-18
 
@@ -184,12 +192,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improve error message when running in home dir
 - Do not show trusted folder workflow in home dir
 
+
 ## [1.2.0] - 2025-12-18
 
 ### Added
 
 - Modular mode system
-- Trusted folder mechanism for local .vibe directories
+- Trusted folder mechanism for local .rune directories
 - Document public setup for rune-acp in zed, jetbrains and neovim
 - `--version` flag
 
@@ -205,6 +214,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Prevent segmentation fault on exit by shutting down thread pools
 - Fix extra spacing with assistant message
+
 
 ## [1.1.3] - 2025-12-12
 
@@ -227,18 +237,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix security issue: prevent command injection in GitHub Action prompt handling
 - Fix issues with vLLM
 
+
 ## [1.1.2] - 2025-12-11
 
 ### Changed
 
 - add `terminal-auth` auth method to ACP agent only if the client supports it
-- fix `user-agent` header when using Rune backend, using SDK hook
+- fix `user-agent` header when using local backend, using SDK hook
+
 
 ## [1.1.1] - 2025-12-10
 
 ### Changed
 
 - added `include_commit_signature` in `config.toml` to disable signing commits
+
 
 ## [1.1.0] - 2025-12-10
 
@@ -249,6 +262,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - improved context length from 100k to 200k
+
 
 ## [1.0.6] - 2025-12-10
 
@@ -266,11 +280,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - update default system prompt reference
   - document MCP tool permission configuration
 
+
 ## [1.0.5] - 2025-12-10
 
 ### Fixed
 
 - Fix streaming with OpenAI adapter
+
 
 ## [1.0.4] - 2025-12-09
 
@@ -286,11 +302,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove .envrc file
 
+
 ## [1.0.3] - 2025-12-09
 
 ### Added
 
 - Add LICENCE symlink in distribution/zed for compatibility with zed extension release process
+
 
 ## [1.0.2] - 2025-12-09
 
@@ -298,14 +316,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix setup flow for rune-acp builds
 
+
 ## [1.0.1] - 2025-12-09
 
 ### Fixed
 
 - Fix update notification
 
+
 ## [1.0.0] - 2025-12-09
 
 ### Added
 
-- Initial release
+- Initial release of Rune CLI
+- Ollama integration for local LLM inference
+- Interactive TUI with rich formatting
+- Session management and persistence
+- Tool calling system with built-in tools
+- Agent Client Protocol (ACP) support
+- MCP (Model Context Protocol) server integration
+- Skills and custom agents system
+- Code editing and file management tools
+- Git integration
+- Clipboard support
+- Auto-update functionality
