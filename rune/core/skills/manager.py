@@ -12,13 +12,13 @@ from rune.core.skills.parser import SkillParseError, parse_frontmatter
 from rune.core.utils import name_matches
 
 if TYPE_CHECKING:
-    from rune.core.config import VibeConfig
+    from rune.core.config import RuneConfig
 
-logger = getLogger("vibe")
+logger = getLogger("rune")
 
 
 class SkillManager:
-    def __init__(self, config_getter: Callable[[], VibeConfig]) -> None:
+    def __init__(self, config_getter: Callable[[], RuneConfig]) -> None:
         self._config_getter = config_getter
         self._search_paths = self._compute_search_paths(self._config)
         self._available: dict[str, SkillInfo] = self._discover_skills()
@@ -31,7 +31,7 @@ class SkillManager:
             )
 
     @property
-    def _config(self) -> VibeConfig:
+    def _config(self) -> RuneConfig:
         return self._config_getter()
 
     @property
@@ -51,7 +51,7 @@ class SkillManager:
         return dict(self._available)
 
     @staticmethod
-    def _compute_search_paths(config: VibeConfig) -> list[Path]:
+    def _compute_search_paths(config: RuneConfig) -> list[Path]:
         paths: list[Path] = []
 
         for path in config.skill_paths:

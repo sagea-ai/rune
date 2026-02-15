@@ -40,14 +40,14 @@ def _try_canonical_module_name(path: Path) -> str | None:
         return None
 
     try:
-        vibe_idx = parts.index("rune")
+        rune_idx = parts.index("rune")
     except ValueError:
         return None
 
-    if vibe_idx + 1 >= len(parts):
+    if rune_idx + 1 >= len(parts):
         return None
 
-    module_parts = [p.removesuffix(".py") for p in parts[vibe_idx:]]
+    module_parts = [p.removesuffix(".py") for p in parts[rune_idx:]]
     return ".".join(module_parts)
 
 
