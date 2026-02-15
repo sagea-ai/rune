@@ -1,6 +1,6 @@
 # Rune Documentation
 
-Welcome to the Rune documentation! For basic setup, see the [main README](https://github.com/runeai/rune-cli#readme).
+Welcome to the Rune documentation! For basic setup, see the [main README](https://github.com/sagea-ai/rune#readme).
 
 ## Available Documentation
 

@@ -877,14 +877,6 @@ class AgentLoop:
         self.stats = AgentStats()
         self.stats.trigger_listeners()
 
-        try:
-            active_model = self.config.get_active_model()
-            self.stats.update_pricing(
-                active_model.input_price, active_model.output_price
-            )
-        except ValueError:
-            pass
-
         self.middleware_pipeline.reset()
         self.tool_manager.reset_all()
         self._reset_session()
@@ -1002,14 +994,6 @@ class AgentLoop:
 
         if len(self.messages) == 1:
             self.stats.reset_context_state()
-
-        try:
-            active_model = self.config.get_active_model()
-            self.stats.update_pricing(
-                active_model.input_price, active_model.output_price
-            )
-        except ValueError:
-            pass
 
         self._last_observed_message_index = 0
 
