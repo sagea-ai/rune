@@ -13,7 +13,7 @@ from textual.widgets import Input, Link, Static
 
 from rune.cli.clipboard import copy_selection_to_clipboard
 from rune.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
-from rune.core.config import VibeConfig
+from rune.core.config import RuneConfig
 from rune.core.paths.global_paths import GLOBAL_ENV_FILE
 from rune.setup.onboarding.base import OnboardingScreen
 
@@ -21,7 +21,7 @@ PROVIDER_HELP = {
     "rune": ("https://console.rune.ai/codestral/cli", "Rune AI Studio")
 }
 CONFIG_DOCS_URL = (
-    "https://github.com/runeai/rune-cli?tab=readme-ov-file#configuration"
+    "https://github.com/sagea-ai/rune?tab=readme-ov-file#configuration"
 )
 
 
@@ -40,7 +40,7 @@ class ApiKeyScreen(OnboardingScreen):
 
     def __init__(self) -> None:
         super().__init__()
-        config = VibeConfig.model_construct()
+        config = RuneConfig.model_construct()
         active_model = config.get_active_model()
         self.provider = config.get_provider_for_model(active_model)
 
@@ -59,7 +59,7 @@ class ApiKeyScreen(OnboardingScreen):
         )
 
     def _compose_config_docs(self) -> ComposeResult:
-        yield Static("[dim]Learn more about Vibe configuration:[/]")
+        yield Static("[dim]Learn more about Rune configuration:[/]")
         yield Horizontal(
             NoMarkupStatic("→ ", classes="link-chevron"),
             Link(CONFIG_DOCS_URL, url=CONFIG_DOCS_URL),

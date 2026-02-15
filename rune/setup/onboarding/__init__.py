@@ -35,5 +35,5 @@ def run_onboarding(app: App | None = None) -> None:
             )
         case "completed":
             rprint(
-                '\nSetup complete 🎉. Run "vibe" to start using the Rune CLI.\n'
+                '\nSetup complete 🎉. Run "rune" to start using the Rune CLI.\n'
             )
