@@ -75,7 +75,7 @@ class WrongBackendError(RuntimeError):
     def __init__(self, backend: Backend, is_rune_api: bool) -> None:
         super().__init__(
             f"Wrong backend '{backend}' for {'' if is_rune_api else 'non-'}"
-            f"rune API. Use '{Backend.RUNE}' for rune API and '{Backend.GENERIC}' for others."
+            f"rune API."
         )
         self.backend = backend
         self.is_rune_api = is_rune_api

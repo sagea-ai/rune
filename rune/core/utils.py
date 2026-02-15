@@ -150,9 +150,6 @@ logger = logging.getLogger("vibe")
 
 def get_user_agent(backend: Backend) -> str:
     user_agent = f"Rune-Vibe/{__version__}"
-    if backend == Backend.RUNE:
-        rune_sdk_prefix = "rune-client-python/"
-        user_agent = f"{rune_sdk_prefix}{user_agent}"
     return user_agent
 
 

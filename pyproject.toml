@@ -13,6 +13,7 @@ keywords = [
     "rune",
     "llm",
     "developer-tools",
+    "sagea",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -54,10 +55,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/runeai/rune-cli"
-Repository = "https://github.com/runeai/rune-cli"
-Issues = "https://github.com/runeai/rune-cli/issues"
-Documentation = "https://github.com/runeai/rune-cli#readme"
+Homepage = "https://github.com/sagea-ai/rune"
+Repository = "https://github.com/sagea-ai/rune"
+Issues = "https://github.com/sagea-ai/rune/issues"
+Documentation = "https://github.com/sagea-ai/rune#readme"
 
 
 [build-system]

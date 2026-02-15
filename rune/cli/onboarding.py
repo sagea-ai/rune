@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 import os
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import ollama
@@ -14,6 +16,34 @@ from rune.core.config import CONFIG_FILE, VibeConfig
 
 console = Console()
 
+def install_ollama() -> bool:
+    """Attempt to install Ollama automatically."""
+    console.print("[yellow]Ollama not found. Attempting to install...[/yellow]")
+
+    if sys.platform != "linux":
+        console.print("[red]Automatic installation is only supported on Linux.[/red]")
+        console.print("Please install Ollama manually from https://ollama.com/")
+        return False
+
+    try:
+        # Use simple curl | sh installation
+        install_cmd = "curl -fsSL https://ollama.com/install.sh | sh"
+
+        # We need to run this interactively to allow sudo prompt if needed
+        # But subprocess.run might not utilize the TTY properly for sudo password if not careful.
+        # However, for a CLI tool, inheriting stdin/stdout usually works.
+
+        subprocess.run(install_cmd, shell=True, check=True, executable="/bin/sh")
+        console.print("[green]Ollama installed successfully![/green]")
+        return True
+    except subprocess.CalledProcessError:
+        console.print("[red]Installation failed.[/red]")
+        console.print("Please install Ollama manually from https://ollama.com/")
+        return False
+    except Exception as e:
+        console.print(f"[red]An error occurred: {e}[/red]")
+        return False
+
 def run_onboarding() -> None:
     """Run the interactive onboarding process."""
     console.print(r"""
@@ -23,7 +53,7 @@ def run_onboarding() -> None:
    ░░▒▒██▒██▒█▓▒▒░     ▒████▓░    ░░█████░░████▓░  ░░░░▓████░░▓███████░  ░▒████▒ ▒████▓░░        ░
  ░░░▓█▓▓█▒▒▒▒█▓▓█▒░░  ░▒████▓░     ░█████ ░████▓░░    ░▓████░░▓███████▓▓░░▒████▒ ▒████▓░  ░    ░░ ░
  ░█▓▓█▒░▓▓░░▓▒░▓█▓▓▓░ ░▒████▓░   ▒▓▓█████ ░████▓░    ░░▓████░░▓████▓▒▓██▓▓▓████▒ ▒█████▓▓▓▓▓▓▓▓▓░░
- ▒█▓▓██▒░▒█▓░░▒██▓▓█▒  ▒████▓░░░░▓██████▓ ░████▓░    ░░▓████░░▓████░ ░█████████▒ ▒██████████████░░
+ ░▒▓▓██▒░▒█▓░░▒██▓▓█▒  ▒████▓░░░░▓██████▓ ░████▓░    ░░▓████░░▓████░ ░█████████▒ ▒██████████████░░
 ░▒█▓░▓██▓▒█▓▒███▒▒▓█▒  ▒████████████  ░   ░████▓░ ░ ░ ░▓████░░▓████░  ░░███████▒ ▒████▓░░░
  ▒██░░░▓██████▓░░▒██▒ ░▒████▓░░███████▒   ░████▓░    ░░▓████░░▓████░ ░ ░░░▒████▒ ▒████▓░    ░
  ░▓██▓░░░███▓░░▒███▒░  ▒████▓░░▒▒▓█████▓▒ ░▒▒▓██▓▓▓▓▓▓▓██▓▒▒░░▓████░     ░▒████▒ ▒█████▓▓▓▓▓▓▓▓▓▓▓▒░
@@ -38,50 +68,54 @@ def run_onboarding() -> None:
     console.print("Setting things up for you...")
 
     # Check Ollama
+    ollama_ready = False
     with console.status("Checking Ollama installation..."):
         try:
-            # Simple check if ollama is reachable
-            # We can try listing models or just a version check if client supports it
-            # Using list as a connectivity check
             ollama.list()
+            ollama_ready = True
             console.print("✓ Ollama is running")
         except Exception:
-            console.print("[bold red]× Could not connect to Ollama[/bold red]")
-            console.print("Please make sure Ollama is installed and running: https://ollama.com/")
-            console.print("Run `ollama serve` in a separate terminal.")
-            # We continue anyway, user might fix it later
+            pass
+
+    if not ollama_ready:
+        console.print("[bold red]× Could not connect to Ollama[/bold red]")
+        if Prompt.ask("Ollama is not running or not installed. Do you want me to install ensure it is running/install it?", choices=["y", "n"], default="y") == "y":
+             if install_ollama():
+                 ollama_ready = True
+                 # Try starting the server in background if not running?
+                 # The install script usually starts the service on Linux (systemd).
+                 console.print("Waiting for Ollama to start...")
+                 import time
+                 time.sleep(5)
+                 try:
+                     ollama.list()
+                     console.print("✓ Ollama is now running")
+                 except Exception:
+                     console.print("[yellow]Ollama installed but might need a manual start or restart of this terminal.[/yellow]")
+                     console.print("Run `ollama serve` in a separate terminal if it's not running.")
 
     # Verify Sage Reasoning models
-    sage_models = ["sage-reasoning:8b", "sage-reasoning:3b", "sage-reasoning:14b", "sage-reasoning:32b"]
     wanted_model = "sage-reasoning:8b" # Default
 
-    with console.status("Verifying Sage Reasoning models..."):
-        try:
-            available = [m['name'] for m in ollama.list()['models']]
-            if not any(m.startswith(wanted_model) for m in available):
-                console.print(f"  Downloading {wanted_model}...")
-                ollama.pull(wanted_model)
-                console.print(f"✓ {wanted_model} ready")
-            else:
-                console.print(f"✓ {wanted_model} found")
-        except Exception as e:
-            console.print(f"[yellow]! Could not verify models: {e}[/yellow]")
+    if ollama_ready:
+        with console.status("Verifying Sage Reasoning models..."):
+            try:
+                available = [m['name'] for m in ollama.list()['models']]
+                if not any(m.startswith(wanted_model) for m in available):
+                    console.print(f"  Downloading {wanted_model}...")
+                    ollama.pull(wanted_model)
+                    console.print(f"✓ {wanted_model} ready")
+                else:
+                    console.print(f"✓ {wanted_model} found")
+            except Exception as e:
+                console.print(f"[yellow]! Could not verify models: {e}[/yellow]")
+    else:
+        console.print("[yellow]Skipping model verification as Ollama is not ready.[/yellow]")
 
     # Configuring preferences
     with console.status("Configuring your preferences..."):
         # Create config directory if needed
         CONFIG_FILE.path.parent.mkdir(parents=True, exist_ok=True)
-
-        # We can simulate saving the name or other prefs in a separate user config if needed,
-        # but for now we rely on VibeConfig (RuneConfig).
-        # To store the name, we might need to extend VibeConfig or just print it.
-        # The prompt says "Store user preferences (name, preferred model, etc.) in a config file".
-        # config.py loads from config.toml. We can write to it.
-
-        # Create a default config if it doesn't exist, utilizing the name?
-        # VibeConfig doesn't have a 'user_name' field by default.
-        # We can add it or ignore it for now as it's not critical for logic, just for onboarding.
-        # But let's create the default toml.
 
         if not CONFIG_FILE.path.exists():
              VibeConfig.save_updates({"active_model": "default"})
