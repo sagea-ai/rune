@@ -6,7 +6,7 @@ import os
 import sys
 
 from rune import __version__
-from rune.core.config import VibeConfig
+from rune.core.config import RuneConfig
 from rune.core.paths.config_paths import CONFIG_FILE, HISTORY_FILE, unlock_config_paths
 from rune.core.utils import logger
 
@@ -34,7 +34,7 @@ def parse_arguments() -> Arguments:
 def bootstrap_config_files() -> None:
     if not CONFIG_FILE.path.exists():
         try:
-            VibeConfig.save_updates(VibeConfig.create_default())
+            RuneConfig.save_updates(RuneConfig.create_default())
         except Exception as e:
             logger.error(f"Could not create default config file: {e}")
             raise
@@ -42,7 +42,7 @@ def bootstrap_config_files() -> None:
     if not HISTORY_FILE.path.exists():
         try:
             HISTORY_FILE.path.parent.mkdir(parents=True, exist_ok=True)
-            HISTORY_FILE.path.write_text("Hello Vibe!\n", "utf-8")
+            HISTORY_FILE.path.write_text("Hello Rune!\n", "utf-8")
         except Exception as e:
             logger.error(f"Could not create history file: {e}")
             raise

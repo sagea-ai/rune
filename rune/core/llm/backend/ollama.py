@@ -214,7 +214,7 @@ class OllamaBackend:
         # Logic: prompt_tokens is returned in response.
         # We can do a dummy generation with max_tokens=1?
         # Or just rely on previous functionality?
-        # Mistral backend did a complete(max_tokens=1).
+        # Rune backend did a complete(max_tokens=1).
 
         result = await self.complete(
             model=model,

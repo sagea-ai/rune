@@ -313,11 +313,11 @@ class RuneConfig(BaseSettings):
     enable_auto_update: bool = True
     api_timeout: float = 720.0
 
-    # TODO(vibe-nuage): remove exclude=True once the feature is publicly available
+    # TODO(rune-nuage): remove exclude=True once the feature is publicly available
     nuage_enabled: bool = Field(default=False, exclude=True)
     nuage_base_url: str = Field(default="https://api.globalaegis.net", exclude=True)
     nuage_workflow_id: str = Field(default="__shared-nuage-workflow", exclude=True)
-    # TODO(vibe-nuage): change default value to RUNE_API_KEY once prod has shared vibe-nuage workers
+    # TODO(rune-nuage): change default value to RUNE_API_KEY once prod has shared rune-nuage workers
     nuage_api_key_env_var: str = Field(default="STAGING_RUNE_API_KEY", exclude=True)
 
     providers: list[ProviderConfig] = Field(

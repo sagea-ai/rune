@@ -959,7 +959,7 @@ class AgentLoop:
 
     async def reload_with_initial_messages(
         self,
-        base_config: VibeConfig | None = None,
+        base_config: RuneConfig | None = None,
         max_turns: int | None = None,
         max_price: float | None = None,
     ) -> None:
