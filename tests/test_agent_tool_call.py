@@ -6,13 +6,13 @@ import json
 from pydantic import BaseModel
 import pytest
 
-from tests.conftest import build_test_agent_loop, build_test_vibe_config
+from tests.conftest import build_test_agent_loop, build_test_rune_config
 from tests.mock.utils import mock_llm_chunk
 from tests.stubs.fake_backend import FakeBackend
 from tests.stubs.fake_tool import FakeTool
 from rune.core.agent_loop import AgentLoop
 from rune.core.agents.models import BuiltinAgentName
-from rune.core.config import VibeConfig
+from rune.core.config import RuneConfig
 from rune.core.tools.base import BaseToolConfig, ToolPermission
 from rune.core.tools.builtins.todo import TodoItem
 from rune.core.types import (
@@ -34,8 +34,8 @@ async def act_and_collect_events(agent_loop: AgentLoop, prompt: str) -> list[Bas
     return [ev async for ev in agent_loop.act(prompt)]
 
 
-def make_config(todo_permission: ToolPermission = ToolPermission.ALWAYS) -> VibeConfig:
-    return build_test_vibe_config(
+def make_config(todo_permission: ToolPermission = ToolPermission.ALWAYS) -> RuneConfig:
+    return build_test_rune_config(
         auto_compact_threshold=0,
         enabled_tools=["todo"],
         tools={"todo": BaseToolConfig(permission=todo_permission)},
@@ -410,7 +410,7 @@ async def test_tool_call_can_be_interrupted() -> None:
     tool_call = ToolCall(
         id="call_8", index=0, function=FunctionCall(name="stub_tool", arguments="{}")
     )
-    config = build_test_vibe_config(
+    config = build_test_rune_config(
         auto_compact_threshold=0, enabled_tools=["stub_tool"]
     )
     agent_loop = build_test_agent_loop(

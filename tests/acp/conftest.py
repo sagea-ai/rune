@@ -6,7 +6,7 @@ import pytest
 
 from tests.stubs.fake_backend import FakeBackend
 from tests.stubs.fake_client import FakeClient
-from rune.acp.acp_agent_loop import VibeAcpAgentLoop
+from rune.acp.acp_agent_loop import RuneAcpAgentLoop
 from rune.core.agent_loop import AgentLoop
 from rune.core.types import LLMChunk, LLMMessage, LLMUsage, Role
 
@@ -22,18 +22,18 @@ def backend() -> FakeBackend:
     return backend
 
 
-def _create_acp_agent() -> VibeAcpAgentLoop:
-    vibe_acp_agent = VibeAcpAgentLoop()
+def _create_acp_agent() -> RuneAcpAgentLoop:
+    rune_acp_agent = RuneAcpAgentLoop()
     client = FakeClient()
 
-    vibe_acp_agent.on_connect(client)
-    client.on_connect(vibe_acp_agent)
+    rune_acp_agent.on_connect(client)
+    client.on_connect(rune_acp_agent)
 
-    return vibe_acp_agent  # pyright: ignore[reportReturnType]
+    return rune_acp_agent  # pyright: ignore[reportReturnType]
 
 
 @pytest.fixture
-def acp_agent_loop(backend: FakeBackend) -> VibeAcpAgentLoop:
+def acp_agent_loop(backend: FakeBackend) -> RuneAcpAgentLoop:
     class PatchedAgent(AgentLoop):
         def __init__(self, *args, **kwargs) -> None:
             super().__init__(*args, **kwargs, backend=backend)

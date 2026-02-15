@@ -6,16 +6,16 @@ from unittest.mock import patch
 import pytest
 
 from tests.acp.conftest import _create_acp_agent
-from tests.conftest import build_test_vibe_config
-from rune.acp.acp_agent_loop import VibeAcpAgentLoop
+from tests.conftest import build_test_rune_config
+from rune.acp.acp_agent_loop import RuneAcpAgentLoop
 from rune.core.agent_loop import AgentLoop
 from rune.core.agents.models import BuiltinAgentName
 from rune.core.config import ModelConfig
 
 
 @pytest.fixture
-def acp_agent_loop(backend) -> VibeAcpAgentLoop:
-    config = build_test_vibe_config(
+def acp_agent_loop(backend) -> RuneAcpAgentLoop:
+    config = build_test_rune_config(
         active_model="devstral-latest",
         models=[
             ModelConfig(
@@ -41,7 +41,7 @@ def acp_agent_loop(backend) -> VibeAcpAgentLoop:
 class TestACPNewSession:
     @pytest.mark.asyncio
     async def test_new_session_response_structure(
-        self, acp_agent_loop: VibeAcpAgentLoop
+        self, acp_agent_loop: RuneAcpAgentLoop
     ) -> None:
         session_response = await acp_agent_loop.new_session(
             cwd=str(Path.cwd()), mcp_servers=[]
@@ -93,7 +93,7 @@ class TestACPNewSession:
     @pytest.mark.skip(reason="TODO: Fix this test")
     @pytest.mark.asyncio
     async def test_new_session_preserves_model_after_set_model(
-        self, acp_agent_loop: VibeAcpAgentLoop
+        self, acp_agent_loop: RuneAcpAgentLoop
     ) -> None:
         session_response = await acp_agent_loop.new_session(
             cwd=str(Path.cwd()), mcp_servers=[]
