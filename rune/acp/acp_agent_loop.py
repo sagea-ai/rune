@@ -90,7 +90,7 @@ class AcpSessionLoop(BaseModel):
     task: asyncio.Task[None] | None = None
 
 
-class VibeAcpAgentLoop(AcpAgent):
+class RuneAcpAgentLoop(AcpAgent):
     client: Client
 
     def __init__(self) -> None:
@@ -132,7 +132,7 @@ class VibeAcpAgentLoop(AcpAgent):
         auth_methods = (
             [
                 AuthMethod(
-                    id="vibe-setup",
+                    id="rune-setup",
                     name="Register your API Key",
                     description="Register your API Key inside Rune",
                     field_meta={
@@ -182,7 +182,7 @@ class VibeAcpAgentLoop(AcpAgent):
         os.chdir(cwd)
 
         try:
-            config = VibeConfig.load(disabled_tools=["ask_user_question"])
+            config = RuneConfig.load(disabled_tools=["ask_user_question"])
             config.tool_paths.extend(self._get_acp_tool_overrides())
         except MissingAPIKeyError as e:
             raise RequestError.auth_required({

@@ -7,11 +7,11 @@ import tomli_w
 
 from rune.core.paths.global_paths import TRUSTED_FOLDERS_FILE
 
-TRUSTABLE_FILENAMES = ["AGENTS.md", "VIBE.md", ".rune.md"]
+TRUSTABLE_FILENAMES = ["AGENTS.md", "RUNE.md", ".rune.md"]
 
 
 def has_trustable_content(path: Path) -> bool:
-    if (path / ".vibe").exists():
+    if (path / ".rune").exists():
         return True
     for name in TRUSTABLE_FILENAMES:
         if (path / name).exists():

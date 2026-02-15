@@ -22,8 +22,8 @@ from rune.core.types import BaseEvent, ToolResultEvent
 
 CANCELLATION_TAG = "user_cancellation"
 TOOL_ERROR_TAG = "tool_error"
-RUNE_STOP_EVENT_TAG = "vibe_stop_event"
-RUNE_WARNING_TAG = "vibe_warning"
+RUNE_STOP_EVENT_TAG = "rune_stop_event"
+RUNE_WARNING_TAG = "rune_warning"
 
 KNOWN_TAGS = [CANCELLATION_TAG, TOOL_ERROR_TAG, RUNE_STOP_EVENT_TAG, RUNE_WARNING_TAG]
 
@@ -145,11 +145,11 @@ logging.basicConfig(
     handlers=[logging.FileHandler(LOG_FILE.path, "a", "utf-8")],
 )
 
-logger = logging.getLogger("vibe")
+logger = logging.getLogger("rune")
 
 
 def get_user_agent(backend: Backend) -> str:
-    user_agent = f"Rune-Vibe/{__version__}"
+    user_agent = f"Rune-CLI/{__version__}"
     return user_agent
 
 
