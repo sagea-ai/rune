@@ -189,16 +189,14 @@ Rune works best with capable models. We recommend:
 
 ```bash
 # Download a recommended model
-ollama pull qwen2.5-coder:32b
+ollama pull comethrusws/sage-reasoning:32b
+
+# or alternatively
+ollama pull comethrusws/sage-reasoning:14b
 
 # Or try the smaller but still capable version
-ollama pull qwen2.5-coder:14b
+ollama pull comethrusws/sage-reasoning:8b
 ```
-
-Other compatible models:
-- `deepseek-coder-v2`
-- `codellama:34b`
-- `llama3.1:70b`
 
 ## Terminal Requirements
 
