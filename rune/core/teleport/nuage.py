@@ -17,13 +17,13 @@ class GitRepoConfig(BaseModel):
     commit: str | None = None
 
 
-class VibeSandboxConfig(BaseModel):
+class RuneSandboxConfig(BaseModel):
     git_repo: GitRepoConfig | None = None
 
 
-class VibeNewSandbox(BaseModel):
+class RuneNewSandbox(BaseModel):
     type: str = "new"
-    config: VibeSandboxConfig = Field(default_factory=VibeSandboxConfig)
+    config: RuneSandboxConfig = Field(default_factory=RuneSandboxConfig)
     teleported_diffs: bytes | None = None
 
 
@@ -34,7 +34,7 @@ class TeleportSession(BaseModel):
 
 class WorkflowParams(BaseModel):
     prompt: str
-    sandbox: VibeNewSandbox
+    sandbox: RuneNewSandbox
     session: TeleportSession | None = None
 
 
@@ -117,7 +117,7 @@ class NuageClient:
         )
         if not response.is_success:
             error_msg = f"Nuage workflow trigger failed: {response.text}"
-            # TODO(vibe-nuage): remove this once prod has shared vibe-nuage workers
+            # TODO(rune-nuage): remove this once prod has shared rune-nuage workers
             if "Unauthorized" in response.text or "unauthorized" in response.text:
                 error_msg += (
                     "\n\nHint: This version uses Rune staging environment. "

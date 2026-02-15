@@ -295,7 +295,7 @@ DEFAULT_MODELS = [
 ]
 
 
-class VibeConfig(BaseSettings):
+class RuneConfig(BaseSettings):
     active_model: str = "default"
     vim_keybindings: bool = False
     disable_welcome_banner_animation: bool = False
@@ -468,7 +468,7 @@ class VibeConfig(BaseSettings):
         )
 
     @model_validator(mode="after")
-    def _check_api_key(self) -> VibeConfig:
+    def _check_api_key(self) -> RuneConfig:
         try:
             active_model = self.get_active_model()
             provider = self.get_provider_for_model(active_model)
@@ -480,7 +480,7 @@ class VibeConfig(BaseSettings):
         return self
 
     @model_validator(mode="after")
-    def _check_api_backend_compatibility(self) -> VibeConfig:
+    def _check_api_backend_compatibility(self) -> RuneConfig:
         return self
 
     @field_validator("tool_paths", mode="before")
@@ -515,7 +515,7 @@ class VibeConfig(BaseSettings):
         return normalized
 
     @model_validator(mode="after")
-    def _validate_model_uniqueness(self) -> VibeConfig:
+    def _validate_model_uniqueness(self) -> RuneConfig:
         seen_aliases: set[str] = set()
         for model in self.models:
             if model.alias in seen_aliases:
@@ -526,7 +526,7 @@ class VibeConfig(BaseSettings):
         return self
 
     @model_validator(mode="after")
-    def _check_system_prompt(self) -> VibeConfig:
+    def _check_system_prompt(self) -> RuneConfig:
         _ = self.system_prompt
         return self
 
@@ -570,7 +570,7 @@ class VibeConfig(BaseSettings):
         pass
 
     @classmethod
-    def load(cls, **overrides: Any) -> VibeConfig:
+    def load(cls, **overrides: Any) -> RuneConfig:
         cls._migrate()
         return cls(**(overrides or {}))
 

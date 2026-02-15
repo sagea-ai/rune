@@ -81,7 +81,7 @@ from rune.cli.update_notifier.update import do_update
 from rune.core.agent_loop import AgentLoop, TeleportError
 from rune.core.agents import AgentProfile
 from rune.core.autocompletion.path_prompt_adapter import render_path_prompt
-from rune.core.config import VibeConfig
+from rune.core.config import RuneConfig
 from rune.core.paths.config_paths import HISTORY_FILE
 from rune.core.session.session_loader import SessionLoader
 from rune.core.teleport.types import (
@@ -172,7 +172,7 @@ async def prune_by_height(messages_area: Widget, low_mark: int, high_mark: int) 
     return bool(prune_children)
 
 
-class VibeApp(App):  # noqa: PLR0904
+class RuneApp(App):  # noqa: PLR0904
     ENABLE_COMMAND_PALETTE = False
     CSS_PATH = "app.tcss"
 
@@ -246,7 +246,7 @@ class VibeApp(App):  # noqa: PLR0904
         self._cached_loading_area: Widget | None = None
 
     @property
-    def config(self) -> VibeConfig:
+    def config(self) -> RuneConfig:
         return self.agent_loop.config
 
     def compose(self) -> ComposeResult:
@@ -414,7 +414,7 @@ class VibeApp(App):  # noqa: PLR0904
         self, message: ConfigApp.ConfigClosed
     ) -> None:
         if message.changes:
-            VibeConfig.save_updates(message.changes)
+            RuneConfig.save_updates(message.changes)
             await self._reload_config()
         else:
             await self._mount_and_scroll(
@@ -713,7 +713,7 @@ class VibeApp(App):  # noqa: PLR0904
         await self._mount_and_scroll(teleport_msg)
 
         try:
-            gen = self.agent_loop.teleport_to_vibe_nuage(prompt)
+            gen = self.agent_loop.teleport_to_rune_nuage(prompt)
             async for event in gen:
                 match event:
                     case TeleportCheckingGitEvent():
@@ -830,7 +830,7 @@ class VibeApp(App):  # noqa: PLR0904
             self._tool_call_map = None
             self._history_widget_indices = WeakKeyDictionary()
             await self._load_more.hide()
-            base_config = VibeConfig.load()
+            base_config = RuneConfig.load()
 
             await self.agent_loop.reload_with_initial_messages(base_config=base_config)
 
@@ -1417,7 +1417,7 @@ class VibeApp(App):  # noqa: PLR0904
 
         if self.config.enable_auto_update and await do_update():
             self.notify(
-                f"{update_message_prefix}\nVibe was updated successfully. Please restart to use the new version.",
+                f"{update_message_prefix}\nRune was updated successfully. Please restart to use the new version.",
                 title="Update successful",
                 severity="information",
                 timeout=10,
@@ -1451,8 +1451,8 @@ def _print_session_resume_message(session_id: str | None) -> None:
         return
 
     print()
-    print("To continue this session, run: vibe --continue")
-    print(f"Or: vibe --resume {session_id}")
+    print("To continue this session, run: rune --continue")
+    print(f"Or: rune --resume {session_id}")
 
 
 def run_textual_ui(
@@ -1463,7 +1463,7 @@ def run_textual_ui(
     update_notifier = GitHubUpdateGateway(owner="sagea-ai", repository="rune")
     update_cache_repository = FileSystemUpdateCacheRepository()
     plan_offer_gateway = HttpWhoAmIGateway()
-    app = VibeApp(
+    app = RuneApp(
         agent_loop=agent_loop,
         initial_prompt=initial_prompt,
         teleport_on_start=teleport_on_start,

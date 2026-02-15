@@ -12,7 +12,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 
-from rune.core.config import CONFIG_FILE, VibeConfig
+from rune.core.config import CONFIG_FILE, RuneConfig
 
 console = Console()
 
@@ -118,7 +118,7 @@ def run_onboarding() -> None:
         CONFIG_FILE.path.parent.mkdir(parents=True, exist_ok=True)
 
         if not CONFIG_FILE.path.exists():
-             VibeConfig.save_updates({"active_model": "default"})
+             RuneConfig.save_updates({"active_model": "default"})
 
         console.print("✓ Configuration saved")
 

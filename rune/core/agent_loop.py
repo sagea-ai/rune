@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from rune.core.agents.manager import AgentManager
 from rune.core.agents.models import AgentProfile, BuiltinAgentName
-from rune.core.config import VibeConfig
+from rune.core.config import RuneConfig
 from rune.core.llm.backend.factory import BACKEND_FACTORY
 from rune.core.llm.exceptions import BackendError
 from rune.core.llm.format import APIToolFormatHandler, ResolvedMessage, ResolvedToolCall
@@ -112,7 +112,7 @@ class AgentLoopLLMResponseError(AgentLoopError):
 
 
 class TeleportError(AgentLoopError):
-    """Raised when teleport to Vibe Nuage fails."""
+    """Raised when teleport to Rune Nuage fails."""
 
 
 def _should_raise_rate_limit_error(e: Exception) -> bool:
@@ -122,7 +122,7 @@ def _should_raise_rate_limit_error(e: Exception) -> bool:
 class AgentLoop:
     def __init__(
         self,
-        config: VibeConfig,
+        config: RuneConfig,
         agent_name: str = BuiltinAgentName.DEFAULT,
         message_observer: Callable[[LLMMessage], None] | None = None,
         max_turns: int | None = None,
@@ -188,7 +188,7 @@ class AgentLoop:
         return self.agent_manager.active_profile
 
     @property
-    def config(self) -> VibeConfig:
+    def config(self) -> RuneConfig:
         return self.agent_manager.config
 
     @property
@@ -199,7 +199,7 @@ class AgentLoop:
         self, tool_name: str, permission: ToolPermission, save_permanently: bool = False
     ) -> None:
         if save_permanently:
-            VibeConfig.save_updates({
+            RuneConfig.save_updates({
                 "tools": {tool_name: {"permission": permission.value}}
             })
 
@@ -264,7 +264,7 @@ class AgentLoop:
             )
         return self._teleport_service
 
-    def teleport_to_vibe_nuage(
+    def teleport_to_rune_nuage(
         self, prompt: str | None
     ) -> AsyncGenerator[TeleportYieldEvent, TeleportPushResponseEvent | None]:
         from rune.core.teleport.nuage import TeleportSession
