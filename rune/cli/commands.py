@@ -64,7 +64,7 @@ class CommandRegistry:
             ),
             "teleport": Command(
                 aliases=frozenset(["/teleport"]),
-                description="Teleport session to Vibe Nuage",
+                description="Teleport session to Rune Nuage",
                 handler="_teleport_command",
             ),
         }

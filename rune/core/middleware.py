@@ -30,7 +30,7 @@ class ResetReason(StrEnum):
 class ConversationContext:
     messages: list[LLMMessage]
     stats: AgentStats
-    config: VibeConfig
+    config: RuneConfig
 
 
 @dataclass

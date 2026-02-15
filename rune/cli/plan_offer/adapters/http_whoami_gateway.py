@@ -12,7 +12,7 @@ from rune.cli.plan_offer.ports.whoami_gateway import (
 )
 
 BASE_URL = "https://console.rune.ai"
-WHOAMI_PATH = "/api/vibe/whoami"
+WHOAMI_PATH = "/api/rune/whoami"
 
 
 class HttpWhoAmIGateway:

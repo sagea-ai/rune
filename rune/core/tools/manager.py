@@ -22,14 +22,14 @@ from rune.core.tools.mcp import (
 )
 from rune.core.utils import name_matches, run_sync
 
-logger = getLogger("vibe")
+logger = getLogger("rune")
 
 if TYPE_CHECKING:
-    from rune.core.config import MCPHttp, MCPStdio, MCPStreamableHttp, VibeConfig
+    from rune.core.config import MCPHttp, MCPStdio, MCPStreamableHttp, RuneConfig
 
 
 def _try_canonical_module_name(path: Path) -> str | None:
-    """Extract canonical module name for vibe package files.
+    """Extract canonical module name for rune package files.
 
     Prevents Pydantic class identity mismatches when the same module
     is imported via dynamic discovery and regular imports.
@@ -40,7 +40,7 @@ def _try_canonical_module_name(path: Path) -> str | None:
         return None
 
     try:
-        vibe_idx = parts.index("vibe")
+        vibe_idx = parts.index("rune")
     except ValueError:
         return None
 
@@ -52,14 +52,14 @@ def _try_canonical_module_name(path: Path) -> str | None:
 
 
 def _compute_module_name(path: Path) -> str:
-    """Return canonical module name for vibe files, hash-based synthetic name otherwise."""
+    """Return canonical module name for rune files, hash-based synthetic name otherwise."""
     if canonical := _try_canonical_module_name(path):
         return canonical
 
     resolved = path.resolve()
     path_hash = hashlib.md5(str(resolved).encode()).hexdigest()[:8]
     stem = re.sub(r"[^0-9A-Za-z_]", "_", path.stem) or "mod"
-    return f"vibe_tools_discovered_{stem}_{path_hash}"
+    return f"rune_tools_discovered_{stem}_{path_hash}"
 
 
 class NoSuchToolError(Exception):
@@ -73,7 +73,7 @@ class ToolManager:
     should have its own ToolManager instance.
     """
 
-    def __init__(self, config_getter: Callable[[], VibeConfig]) -> None:
+    def __init__(self, config_getter: Callable[[], RuneConfig]) -> None:
         self._config_getter = config_getter
         self._instances: dict[str, BaseTool] = {}
         self._search_paths: list[Path] = self._compute_search_paths(self._config)
@@ -84,11 +84,11 @@ class ToolManager:
         self._integrate_mcp()
 
     @property
-    def _config(self) -> VibeConfig:
+    def _config(self) -> RuneConfig:
         return self._config_getter()
 
     @staticmethod
-    def _compute_search_paths(config: VibeConfig) -> list[Path]:
+    def _compute_search_paths(config: RuneConfig) -> list[Path]:
         paths: list[Path] = [DEFAULT_TOOL_DIR.path]
 
         paths.extend(config.tool_paths)
