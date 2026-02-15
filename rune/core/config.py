@@ -264,7 +264,7 @@ class ModelConfig(BaseModel):
 DEFAULT_PROVIDERS = [
     ProviderConfig(
         name="ollama",
-        api_base="http://127.0.0.1:11434/v1",
+        api_base="http://127.0.0.1:11434",
         api_key_env_var="",
         backend=Backend.OLLAMA,
     ),
@@ -272,23 +272,30 @@ DEFAULT_PROVIDERS = [
 
 DEFAULT_MODELS = [
     ModelConfig(
-        name="sage-reasoning:8b",
+        name="comethrusws/sage-reasoning:8b",
         provider="ollama",
         alias="default",
         input_price=0.0,
         output_price=0.0,
     ),
     ModelConfig(
-        name="sage-reasoning:3b",
+        name="comethrusws/sage-reasoning:3b",
         provider="ollama",
-        alias="fast",
+        alias="instinctive (3b)",
         input_price=0.0,
         output_price=0.0,
     ),
     ModelConfig(
-        name="sage-reasoning:14b",
+        name="comethrusws/sage-reasoning:14b",
         provider="ollama",
-        alias="powerful",
+        alias="intuitive (14b)",
+        input_price=0.0,
+        output_price=0.0,
+    ),
+    ModelConfig(
+        name="comethrusws/sage-reasoning:32b",
+        provider="ollama",
+        alias="agentic (32b)",
         input_price=0.0,
         output_price=0.0,
     ),
@@ -296,7 +303,7 @@ DEFAULT_MODELS = [
 
 
 class RuneConfig(BaseSettings):
-    active_model: str = "default"
+    active_model: str = "intuitive (14b)"
     vim_keybindings: bool = False
     disable_welcome_banner_animation: bool = False
     autocopy_to_clipboard: bool = True

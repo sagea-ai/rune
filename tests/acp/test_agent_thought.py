@@ -7,7 +7,7 @@ from acp.schema import AgentThoughtChunk, TextContentBlock
 import pytest
 
 from tests.acp.conftest import _create_acp_agent
-from tests.conftest import build_test_rune_config
+from tests.conftest import build_test_vibe_config
 from tests.stubs.fake_backend import FakeBackend
 from tests.stubs.fake_client import FakeClient
 from rune.acp.acp_agent_loop import VibeAcpAgentLoop
@@ -39,7 +39,7 @@ def backend_with_reasoning() -> FakeBackend:
 def acp_agent_loop_with_reasoning(
     backend_with_reasoning: FakeBackend,
 ) -> VibeAcpAgentLoop:
-    config = build_test_rune_config(active_model="devstral-latest")
+    config = build_test_vibe_config(active_model="devstral-latest")
 
     class PatchedAgentLoop(AgentLoop):
         def __init__(self, *args, **kwargs) -> None:

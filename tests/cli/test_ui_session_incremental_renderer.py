@@ -8,7 +8,7 @@ from textual.widgets import Button
 from tests.cli.plan_offer.adapters.fake_whoami_gateway import FakeWhoAmIGateway
 from tests.conftest import build_test_agent_loop
 from rune.cli.plan_offer.ports.whoami_gateway import WhoAmIResponse
-from rune.cli.textual_ui.app import ChatScroll, RuneApp
+from rune.cli.textual_ui.app import ChatScroll, VibeApp
 from rune.cli.textual_ui.widgets.load_more import (
     HistoryLoadMoreMessage,
     HistoryLoadMoreRequested,
@@ -18,13 +18,13 @@ from rune.cli.textual_ui.windowing import (
     HISTORY_RESUME_TAIL_MESSAGES,
     LOAD_MORE_BATCH_SIZE,
 )
-from rune.core.config import SessionLoggingConfig, RuneConfig
+from rune.core.config import SessionLoggingConfig, VibeConfig
 from rune.core.types import LLMMessage, Role
 
 
 @pytest.fixture
-def rune_config() -> RuneConfig:
-    return RuneConfig(
+def vibe_config() -> VibeConfig:
+    return VibeConfig(
         session_logging=SessionLoggingConfig(enabled=False), enable_update_checks=False
     )
 
@@ -48,13 +48,13 @@ async def _wait_until(pause, predicate, timeout: float = 2.0) -> None:
     raise AssertionError("Condition was not met within the timeout")
 
 
-async def _wait_for_load_more(app: RuneApp, pause) -> None:
+async def _wait_for_load_more(app: VibeApp, pause) -> None:
     await _wait_until(
         pause, lambda: len(app.query(HistoryLoadMoreMessage)) == 1, timeout=5.0
     )
 
 
-def _load_more_remaining(app: RuneApp) -> int:
+def _load_more_remaining(app: VibeApp) -> int:
     label = app.query_one(HistoryLoadMoreMessage).query_one(Button).label
     text = str(label)
     _, _, remainder = text.rpartition("(")
@@ -63,14 +63,14 @@ def _load_more_remaining(app: RuneApp) -> int:
 
 @pytest.mark.asyncio
 async def test_ui_session_incremental_loader_shows_tail_and_load_more(
-    rune_config: RuneConfig,
+    vibe_config: VibeConfig,
 ) -> None:
-    agent_loop = build_test_agent_loop(config=rune_config, enable_streaming=False)
+    agent_loop = build_test_agent_loop(config=vibe_config, enable_streaming=False)
     agent_loop.messages.extend([
         LLMMessage(role=Role.user, content=f"msg-{idx}") for idx in range(66)
     ])
 
-    app = RuneApp(agent_loop=agent_loop, plan_offer_gateway=_pro_plan_gateway())
+    app = VibeApp(agent_loop=agent_loop, plan_offer_gateway=_pro_plan_gateway())
 
     async with app.run_test() as pilot:
         await _wait_until(
@@ -88,16 +88,16 @@ async def test_ui_session_incremental_loader_shows_tail_and_load_more(
 
 @pytest.mark.asyncio
 async def test_ui_session_incremental_loader_load_more_shows_remaining_count(
-    rune_config: RuneConfig,
+    vibe_config: VibeConfig,
 ) -> None:
     total_messages = 31
-    agent_loop = build_test_agent_loop(config=rune_config, enable_streaming=False)
+    agent_loop = build_test_agent_loop(config=vibe_config, enable_streaming=False)
     agent_loop.messages.extend([
         LLMMessage(role=Role.user, content=f"msg-{idx}")
         for idx in range(total_messages)
     ])
 
-    app = RuneApp(agent_loop=agent_loop, plan_offer_gateway=_pro_plan_gateway())
+    app = VibeApp(agent_loop=agent_loop, plan_offer_gateway=_pro_plan_gateway())
 
     async with app.run_test() as pilot:
         await _wait_until(
@@ -121,14 +121,14 @@ async def test_ui_session_incremental_loader_load_more_shows_remaining_count(
 
 @pytest.mark.asyncio
 async def test_ui_session_incremental_loader_load_more_batches_until_done(
-    rune_config: RuneConfig,
+    vibe_config: VibeConfig,
 ) -> None:
-    agent_loop = build_test_agent_loop(config=rune_config, enable_streaming=False)
+    agent_loop = build_test_agent_loop(config=vibe_config, enable_streaming=False)
     agent_loop.messages.extend([
         LLMMessage(role=Role.user, content=f"msg-{idx}") for idx in range(31)
     ])
 
-    app = RuneApp(agent_loop=agent_loop, plan_offer_gateway=_pro_plan_gateway())
+    app = VibeApp(agent_loop=agent_loop, plan_offer_gateway=_pro_plan_gateway())
 
     async with app.run_test() as pilot:
         await _wait_until(
@@ -155,15 +155,15 @@ async def test_ui_session_incremental_loader_load_more_batches_until_done(
 
 @pytest.mark.asyncio
 async def test_ui_session_incremental_loader_keeps_top_alignment_when_not_scrollable(
-    rune_config: RuneConfig,
+    vibe_config: VibeConfig,
 ) -> None:
-    agent_loop = build_test_agent_loop(config=rune_config, enable_streaming=False)
+    agent_loop = build_test_agent_loop(config=vibe_config, enable_streaming=False)
     agent_loop.messages.extend([
         LLMMessage(role=Role.user, content=f"msg-{idx}")
         for idx in range(HISTORY_RESUME_TAIL_MESSAGES + 1)
     ])
 
-    app = RuneApp(agent_loop=agent_loop, plan_offer_gateway=_pro_plan_gateway())
+    app = VibeApp(agent_loop=agent_loop, plan_offer_gateway=_pro_plan_gateway())
 
     async with app.run_test(size=(120, 80)) as pilot:
         await _wait_for_load_more(app, pilot.pause)
