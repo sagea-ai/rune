@@ -1,7 +1,7 @@
 # ACP Setup
 
 Rune can be used in text editors and IDEs that support [Agent Client Protocol](https://agentclientprotocol.com/overview/clients). Rune includes the `rune-acp` tool.
-Once you have set up `vibe` with the API keys, you are ready to use `rune-acp` in your editor. Below are the setup instructions for some editors that support ACP.
+Once you have set up `rune` with the API keys, you are ready to use `rune-acp` in your editor. Below are the setup instructions for some editors that support ACP.
 
 ## Zed
 
@@ -22,7 +22,7 @@ For usage in Zed, we recommend using the [Rune Zed's extension](https://zed.dev/
 }
 ```
 
-2. In the `New Thread` pane on the right, select the `vibe` agent and start the conversation.
+2. In the `New Thread` pane on the right, select the `rune` agent and start the conversation.
 
 ## JetBrains IDEs
 

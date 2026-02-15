@@ -82,7 +82,7 @@ Simply run `rune` to enter the interactive chat.
 Rune uses a TOML configuration file located at `~/.rune/config.toml`.
 
 ```toml
-[vibe]
+[rune]
 active_model = "default"  # Maps to sage-reasoning:8b
 
 [[models]]

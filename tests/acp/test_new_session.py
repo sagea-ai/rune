@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from tests.acp.conftest import _create_acp_agent
-from tests.conftest import build_test_vibe_config
+from tests.conftest import build_test_rune_config
 from rune.acp.acp_agent_loop import VibeAcpAgentLoop
 from rune.core.agent_loop import AgentLoop
 from rune.core.agents.models import BuiltinAgentName
@@ -15,7 +15,7 @@ from rune.core.config import ModelConfig
 
 @pytest.fixture
 def acp_agent_loop(backend) -> VibeAcpAgentLoop:
-    config = build_test_vibe_config(
+    config = build_test_rune_config(
         active_model="devstral-latest",
         models=[
             ModelConfig(

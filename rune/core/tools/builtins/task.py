@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from rune.core.agent_loop import AgentLoop
 from rune.core.agents.models import AgentType
-from rune.core.config import SessionLoggingConfig, VibeConfig
+from rune.core.config import RuneConfig, SessionLoggingConfig
 from rune.core.tools.base import (
     BaseTool,
     BaseToolConfig,
@@ -107,7 +107,7 @@ class Task(
                 f"This is a security constraint to prevent recursive spawning."
             )
 
-        base_config = VibeConfig.load(
+        base_config = RuneConfig.load(
             session_logging=SessionLoggingConfig(enabled=False)
         )
         subagent_loop = AgentLoop(config=base_config, agent_name=args.agent)

@@ -78,23 +78,23 @@ function install_uv() {
     fi
 }
 
-function check_vibe_installed() {
-    if command -v vibe &> /dev/null; then
-        info "vibe is already installed"
+function check_rune_installed() {
+    if command -v rune &> /dev/null; then
+        info "rune is already installed"
         RUNE_INSTALLED=true
     else
         RUNE_INSTALLED=false
     fi
 }
 
-function install_vibe() {
+function install_rune() {
     info "Installing rune-cli from GitHub repository using uv..."
     uv tool install rune-cli
 
-    success "Rune installed successfully! (commands: vibe, rune-acp)"
+    success "Rune installed successfully! (commands: rune, rune-acp)"
 }
 
-function update_vibe() {
+function update_rune() {
     info "Updating rune-cli from GitHub repository using uv..."
     uv tool upgrade rune-cli
 
@@ -161,7 +161,7 @@ function main() {
     echo
     echo "Starting Rune installation..."
     echo
-    
+
     check_platform
 
     check_uv_installed
@@ -170,24 +170,24 @@ function main() {
         install_uv
     fi
 
-    check_vibe_installed
+    check_rune_installed
 
     if [[ "$RUNE_INSTALLED" == "false" ]]; then
-        install_vibe
+        install_rune
     else
-        update_vibe
+        update_rune
     fi
 
-    if command -v vibe &> /dev/null; then
+    if command -v rune &> /dev/null; then
         success "Installation completed successfully!"
         echo
-        echo "You can now run vibe with:"
-        echo "  vibe"
+        echo "You can now run rune with:"
+        echo "  rune"
         echo
         echo "Or for ACP mode:"
         echo "  rune-acp"
     else
-        error "Installation completed but 'vibe' command not found"
+        error "Installation completed but 'rune' command not found"
         error "Please check your installation and PATH settings"
         exit 1
     fi

@@ -16,8 +16,8 @@ from rune.core.teleport.nuage import (
     GitRepoConfig,
     NuageClient,
     TeleportSession,
-    VibeNewSandbox,
-    VibeSandboxConfig,
+    RuneNewSandbox,
+    RuneSandboxConfig,
     WorkflowParams,
 )
 from rune.core.teleport.types import (
@@ -34,7 +34,7 @@ from rune.core.teleport.types import (
     TeleportYieldEvent,
 )
 
-# TODO(vibe-nuage): update URL once prod has shared vibe-nuage workers
+# TODO(rune-nuage): update URL once prod has shared rune-nuage workers
 _NUAGE_EXECUTION_URL_TEMPLATE = "https://console.globalaegis.net/build/workflows/{workflow_id}?tab=executions&executionId={execution_id}"
 _DEFAULT_TELEPORT_PROMPT = "please continue where you left off"
 
@@ -177,16 +177,16 @@ class TeleportService:
             raise ServiceTeleportError("Failed to push current branch to remote.")
 
     def _validate_config(self) -> None:
-        # TODO(vibe-nuage): update error message once prod has shared vibe-nuage workers
+        # TODO(rune-nuage): update error message once prod has shared rune-nuage workers
         if not self._nuage_api_key:
             raise ServiceTeleportError(
                 "STAGING_RUNE_API_KEY not set. "
                 "Set it from https://console.globalaegis.net/ to use teleport."
             )
 
-    def _build_sandbox(self, git_info: GitRepoInfo) -> VibeNewSandbox:
-        return VibeNewSandbox(
-            config=VibeSandboxConfig(
+    def _build_sandbox(self, git_info: GitRepoInfo) -> RuneNewSandbox:
+        return RuneNewSandbox(
+            config=RuneSandboxConfig(
                 git_repo=GitRepoConfig(
                     url=git_info.remote_url,
                     branch=git_info.branch,

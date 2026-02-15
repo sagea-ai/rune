@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tests.conftest import build_test_vibe_config
+from tests.conftest import build_test_rune_config
 from tests.mock.utils import collect_result
 from rune.core.agents.manager import AgentManager
 from rune.core.agents.models import BUILTIN_AGENTS, AgentType
@@ -32,7 +32,7 @@ class TestTaskArgs:
 class TestTaskToolValidation:
     @pytest.fixture
     def ctx(self) -> InvokeContext:
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             include_project_context=False, include_prompt_detail=False
         )
         manager = AgentManager(lambda: config)
@@ -79,7 +79,7 @@ class TestTaskToolValidation:
 class TestTaskToolExecution:
     @pytest.fixture
     def ctx(self) -> InvokeContext:
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             include_project_context=False, include_prompt_detail=False
         )
         manager = AgentManager(lambda: config)

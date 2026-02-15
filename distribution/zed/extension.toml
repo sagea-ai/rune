@@ -4,32 +4,32 @@ description = "Rune's open-source coding assistant"
 version = "2.1.0"
 schema_version = 1
 authors = ["Rune AI"]
-repository = "https://github.com/runeai/rune-cli"
+repository = "https://github.com/sagea-ai/rune"
 
 [agent_servers.rune-cli]
 name = "Rune"
 icon = "./icons/rune_cli.svg"
 
 [agent_servers.rune-cli.targets.darwin-aarch64]
-archive = "https://github.com/runeai/rune-cli/releases/download/v2.1.0/rune-acp-darwin-aarch64-2.1.0.zip"
+archive = "https://github.com/sagea-ai/rune/releases/download/v2.1.0/rune-acp-darwin-aarch64-2.1.0.zip"
 cmd = "./rune-acp"
 
 [agent_servers.rune-cli.targets.darwin-x86_64]
-archive = "https://github.com/runeai/rune-cli/releases/download/v2.1.0/rune-acp-darwin-x86_64-2.1.0.zip"
+archive = "https://github.com/sagea-ai/rune/releases/download/v2.1.0/rune-acp-darwin-x86_64-2.1.0.zip"
 cmd = "./rune-acp"
 
 [agent_servers.rune-cli.targets.linux-aarch64]
-archive = "https://github.com/runeai/rune-cli/releases/download/v2.1.0/rune-acp-linux-aarch64-2.1.0.zip"
+archive = "https://github.com/sagea-ai/rune/releases/download/v2.1.0/rune-acp-linux-aarch64-2.1.0.zip"
 cmd = "./rune-acp"
 
 [agent_servers.rune-cli.targets.linux-x86_64]
-archive = "https://github.com/runeai/rune-cli/releases/download/v2.1.0/rune-acp-linux-x86_64-2.1.0.zip"
+archive = "https://github.com/sagea-ai/rune/releases/download/v2.1.0/rune-acp-linux-x86_64-2.1.0.zip"
 cmd = "./rune-acp"
 
 [agent_servers.rune-cli.targets.windows-aarch64]
-archive = "https://github.com/runeai/rune-cli/releases/download/v2.1.0/rune-acp-windows-aarch64-2.1.0.zip"
+archive = "https://github.com/sagea-ai/rune/releases/download/v2.1.0/rune-acp-windows-aarch64-2.1.0.zip"
 cmd = "./rune-acp.exe"
 
 [agent_servers.rune-cli.targets.windows-x86_64]
-archive = "https://github.com/runeai/rune-cli/releases/download/v2.1.0/rune-acp-windows-x86_64-2.1.0.zip"
+archive = "https://github.com/sagea-ai/rune/releases/download/v2.1.0/rune-acp-windows-x86_64-2.1.0.zip"
 cmd = "./rune-acp.exe"

@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from rune.cli.history_manager import HistoryManager
-from rune.cli.textual_ui.app import VibeApp
+from rune.cli.textual_ui.app import RuneApp
 from rune.cli.textual_ui.widgets.chat_input.body import ChatInputBody
 from rune.cli.textual_ui.widgets.chat_input.container import ChatInputContainer
 
@@ -22,19 +22,19 @@ def history_file(tmp_path: Path) -> Path:
     return history_file
 
 
-def inject_history_file(vibe_app: VibeApp, history_file: Path) -> None:
+def inject_history_file(rune_app: RuneApp, history_file: Path) -> None:
     # Dependency Injection would help here, but as we don't have it yet: manual injection
-    chat_input_body = vibe_app.query_one(ChatInputBody)
+    chat_input_body = rune_app.query_one(ChatInputBody)
     chat_input_body.history = HistoryManager(history_file)
 
 
 @pytest.mark.asyncio
 async def test_ui_navigation_through_input_history(
-    vibe_app: VibeApp, history_file: Path
+    rune_app: RuneApp, history_file: Path
 ) -> None:
-    async with vibe_app.run_test() as pilot:
-        inject_history_file(vibe_app, history_file)
-        chat_input = vibe_app.query_one(ChatInputContainer)
+    async with rune_app.run_test() as pilot:
+        inject_history_file(rune_app, history_file)
+        chat_input = rune_app.query_one(ChatInputContainer)
 
         await pilot.press("up")
         assert chat_input.value == "how are you?"
@@ -55,11 +55,11 @@ async def test_ui_navigation_through_input_history(
 
 @pytest.mark.asyncio
 async def test_ui_does_nothing_if_command_completion_is_active(
-    vibe_app: VibeApp, history_file: Path
+    rune_app: RuneApp, history_file: Path
 ) -> None:
-    async with vibe_app.run_test() as pilot:
-        inject_history_file(vibe_app, history_file)
-        chat_input = vibe_app.query_one(ChatInputContainer)
+    async with rune_app.run_test() as pilot:
+        inject_history_file(rune_app, history_file)
+        chat_input = rune_app.query_one(ChatInputContainer)
 
         await pilot.press("/")
         assert chat_input.value == "/"
@@ -71,10 +71,10 @@ async def test_ui_does_nothing_if_command_completion_is_active(
 
 @pytest.mark.asyncio
 async def test_ui_does_not_prevent_arrow_down_to_move_cursor_to_bottom_lines(
-    vibe_app: VibeApp,
+    rune_app: RuneApp,
 ):
-    async with vibe_app.run_test() as pilot:
-        chat_input = vibe_app.query_one(ChatInputContainer)
+    async with rune_app.run_test() as pilot:
+        chat_input = rune_app.query_one(ChatInputContainer)
         textarea = chat_input.input_widget
         assert textarea is not None
 
@@ -97,16 +97,16 @@ async def test_ui_does_not_prevent_arrow_down_to_move_cursor_to_bottom_lines(
 
 @pytest.mark.asyncio
 async def test_ui_resumes_arrow_down_after_manual_move(
-    vibe_app: VibeApp, tmp_path: Path
+    rune_app: RuneApp, tmp_path: Path
 ) -> None:
     history_path = tmp_path / "history.jsonl"
     history_path.write_text(
         json.dumps("first line\nsecond line") + "\n", encoding="utf-8"
     )
 
-    async with vibe_app.run_test() as pilot:
-        inject_history_file(vibe_app, history_path)
-        chat_input = vibe_app.query_one(ChatInputContainer)
+    async with rune_app.run_test() as pilot:
+        inject_history_file(rune_app, history_path)
+        chat_input = rune_app.query_one(ChatInputContainer)
         textarea = chat_input.input_widget
         assert textarea is not None
 
