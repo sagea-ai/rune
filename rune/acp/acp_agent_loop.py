@@ -66,7 +66,7 @@ from rune.acp.utils import (
 from rune.core.agent_loop import AgentLoop
 from rune.core.agents.models import BuiltinAgentName
 from rune.core.autocompletion.path_prompt_adapter import render_path_prompt
-from rune.core.config import MissingAPIKeyError, VibeConfig, load_dotenv_values
+from rune.core.config import MissingAPIKeyError, RuneConfig, load_dotenv_values
 from rune.core.tools.base import BaseToolConfig, ToolPermission
 from rune.core.types import (
     ApprovalResponse,
