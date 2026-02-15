@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import build_test_agent_loop, build_test_vibe_config
+from tests.conftest import build_test_agent_loop, build_test_rune_config
 from tests.mock.utils import mock_llm_chunk
 from tests.stubs.fake_backend import FakeBackend
 from rune.core.agents.manager import AgentManager
@@ -17,7 +17,7 @@ from rune.core.agents.models import (
     BuiltinAgentName,
     _deep_merge,
 )
-from rune.core.config import VibeConfig
+from rune.core.config import RuneConfig
 from rune.core.paths.config_paths import ConfigPath
 from rune.core.paths.global_paths import GlobalPath
 from rune.core.tools.base import ToolPermission
@@ -192,7 +192,7 @@ class TestAgentApplyToConfig:
             "rune.core.config.GLOBAL_PROMPTS_DIR", GlobalPath(lambda: global_prompts)
         )
 
-        base = VibeConfig(include_project_context=False, include_prompt_detail=False)
+        base = RuneConfig(include_project_context=False, include_prompt_detail=False)
         agent = AgentProfile(
             name="cc",
             display_name="Cc",
@@ -230,8 +230,8 @@ class TestAgentProfileOverrides:
 
 class TestAgentManagerCycling:
     @pytest.fixture
-    def base_config(self) -> VibeConfig:
-        return build_test_vibe_config(
+    def base_config(self) -> RuneConfig:
+        return build_test_rune_config(
             auto_compact_threshold=0,
             include_project_context=False,
             include_prompt_detail=False,
@@ -247,7 +247,7 @@ class TestAgentManagerCycling:
         ])
 
     def test_get_agent_order_includes_primary_agents(
-        self, base_config: VibeConfig, backend: FakeBackend
+        self, base_config: RuneConfig, backend: FakeBackend
     ) -> None:
         agent = build_test_agent_loop(
             config=base_config, agent_name=BuiltinAgentName.DEFAULT, backend=backend
@@ -260,7 +260,7 @@ class TestAgentManagerCycling:
         assert BuiltinAgentName.ACCEPT_EDITS in order
 
     def test_next_agent_cycles_through_all(
-        self, base_config: VibeConfig, backend: FakeBackend
+        self, base_config: RuneConfig, backend: FakeBackend
     ) -> None:
         agent = build_test_agent_loop(
             config=base_config, agent_name=BuiltinAgentName.DEFAULT, backend=backend
@@ -274,7 +274,7 @@ class TestAgentManagerCycling:
         assert len(set(visited)) == len(order)
 
     def test_next_agent_wraps_around(
-        self, base_config: VibeConfig, backend: FakeBackend
+        self, base_config: RuneConfig, backend: FakeBackend
     ) -> None:
         agent = build_test_agent_loop(
             config=base_config, agent_name=BuiltinAgentName.DEFAULT, backend=backend
@@ -299,8 +299,8 @@ class TestAgentProfileConfig:
 
 class TestAgentSwitchAgent:
     @pytest.fixture
-    def base_config(self) -> VibeConfig:
-        return build_test_vibe_config(
+    def base_config(self) -> RuneConfig:
+        return build_test_rune_config(
             auto_compact_threshold=0,
             include_project_context=False,
             include_prompt_detail=False,
@@ -317,7 +317,7 @@ class TestAgentSwitchAgent:
 
     @pytest.mark.asyncio
     async def test_switch_to_plan_agent_restricts_tools(
-        self, base_config: VibeConfig, backend: FakeBackend
+        self, base_config: RuneConfig, backend: FakeBackend
     ) -> None:
         agent = build_test_agent_loop(
             config=base_config, agent_name=BuiltinAgentName.DEFAULT, backend=backend
@@ -333,7 +333,7 @@ class TestAgentSwitchAgent:
 
     @pytest.mark.asyncio
     async def test_switch_from_plan_to_default_restores_tools(
-        self, base_config: VibeConfig, backend: FakeBackend
+        self, base_config: RuneConfig, backend: FakeBackend
     ) -> None:
         agent = build_test_agent_loop(
             config=base_config, agent_name=BuiltinAgentName.PLAN, backend=backend
@@ -347,7 +347,7 @@ class TestAgentSwitchAgent:
 
     @pytest.mark.asyncio
     async def test_switch_agent_preserves_conversation_history(
-        self, base_config: VibeConfig, backend: FakeBackend
+        self, base_config: RuneConfig, backend: FakeBackend
     ) -> None:
         agent = build_test_agent_loop(
             config=base_config, agent_name=BuiltinAgentName.DEFAULT, backend=backend
@@ -365,7 +365,7 @@ class TestAgentSwitchAgent:
 
     @pytest.mark.asyncio
     async def test_switch_to_same_agent_is_noop(
-        self, base_config: VibeConfig, backend: FakeBackend
+        self, base_config: RuneConfig, backend: FakeBackend
     ) -> None:
         agent = build_test_agent_loop(
             config=base_config, agent_name=BuiltinAgentName.DEFAULT, backend=backend
@@ -391,7 +391,7 @@ class TestAcceptEditsAgent:
     async def test_accept_edits_agent_auto_approves_write_file(self) -> None:
         backend = FakeBackend([])
 
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             auto_compact_threshold=0, enabled_tools=["write_file"]
         )
         agent = build_test_agent_loop(
@@ -405,7 +405,7 @@ class TestAcceptEditsAgent:
     async def test_accept_edits_agent_requires_approval_for_other_tools(self) -> None:
         backend = FakeBackend([])
 
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             auto_compact_threshold=0, enabled_tools=["bash"]
         )
         agent = build_test_agent_loop(
@@ -425,7 +425,7 @@ class TestPlanAgentToolRestriction:
                 usage=LLMUsage(prompt_tokens=10, completion_tokens=5),
             )
         ])
-        config = build_test_vibe_config(auto_compact_threshold=0)
+        config = build_test_rune_config(auto_compact_threshold=0)
         agent = build_test_agent_loop(
             config=config, agent_name=BuiltinAgentName.PLAN, backend=backend
         )
@@ -450,7 +450,7 @@ class TestPlanAgentToolRestriction:
             mock_llm_chunk(content="Tool not available"),
         ])
 
-        config = build_test_vibe_config(auto_compact_threshold=0)
+        config = build_test_rune_config(auto_compact_threshold=0)
         agent = build_test_agent_loop(
             config=config, agent_name=BuiltinAgentName.PLAN, backend=backend
         )
@@ -468,7 +468,7 @@ class TestPlanAgentToolRestriction:
 
 class TestAgentManagerFiltering:
     def test_enabled_agents_filters_to_only_enabled(self) -> None:
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             include_project_context=False,
             include_prompt_detail=False,
             enabled_agents=["default", "plan"],
@@ -483,7 +483,7 @@ class TestAgentManagerFiltering:
         assert "accept-edits" not in agents
 
     def test_disabled_agents_excludes_disabled(self) -> None:
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             include_project_context=False,
             include_prompt_detail=False,
             disabled_agents=["auto-approve", "accept-edits"],
@@ -498,7 +498,7 @@ class TestAgentManagerFiltering:
         assert "accept-edits" not in agents
 
     def test_enabled_agents_takes_precedence_over_disabled(self) -> None:
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             include_project_context=False,
             include_prompt_detail=False,
             enabled_agents=["default"],
@@ -511,7 +511,7 @@ class TestAgentManagerFiltering:
         assert "default" in agents
 
     def test_glob_pattern_matching(self) -> None:
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             include_project_context=False,
             include_prompt_detail=False,
             disabled_agents=["auto-*", "accept-*"],
@@ -525,7 +525,7 @@ class TestAgentManagerFiltering:
         assert "accept-edits" not in agents
 
     def test_regex_pattern_matching(self) -> None:
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             include_project_context=False,
             include_prompt_detail=False,
             enabled_agents=["re:^(default|plan)$"],
@@ -538,7 +538,7 @@ class TestAgentManagerFiltering:
         assert "plan" in agents
 
     def test_empty_enabled_agents_returns_all(self) -> None:
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             include_project_context=False,
             include_prompt_detail=False,
             enabled_agents=[],
@@ -552,7 +552,7 @@ class TestAgentManagerFiltering:
         assert "explore" in agents
 
     def test_get_subagents_respects_filtering(self) -> None:
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             include_project_context=False,
             include_prompt_detail=False,
             disabled_agents=["explore"],
@@ -594,7 +594,7 @@ class TestAgentLoopInitialization:
         monkeypatch.setattr("rune.core.agents.models.BUILTIN_AGENTS", patched_agents)
         monkeypatch.setattr("rune.core.agents.manager.BUILTIN_AGENTS", patched_agents)
 
-        config = build_test_vibe_config(
+        config = build_test_rune_config(
             include_project_context=False, include_prompt_detail=False
         )
         assert config.system_prompt_id == "cli", (

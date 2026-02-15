@@ -7,33 +7,33 @@ from unittest.mock import patch
 from acp.schema import TextContentBlock, ToolCallProgress, ToolCallStart
 import pytest
 
-from tests.conftest import build_test_vibe_config
+from tests.conftest import build_test_rune_config
 from tests.stubs.fake_backend import FakeBackend
 from tests.stubs.fake_client import FakeClient
-from rune.acp.acp_agent_loop import VibeAcpAgentLoop
+from rune.acp.acp_agent_loop import RuneAcpAgentLoop
 from rune.core.agent_loop import AgentLoop
 
 
 @pytest.fixture
-def acp_agent_loop(backend: FakeBackend) -> VibeAcpAgentLoop:
+def acp_agent_loop(backend: FakeBackend) -> RuneAcpAgentLoop:
     class PatchedAgent(AgentLoop):
         def __init__(self, *args, **kwargs) -> None:
             # Force our config with auto_compact_threshold=1
-            kwargs["config"] = build_test_vibe_config(auto_compact_threshold=1)
+            kwargs["config"] = build_test_rune_config(auto_compact_threshold=1)
             super().__init__(*args, **kwargs, backend=backend)
 
     patch("rune.acp.acp_agent_loop.AgentLoop", side_effect=PatchedAgent).start()
-    vibe_acp_agent = VibeAcpAgentLoop()
+    rune_acp_agent = RuneAcpAgentLoop()
     client = FakeClient()
-    vibe_acp_agent.on_connect(client)
-    client.on_connect(vibe_acp_agent)
-    return vibe_acp_agent
+    rune_acp_agent.on_connect(client)
+    client.on_connect(rune_acp_agent)
+    return rune_acp_agent
 
 
 class TestCompactEventHandling:
     @pytest.mark.asyncio
     async def test_prompt_handles_compact_events(
-        self, acp_agent_loop: VibeAcpAgentLoop
+        self, acp_agent_loop: RuneAcpAgentLoop
     ) -> None:
         """Verify prompt() sends tool_call session updates for compact events."""
         session_response = await acp_agent_loop.new_session(

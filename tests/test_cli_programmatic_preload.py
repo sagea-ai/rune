@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from tests.conftest import build_test_vibe_config
+from tests.conftest import build_test_rune_config
 from tests.mock.mock_backend_factory import mock_backend_factory
 from tests.mock.utils import mock_llm_chunk
 from tests.stubs.fake_backend import FakeBackend
@@ -41,7 +41,7 @@ def test_run_programmatic_preload_streaming_is_batched(
             )
         ),
     ):
-        cfg = build_test_vibe_config(
+        cfg = build_test_rune_config(
             system_prompt_id="tests",
             include_project_context=False,
             include_prompt_detail=False,
@@ -78,7 +78,7 @@ def test_run_programmatic_preload_streaming_is_batched(
             Role.assistant,
         ]
         assert (
-            spy.emitted[0][1] == "You are Vibe, a super useful programming assistant."
+            spy.emitted[0][1] == "You are Rune, a super useful programming assistant."
         )
         assert spy.emitted[1][1] == "Previously, you told me about decorators."
         assert spy.emitted[2][1] == "Sure, decorators allow you to wrap functions."
@@ -101,7 +101,7 @@ def test_run_programmatic_ignores_system_messages_in_previous(
         Backend.RUNE,
         lambda provider, **kwargs: FakeBackend([mock_llm_chunk(content="Understood.")]),
     ):
-        cfg = build_test_vibe_config(
+        cfg = build_test_rune_config(
             system_prompt_id="tests",
             include_project_context=False,
             include_prompt_detail=False,
@@ -129,7 +129,7 @@ def test_run_programmatic_ignores_system_messages_in_previous(
         roles = [r for r, _ in spy.emitted]
         assert roles == [Role.system, Role.user, Role.user, Role.assistant]
         assert (
-            spy.emitted[0][1] == "You are Vibe, a super useful programming assistant."
+            spy.emitted[0][1] == "You are Rune, a super useful programming assistant."
         )
         assert spy.emitted[1][1] == "Continue our previous discussion."
         assert spy.emitted[2][1] == "Let's move on to practical examples."

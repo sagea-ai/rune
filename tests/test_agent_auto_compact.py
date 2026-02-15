@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from tests.conftest import build_test_agent_loop, build_test_vibe_config
+from tests.conftest import build_test_agent_loop, build_test_rune_config
 from tests.mock.utils import mock_llm_chunk
 from tests.stubs.fake_backend import FakeBackend
 from rune.core.types import (
@@ -26,7 +26,7 @@ async def test_auto_compact_triggers_and_batches_observer() -> None:
         [mock_llm_chunk(content="<summary>")],
         [mock_llm_chunk(content="<final>")],
     ])
-    cfg = build_test_vibe_config(auto_compact_threshold=1)
+    cfg = build_test_rune_config(auto_compact_threshold=1)
     agent = build_test_agent_loop(
         config=cfg, message_observer=observer, backend=backend
     )
