@@ -67,6 +67,7 @@ from rune.cli.textual_ui.windowing import (
 )
 from rune.cli.update_notifier import (
     FileSystemUpdateCacheRepository,
+    GitHubUpdateGateway,
     PyPIUpdateGateway,
     UpdateCacheRepository,
     UpdateError,
@@ -1459,7 +1460,7 @@ def run_textual_ui(
     initial_prompt: str | None = None,
     teleport_on_start: bool = False,
 ) -> None:
-    update_notifier = PyPIUpdateGateway(project_name="rune-cli")
+    update_notifier = GitHubUpdateGateway(owner="sagea-ai", repository="rune")
     update_cache_repository = FileSystemUpdateCacheRepository()
     plan_offer_gateway = HttpWhoAmIGateway()
     app = VibeApp(

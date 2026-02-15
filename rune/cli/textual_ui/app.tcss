@@ -1,4 +1,4 @@
-$rune_orange: #FF8205;
+$rune_primary: #3B82F6;
 
 * {
     scrollbar-color: ansi_black;
@@ -120,7 +120,7 @@ TextArea > .text-area--cursor {
 #prompt {
     width: auto;
     background: transparent;
-    color: $rune_orange;
+    color: $rune_primary;
     text-style: bold;
     padding: 0 1 0 0;
 }
@@ -208,8 +208,8 @@ Markdown {
     height: auto;
     text-style: bold;
     padding-left: 1;
-    border-left: heavy $rune_orange;
-    color: $rune_orange;
+    border-left: heavy $rune_primary;
+    color: $rune_primary;
 }
 
 .assistant-message {
@@ -910,7 +910,7 @@ ContextProgress {
 }
 
 #banner-brand {
-    color: $rune_orange;
+    color: $rune_primary;
     text-style: bold;
     width: auto;
 }
@@ -945,7 +945,7 @@ ContextProgress {
 }
 
 .whats-new-message {
-    border-left: heavy $rune_orange;
+    border-left: heavy $rune_primary;
     margin-bottom: 1;
 
     Markdown {
@@ -974,7 +974,7 @@ ContextProgress {
     link-style: none;
     link-background-hover: transparent;
     link-style-hover: underline;
-    link-color-hover: $rune_orange;
+    link-color-hover: $rune_primary;
 }
 
 .whats-new-message.after-history {
