@@ -14,10 +14,10 @@ from tests.update_notifier.adapters.fake_update_cache_repository import (
 )
 from tests.update_notifier.adapters.fake_update_gateway import FakeUpdateGateway
 from rune.cli.plan_offer.ports.whoami_gateway import WhoAmIResponse
-from rune.cli.textual_ui.app import CORE_VERSION, VibeApp
+from rune.cli.textual_ui.app import CORE_VERSION, RuneApp
 from rune.core.agent_loop import AgentLoop
 from rune.core.agents.models import BuiltinAgentName
-from rune.core.config import SessionLoggingConfig, VibeConfig
+from rune.core.config import RuneConfig, SessionLoggingConfig
 from rune.core.llm.types import BackendLike
 from rune.core.paths import global_paths
 from rune.core.paths.config_paths import unlock_config_paths
@@ -58,7 +58,7 @@ def tmp_working_directory(
 def config_dir(
     monkeypatch: pytest.MonkeyPatch, tmp_path_factory: pytest.TempPathFactory
 ) -> Path:
-    tmp_path = tmp_path_factory.mktemp("vibe")
+    tmp_path = tmp_path_factory.mktemp("rune")
     config_dir = tmp_path / ".rune"
     config_dir.mkdir(parents=True, exist_ok=True)
     config_file = config_dir / "config.toml"
@@ -95,8 +95,8 @@ def _mock_update_commands(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def vibe_app() -> VibeApp:
-    return build_test_vibe_app()
+def rune_app() -> RuneApp:
+    return build_test_rune_app()
 
 
 @pytest.fixture
@@ -105,11 +105,11 @@ def agent_loop() -> AgentLoop:
 
 
 @pytest.fixture
-def vibe_config() -> VibeConfig:
-    return build_test_vibe_config()
+def rune_config() -> RuneConfig:
+    return build_test_rune_config()
 
 
-def build_test_vibe_config(**kwargs) -> VibeConfig:
+def build_test_rune_config(**kwargs) -> RuneConfig:
     session_logging = kwargs.pop("session_logging", None)
     resolved_session_logging = (
         SessionLoggingConfig(enabled=False)
@@ -120,7 +120,7 @@ def build_test_vibe_config(**kwargs) -> VibeConfig:
     resolved_enable_update_checks = (
         False if enable_update_checks is None else enable_update_checks
     )
-    return VibeConfig(
+    return RuneConfig(
         session_logging=resolved_session_logging,
         enable_update_checks=resolved_enable_update_checks,
         **kwargs,
@@ -129,14 +129,14 @@ def build_test_vibe_config(**kwargs) -> VibeConfig:
 
 def build_test_agent_loop(
     *,
-    config: VibeConfig | None = None,
+    config: RuneConfig | None = None,
     agent_name: str = BuiltinAgentName.DEFAULT,
     backend: BackendLike | None = None,
     enable_streaming: bool = False,
     **kwargs,
 ) -> AgentLoop:
 
-    resolved_config = config or build_test_vibe_config()
+    resolved_config = config or build_test_rune_config()
 
     return AgentLoop(
         config=resolved_config,
@@ -147,10 +147,10 @@ def build_test_agent_loop(
     )
 
 
-def build_test_vibe_app(
-    *, config: VibeConfig | None = None, agent_loop: AgentLoop | None = None, **kwargs
-) -> VibeApp:
-    app_config = config or build_test_vibe_config()
+def build_test_rune_app(
+    *, config: RuneConfig | None = None, agent_loop: AgentLoop | None = None, **kwargs
+) -> RuneApp:
+    app_config = config or build_test_rune_config()
 
     resolved_agent_loop = agent_loop or build_test_agent_loop(config=app_config)
 
@@ -181,7 +181,7 @@ def build_test_vibe_app(
         CORE_VERSION if current_version is None else current_version
     )
 
-    return VibeApp(
+    return RuneApp(
         agent_loop=resolved_agent_loop,
         current_version=resolved_current_version,
         update_notifier=resolved_update_notifier,

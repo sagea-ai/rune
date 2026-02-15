@@ -8,11 +8,11 @@ from unittest.mock import AsyncMock
 import httpx
 import pytest
 
-from tests.conftest import build_test_agent_loop, build_test_vibe_config
+from tests.conftest import build_test_agent_loop, build_test_rune_config
 from tests.mock.utils import mock_llm_chunk
 from tests.stubs.fake_backend import FakeBackend
 from rune.core.agents.models import BuiltinAgentName
-from rune.core.config import VibeConfig
+from rune.core.config import RuneConfig
 from rune.core.llm.exceptions import BackendErrorBuilder
 from rune.core.middleware import (
     ConversationContext,
@@ -59,8 +59,8 @@ def make_config(
     *,
     enabled_tools: list[str] | None = None,
     tools: dict[str, BaseToolConfig] | None = None,
-) -> VibeConfig:
-    return build_test_vibe_config(
+) -> RuneConfig:
+    return build_test_rune_config(
         auto_compact_threshold=0,
         system_prompt_id="tests",
         include_project_context=False,
@@ -101,7 +101,7 @@ async def test_act_flushes_batched_messages_with_injection_middleware(
 
     assert len(observed) == 3
     assert [r for r, _ in observed] == [Role.system, Role.user, Role.assistant]
-    assert observed[0][1] == "You are Vibe, a super useful programming assistant."
+    assert observed[0][1] == "You are Rune, a super useful programming assistant."
     # injected content should be appended to the user's message before emission
     assert (
         observed[1][1]
@@ -128,7 +128,7 @@ async def test_stop_action_flushes_user_msg_before_returning(observer_capture) -
     assert len(observed) == 2
     # user's message should have been flushed before returning
     assert [r for r, _ in observed] == [Role.system, Role.user]
-    assert observed[0][1] == "You are Vibe, a super useful programming assistant."
+    assert observed[0][1] == "You are Rune, a super useful programming assistant."
     assert observed[1][1] == "Greet."
 
 
@@ -155,7 +155,7 @@ async def test_act_streams_batched_chunks_in_order() -> None:
     backend = FakeBackend([
         mock_llm_chunk(content="Hello"),
         mock_llm_chunk(content=" from"),
-        mock_llm_chunk(content=" Vibe"),
+        mock_llm_chunk(content=" Rune"),
         mock_llm_chunk(content="! "),
         mock_llm_chunk(content="More"),
         mock_llm_chunk(content=" and"),
@@ -170,11 +170,11 @@ async def test_act_streams_batched_chunks_in_order() -> None:
     assistant_events = [e for e in events if isinstance(e, AssistantEvent)]
     assert len(assistant_events) == 2
     assert [event.content for event in assistant_events] == [
-        "Hello from Vibe! More",
+        "Hello from Rune! More",
         " and end",
     ]
     assert agent.messages[-1].role == Role.assistant
-    assert agent.messages[-1].content == "Hello from Vibe! More and end"
+    assert agent.messages[-1].content == "Hello from Rune! More and end"
 
 
 @pytest.mark.asyncio
