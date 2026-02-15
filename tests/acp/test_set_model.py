@@ -6,16 +6,16 @@ from unittest.mock import patch
 import pytest
 
 from tests.acp.conftest import _create_acp_agent
-from tests.conftest import build_test_vibe_config
+from tests.conftest import build_test_rune_config
 from rune.acp.acp_agent_loop import VibeAcpAgentLoop
 from rune.core.agent_loop import AgentLoop
-from rune.core.config import ModelConfig, VibeConfig
+from rune.core.config import ModelConfig, RuneConfig
 from rune.core.types import LLMMessage, Role
 
 
 @pytest.fixture
 def acp_agent_loop(backend) -> VibeAcpAgentLoop:
-    config = build_test_vibe_config(
+    config = build_test_rune_config(
         active_model="devstral-latest",
         models=[
             ModelConfig(
@@ -35,7 +35,7 @@ def acp_agent_loop(backend) -> VibeAcpAgentLoop:
         ],
     )
 
-    VibeConfig.dump_config(config.model_dump())
+    RuneConfig.dump_config(config.model_dump())
 
     class PatchedAgentLoop(AgentLoop):
         def __init__(self, *args, **kwargs) -> None:
@@ -126,7 +126,7 @@ class TestACPSetModel:
         )
         session_id = session_response.session_id
 
-        with patch("rune.acp.acp_agent_loop.VibeConfig.save_updates") as mock_save:
+        with patch("rune.acp.acp_agent_loop.RuneConfig.save_updates") as mock_save:
             response = await acp_agent_loop.set_session_model(
                 session_id=session_id, model_id="devstral-small"
             )
@@ -143,7 +143,7 @@ class TestACPSetModel:
         )
         session_id = session_response.session_id
 
-        with patch("rune.acp.acp_agent_loop.VibeConfig.save_updates") as mock_save:
+        with patch("rune.acp.acp_agent_loop.RuneConfig.save_updates") as mock_save:
             response = await acp_agent_loop.set_session_model(
                 session_id=session_id, model_id="non-existent-model"
             )

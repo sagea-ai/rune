@@ -7,18 +7,18 @@ import runeai
 import pytest
 import respx
 
-from tests.conftest import build_test_agent_loop, build_test_vibe_config
+from tests.conftest import build_test_agent_loop, build_test_rune_config
 from tests.mock.utils import mock_llm_chunk
 from tests.stubs.fake_backend import FakeBackend
-from rune.core.config import ModelConfig, ProviderConfig, VibeConfig
+from rune.core.config import ModelConfig, ProviderConfig, RuneConfig
 from rune.core.llm.backend.generic import GenericBackend, OpenAIAdapter
 from rune.core.llm.backend.rune import RuneBackend, RuneMapper, ParsedContent
 from rune.core.llm.format import APIToolFormatHandler
 from rune.core.types import AssistantEvent, LLMMessage, ReasoningEvent, Role
 
 
-def make_config() -> VibeConfig:
-    return build_test_vibe_config(
+def make_config() -> RuneConfig:
+    return build_test_rune_config(
         auto_compact_threshold=0,
         system_prompt_id="tests",
         include_project_context=False,

@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from tests.conftest import build_test_vibe_config
-from rune.core.config import VibeConfig
+from tests.conftest import build_test_rune_config
+from rune.core.config import RuneConfig
 
 
 @pytest.fixture
@@ -18,8 +18,8 @@ def skills_dir(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def skill_config(skills_dir: Path) -> VibeConfig:
-    return build_test_vibe_config(
+def skill_config(skills_dir: Path) -> RuneConfig:
+    return build_test_rune_config(
         system_prompt_id="tests",
         include_project_context=False,
         skill_paths=[skills_dir],
