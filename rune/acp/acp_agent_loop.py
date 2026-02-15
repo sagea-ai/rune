@@ -335,7 +335,7 @@ class RuneAcpAgentLoop(AcpAgent):
 
         VibeConfig.save_updates({"active_model": model_id})
 
-        new_config = VibeConfig.load(
+        new_config = RuneConfig.load(
             tool_paths=session.agent_loop.config.tool_paths,
             disabled_tools=["ask_user_question"],
         )
@@ -551,7 +551,7 @@ class RuneAcpAgentLoop(AcpAgent):
 
 def run_acp_server() -> None:
     try:
-        asyncio.run(run_agent(agent=VibeAcpAgentLoop(), use_unstable_protocol=True))
+        asyncio.run(run_agent(agent=RuneAcpAgentLoop(), use_unstable_protocol=True))
     except KeyboardInterrupt:
         # This is expected when the server is terminated
         pass
