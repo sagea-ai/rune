@@ -9,12 +9,12 @@ from acp.schema import (
 )
 import pytest
 
-from rune.acp.acp_agent_loop import VibeAcpAgentLoop
+from rune.acp.acp_agent_loop import RuneAcpAgentLoop
 
 
 class TestACPInitialize:
     @pytest.mark.asyncio
-    async def test_initialize(self, acp_agent_loop: VibeAcpAgentLoop) -> None:
+    async def test_initialize(self, acp_agent_loop: RuneAcpAgentLoop) -> None:
         response = await acp_agent_loop.initialize(protocol_version=PROTOCOL_VERSION)
 
         assert response.protocol_version == PROTOCOL_VERSION
@@ -32,7 +32,7 @@ class TestACPInitialize:
 
     @pytest.mark.asyncio
     async def test_initialize_with_terminal_auth(
-        self, acp_agent_loop: VibeAcpAgentLoop
+        self, acp_agent_loop: RuneAcpAgentLoop
     ) -> None:
         """Test initialize with terminal-auth capabilities to check it was included."""
         client_capabilities = ClientCapabilities(field_meta={"terminal-auth": True})

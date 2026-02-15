@@ -11,8 +11,8 @@ from rune.core.teleport.nuage import (
     CreateLeChatThreadInput,
     GitRepoConfig,
     NuageClient,
-    VibeNewSandbox,
-    VibeSandboxConfig,
+    RuneNewSandbox,
+    RuneSandboxConfig,
     WorkflowParams,
 )
 
@@ -31,12 +31,12 @@ class TestNuageModels:
         assert config.branch == "main"
         assert config.commit == "abc123"
 
-    def test_vibe_sandbox_config_defaults(self) -> None:
-        config = VibeSandboxConfig()
+    def test_rune_sandbox_config_defaults(self) -> None:
+        config = RuneSandboxConfig()
         assert config.git_repo is None
 
-    def test_vibe_new_sandbox_defaults(self) -> None:
-        sandbox = VibeNewSandbox()
+    def test_rune_new_sandbox_defaults(self) -> None:
+        sandbox = RuneNewSandbox()
         assert sandbox.type == "new"
         assert sandbox.config.git_repo is None
         assert sandbox.teleported_diffs is None
@@ -44,8 +44,8 @@ class TestNuageModels:
     def test_workflow_params_serialization(self) -> None:
         params = WorkflowParams(
             prompt="test prompt",
-            sandbox=VibeNewSandbox(
-                config=VibeSandboxConfig(
+            sandbox=RuneNewSandbox(
+                config=RuneSandboxConfig(
                     git_repo=GitRepoConfig(
                         url="https://github.com/owner/repo.git",
                         branch="main",
@@ -116,7 +116,7 @@ class TestNuageClientStartWorkflow:
         mock_response.json.return_value = {"execution_id": "exec-123"}
         mock_client.post = AsyncMock(return_value=mock_response)
 
-        params = WorkflowParams(prompt="test", sandbox=VibeNewSandbox())
+        params = WorkflowParams(prompt="test", sandbox=RuneNewSandbox())
         execution_id = await nuage.start_workflow(params)
 
         assert execution_id == "exec-123"
@@ -133,7 +133,7 @@ class TestNuageClientStartWorkflow:
         mock_response.text = "Internal Server Error"
         mock_client.post = AsyncMock(return_value=mock_response)
 
-        params = WorkflowParams(prompt="test", sandbox=VibeNewSandbox())
+        params = WorkflowParams(prompt="test", sandbox=RuneNewSandbox())
         with pytest.raises(ServiceTeleportError, match="Nuage workflow trigger failed"):
             await nuage.start_workflow(params)
 
@@ -146,7 +146,7 @@ class TestNuageClientStartWorkflow:
         mock_response.text = "Unauthorized"
         mock_client.post = AsyncMock(return_value=mock_response)
 
-        params = WorkflowParams(prompt="test", sandbox=VibeNewSandbox())
+        params = WorkflowParams(prompt="test", sandbox=RuneNewSandbox())
         with pytest.raises(ServiceTeleportError, match="STAGING_RUNE_API_KEY"):
             await nuage.start_workflow(params)
 
