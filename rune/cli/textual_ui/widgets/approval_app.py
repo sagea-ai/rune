@@ -12,7 +12,7 @@ from textual.widgets import Static
 
 from rune.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
 from rune.cli.textual_ui.widgets.tool_widgets import get_approval_widget
-from rune.core.config import VibeConfig
+from rune.core.config import RuneConfig
 
 
 class ApprovalApp(Container):
@@ -52,7 +52,7 @@ class ApprovalApp(Container):
             self.tool_args = tool_args
 
     def __init__(
-        self, tool_name: str, tool_args: BaseModel, config: VibeConfig
+        self, tool_name: str, tool_args: BaseModel, config: RuneConfig
     ) -> None:
         super().__init__(id="approval-app")
         self.tool_name = tool_name

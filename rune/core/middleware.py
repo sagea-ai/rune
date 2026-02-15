@@ -10,7 +10,7 @@ from rune.core.agents.models import BuiltinAgentName
 from rune.core.utils import RUNE_WARNING_TAG
 
 if TYPE_CHECKING:
-    from rune.core.config import VibeConfig
+    from rune.core.config import RuneConfig
     from rune.core.types import AgentStats, LLMMessage
 
 

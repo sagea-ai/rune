@@ -11,7 +11,7 @@ from textual.widgets import Static
 from rune import __version__
 from rune.cli.textual_ui.widgets.banner.petit_chat import PetitChat
 from rune.cli.textual_ui.widgets.no_markup_static import NoMarkupStatic
-from rune.core.config import VibeConfig
+from rune.core.config import RuneConfig
 from rune.core.skills.manager import SkillManager
 
 
@@ -27,7 +27,7 @@ class Banner(Static):
     state = reactive(BannerState(), init=False)
 
     def __init__(
-        self, config: VibeConfig, skill_manager: SkillManager, **kwargs: Any
+        self, config: RuneConfig, skill_manager: SkillManager, **kwargs: Any
     ) -> None:
         super().__init__(**kwargs)
         self.can_focus = False
@@ -69,7 +69,7 @@ class Banner(Static):
         if self._animated:
             self.query_one(PetitChat).freeze_animation()
 
-    def set_state(self, config: VibeConfig, skill_manager: SkillManager) -> None:
+    def set_state(self, config: RuneConfig, skill_manager: SkillManager) -> None:
         self.state = BannerState(
             active_model=config.active_model,
             models_count=len(config.models),

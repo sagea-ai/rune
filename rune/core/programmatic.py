@@ -4,14 +4,14 @@ import asyncio
 
 from rune.core.agent_loop import AgentLoop
 from rune.core.agents.models import BuiltinAgentName
-from rune.core.config import VibeConfig
+from rune.core.config import RuneConfig
 from rune.core.output_formatters import create_formatter
 from rune.core.types import AssistantEvent, LLMMessage, OutputFormat, Role
 from rune.core.utils import ConversationLimitException, logger
 
 
 def run_programmatic(
-    config: VibeConfig,
+    config: RuneConfig,
     prompt: str,
     max_turns: int | None = None,
     max_price: float | None = None,
