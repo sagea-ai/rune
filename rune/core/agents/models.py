@@ -7,7 +7,7 @@ import tomllib
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from rune.core.config import VibeConfig
+    from rune.core.config import RuneConfig
 
 
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
@@ -49,8 +49,8 @@ class AgentProfile:
     agent_type: AgentType = AgentType.AGENT
     overrides: dict[str, Any] = field(default_factory=dict)
 
-    def apply_to_config(self, base: VibeConfig) -> VibeConfig:
-        from rune.core.config import VibeConfig as VC
+    def apply_to_config(self, base: RuneConfig) -> RuneConfig:
+        from rune.core.config import RuneConfig as VC
 
         merged = _deep_merge(base.model_dump(), self.overrides)
         return VC.model_validate(merged)

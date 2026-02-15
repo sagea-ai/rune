@@ -15,7 +15,7 @@ from rune.core.utils import is_windows, utc_now
 
 if TYPE_CHECKING:
     from rune.core.agents.models import AgentProfile
-    from rune.core.config import SessionLoggingConfig, VibeConfig
+    from rune.core.config import RuneConfig, SessionLoggingConfig
     from rune.core.tools.manager import ToolManager
 
 
@@ -198,7 +198,7 @@ class SessionLogger:
         self,
         messages: list[LLMMessage],
         stats: AgentStats,
-        base_config: VibeConfig,
+        base_config: RuneConfig,
         tool_manager: ToolManager,
         agent_profile: AgentProfile,
     ) -> None:
