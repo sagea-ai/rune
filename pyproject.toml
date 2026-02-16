@@ -1,7 +1,7 @@
 [project]
 name = "rune-cli"
 version = "2.1.0"
-description = "Minimal CLI coding agent by Rune"
+description = "Minimal CLI coding agent by SAGEA"
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Apache-2.0" }

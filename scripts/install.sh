@@ -70,11 +70,14 @@ function get_latest_version() {
     fi
 
     info "Fetching latest version from GitHub..." >&2
-    local latest_url="https://api.github.com/repos/sagea-ai/rune/releases/latest"
-    local version=$(curl -s "$latest_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+    # Use redirect approach to avoid API rate limits
+    local latest_url="https://github.com/sagea-ai/rune/releases/latest"
+    local version=$(curl -Ls -o /dev/null -w '%{url_effective}' "$latest_url" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+$')
 
     if [[ -z "$version" ]]; then
-        error "Failed to fetch latest version."
+        error "Failed to fetch latest version. Please check your internet connection or specify VERSION manually."
+        error "Example: VERSION=v2.1.2 bash install.sh"
         exit 1
     fi
 
