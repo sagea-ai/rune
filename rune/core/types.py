@@ -40,6 +40,10 @@ class AgentStats(BaseModel):
     last_turn_duration: float = 0.0
     tokens_per_second: float = 0.0
 
+    # Pricing information (per million tokens)
+    input_price_per_million: float = 0.0
+    output_price_per_million: float = 0.0
+
     _listeners: dict[str, Callable[[AgentStats], None]] = PrivateAttr(
         default_factory=dict
     )
@@ -67,6 +71,19 @@ class AgentStats(BaseModel):
     @property
     def last_turn_total_tokens(self) -> int:
         return self.last_turn_prompt_tokens + self.last_turn_completion_tokens
+
+    @computed_field
+    @property
+    def session_cost(self) -> float:
+        """Calculate the total session cost based on current pricing."""
+        input_cost = (self.session_prompt_tokens / 1_000_000) * self.input_price_per_million
+        output_cost = (self.session_completion_tokens / 1_000_000) * self.output_price_per_million
+        return input_cost + output_cost
+
+    def update_pricing(self, input_price: float, output_price: float) -> None:
+        """Update the pricing information for token costs."""
+        self.input_price_per_million = input_price
+        self.output_price_per_million = output_price
 
     def reset_context_state(self) -> None:
         """Reset context-related fields while preserving cumulative session stats.
