@@ -24,6 +24,8 @@ a = Analysis(
         ('rune/core/tools/builtins/prompts/*.md', 'rune/core/tools/builtins/prompts'),
         # We also need to add all setup files
         ('rune/setup/*', 'rune/setup'),
+        # Textual UI CSS file
+        ('rune/cli/textual_ui/app.tcss', 'rune/cli/textual_ui'),
         # This is necessary because tools are dynamically called in rune, meaning there is no static reference to those files
         ('rune/core/tools/builtins/*.py', 'rune/core/tools/builtins'),
         ('rune/acp/tools/builtins/*.py', 'rune/acp/tools/builtins'),
