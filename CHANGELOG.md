@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-02-16
+
+### Fixed
+
+- Fixed install script: get_latest_version INFO message now outputs to stderr to prevent polluting version variable
+- Fixed PyInstaller bundling: added app.tcss CSS file to both rune.spec and rune-acp.spec to resolve StylesheetError on startup
+- Enhanced install script with colored ASCII art banner using ANSI escape codes
+
 ## [2.1.0] - 2026-02-11
 
 ### Added
