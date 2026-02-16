@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed install script: get_latest_version INFO message now outputs to stderr to prevent polluting version variable
 - Fixed PyInstaller bundling: added app.tcss CSS file to both rune.spec and rune-acp.spec to resolve StylesheetError on startup
 - Enhanced install script with colored ASCII art banner using ANSI escape codes
+- Fixed AttributeError in /status command: Added missing `session_cost` computed property and pricing fields to `AgentStats` class
 
 ## [2.1.0] - 2026-02-11
 
