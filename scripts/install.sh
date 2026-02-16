@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Rune Installation Script
-# This script installs uv if not present and then installs rune-cli using uv
+# This script downloads and installs the latest binary release of Rune
 
 set -euo pipefail
 
@@ -29,76 +29,121 @@ function warning() {
 }
 
 function check_platform() {
-    local platform=$(uname -s)
+    local kernel=$(uname -s)
+    local machine=$(uname -m)
 
-    if [[ "$platform" == "Linux" ]]; then
-        info "Detected Linux platform"
-        PLATFORM="linux"
-    elif [[ "$platform" == "Darwin" ]]; then
-        info "Detected macOS platform"
-        PLATFORM="macos"
+    if [[ "$kernel" == "Linux" ]]; then
+        OS="linux"
+    elif [[ "$kernel" == "Darwin" ]]; then
+        OS="darwin"
     else
-        error "Unsupported platform: $platform"
-        error "This installation script currently only supports Linux and macOS"
-        exit 1
-    fi
-}
-
-function check_uv_installed() {
-    if command -v uv &> /dev/null; then
-        info "uv is already installed: $(uv --version)"
-        UV_INSTALLED=true
-    else
-        info "uv is not installed"
-        UV_INSTALLED=false
-    fi
-}
-
-function install_uv() {
-    info "Installing uv using the official Astral installer..."
-
-    if ! command -v curl &> /dev/null; then
-        error "curl is required to install uv. Please install curl first."
+        error "Unsupported platform: $kernel"
         exit 1
     fi
 
-    if curl -LsSf https://astral.sh/uv/install.sh | sh; then
-        success "uv installed successfully"
+    if [[ "$machine" == "x86_64" ]]; then
+        ARCH="x86_64"
+    elif [[ "$machine" == "aarch64" ]] || [[ "$machine" == "arm64" ]]; then
+        ARCH="aarch64"
+    else
+        error "Unsupported architecture: $machine"
+        exit 1
+    fi
 
-        export PATH="$HOME/.local/bin:$PATH"
+    info "Detected platform: $OS-$ARCH"
+}
 
-        if ! command -v uv &> /dev/null; then
-            warning "uv was installed but not found in PATH for this session"
-            warning "You may need to restart your terminal or run:"
-            warning "  export PATH=\"\$HOME/.cargo/bin:\$HOME/.local/bin:\$PATH\""
+function check_dependencies() {
+    local deps=("curl" "unzip")
+    for dep in "${deps[@]}"; do
+        if ! command -v "$dep" &> /dev/null; then
+            error "$dep is required but not installed."
+            exit 1
         fi
-    else
-        error "Failed to install uv"
+    done
+}
+
+function get_latest_version() {
+    if [[ -n "${VERSION:-}" ]]; then
+        echo "$VERSION"
+        return
+    fi
+
+    info "Fetching latest version from GitHub..."
+    local latest_url="https://api.github.com/repos/sagea-ai/rune/releases/latest"
+    local version=$(curl -s "$latest_url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+    if [[ -z "$version" ]]; then
+        error "Failed to fetch latest version."
         exit 1
     fi
+
+    echo "$version"
 }
 
-function check_rune_installed() {
-    if command -v rune &> /dev/null; then
-        info "rune is already installed"
-        RUNE_INSTALLED=true
-    else
-        RUNE_INSTALLED=false
+function download_and_install() {
+    local version=$1
+    # Strip 'v' prefix if present for filename construction if needed,
+    # but based on the workflow, the zip name uses the version *without* v?
+    # Wait, the workflow does: `steps.get_version_unix.outputs.version`.
+    # `uv version` returns just the number (e.g. 0.1.0).
+    # The release tag usually has 'v' (e.g. v0.1.0).
+    # so we need to be careful.
+
+    local clean_version="${version#v}"
+    local filename="rune-${OS}-${ARCH}-${clean_version}.zip"
+    local download_url="https://github.com/sagea-ai/rune/releases/download/${version}/${filename}"
+    local tmp_dir=$(mktemp -d)
+
+    info "Downloading $filename from $download_url..."
+    if ! curl -L -f -o "$tmp_dir/$filename" "$download_url"; then
+        error "Failed to download release asset."
+        exit 1
     fi
-}
 
-function install_rune() {
-    info "Installing rune-cli from GitHub repository using uv..."
-    uv tool install rune-cli
+    info "Extracting..."
+    unzip -q "$tmp_dir/$filename" -d "$tmp_dir"
 
-    success "Rune installed successfully! (commands: rune, rune-acp)"
-}
+    # Determine install path
+    local install_path=""
+    if [[ -w "/usr/local/bin" ]]; then
+        install_path="/usr/local/bin"
+    else
+        install_path="$HOME/.local/bin"
+        mkdir -p "$install_path"
+    fi
 
-function update_rune() {
-    info "Updating rune-cli from GitHub repository using uv..."
-    uv tool upgrade rune-cli
+    info "Installing to $install_path..."
 
-    success "Rune updated successfully!"
+    # Check for sudo requirement if using /usr/local/bin and not root
+    local use_sudo=false
+    if [[ "$install_path" == "/usr/local/bin" && "$EUID" -ne 0 ]]; then
+        use_sudo=true
+        info "Elevated permissions required to install to /usr/local/bin"
+    fi
+
+    for binary in "rune" "rune-acp"; do
+        if [[ -f "$tmp_dir/$binary" ]]; then
+            if [[ "$use_sudo" == "true" ]]; then
+                sudo mv "$tmp_dir/$binary" "$install_path/"
+                sudo chmod +x "$install_path/$binary"
+            else
+                mv "$tmp_dir/$binary" "$install_path/"
+                chmod +x "$install_path/$binary"
+            fi
+        else
+             warning "Binary $binary not found in archive."
+        fi
+    done
+
+    # Cleanup
+    rm -rf "$tmp_dir"
+
+    # Path check
+    if [[ ":$PATH:" != *":$install_path:"* ]]; then
+        warning "$install_path is not in your PATH."
+        warning "Please add it to your PATH to run rune."
+    fi
 }
 
 function main() {
@@ -163,34 +208,20 @@ function main() {
     echo
 
     check_platform
+    check_dependencies
 
-    check_uv_installed
+    local version=$(get_latest_version)
+    info "Latest version: $version"
 
-    if [[ "$UV_INSTALLED" == "false" ]]; then
-        install_uv
-    fi
+    download_and_install "$version"
 
-    check_rune_installed
-
-    if [[ "$RUNE_INSTALLED" == "false" ]]; then
-        install_rune
-    else
-        update_rune
-    fi
-
-    if command -v rune &> /dev/null; then
-        success "Installation completed successfully!"
-        echo
-        echo "You can now run rune with:"
-        echo "  rune"
-        echo
-        echo "Or for ACP mode:"
-        echo "  rune-acp"
-    else
-        error "Installation completed but 'rune' command not found"
-        error "Please check your installation and PATH settings"
-        exit 1
-    fi
+    success "Installation completed successfully!"
+    echo
+    echo "You can now run rune with:"
+    echo "  rune"
+    echo
+    echo "Or for ACP mode:"
+    echo "  rune-acp"
 }
 
 main
