@@ -20,9 +20,11 @@
  ░  ░░░░░░░░░░░░░░       ░                       ░  ░ ░ ░        ░      ░  ░       ░  ░  ░ ░
 ```
 
-**Local-first CLI coding assistant powered by Ollama.**
+**Local-first CLI coding assistant powered by SAGE models from SAGEA.**
 
-Rune is a command-line coding assistant that runs entirely on your machine using Ollama. It provides a conversational interface to your codebase, allowing you to use natural language to explore, modify, and interact with your projects through a powerful set of tools—all without sending your code to external APIs.
+Rune is a command-line coding assistant that brings SAGEA's powerful **SAGE models** to your local machine. It allows you to use natural language to explore, modify, and interact with your projects through a comprehensive toolset—all running privately on your own hardware.
+
+Rune uses **Ollama** as the local runtime glue to execute these advanced models efficiently.
 
 > [!WARNING]
 > Rune works on Windows, but we officially support and target UNIX environments.
@@ -32,7 +34,7 @@ Rune is a command-line coding assistant that runs entirely on your machine using
 **Linux and macOS**
 
 ```bash
-curl -LsSf https://raw.githubusercontent.com/sagea-ai/rune/main/scripts/install.sh | bash
+curl -LsSf https://sagea.space/rune-cli/install.sh | bash
 ```
 
 **Windows**
@@ -92,8 +94,9 @@ pip install rune-cli
 
 ## Features
 
-- **100% Local & Private**: All processing happens on your machine using Ollama. Your code never leaves your computer.
-- **Interactive Chat**: A conversational AI agent that understands your requests and breaks down complex tasks.
+- **Powered by SAGE**: Leverages SAGEA's state-of-the-art **SAGE Reasoning** models for deep understanding of code and logic.
+- **100% Local & Private**: All processing happens on your machine using the Ollama runtime. Your code never leaves your computer.
+- **Interactive Chat**: A conversational AI agent that actively reasons about your requests and breaks down complex tasks.
 - **Powerful Toolset**: A suite of tools for file manipulation, code searching, version control, and command execution, right from the chat prompt.
   - Read, write, and patch files (`read_file`, `write_file`, `search_replace`).
   - Execute shell commands in a stateful terminal (`bash`).
@@ -164,7 +167,7 @@ The agent can ask multiple questions at once, displayed as tabs. Each question s
 
 ## Prerequisites
 
-Rune requires **Ollama** to be installed and running on your system.
+Rune requires the **Ollama** runtime to be installed and running on your system to serve SAGE models.
 
 ### Installing Ollama
 
@@ -183,18 +186,18 @@ After installation, start the Ollama service:
 ollama serve
 ```
 
-### Recommended Models
+### Required Models (SAGE)
 
-Rune works best with capable models. We recommend:
+Rune is designed to work best with **SAGE Reasoning** models. Please download the recommended model for your hardware:
 
 ```bash
-# Download a recommended model
+# Recommended for most modern machines (32GB+ RAM)
 ollama pull comethrusws/sage-reasoning:32b
 
-# or alternatively
+# Balanced for standard machines (16GB RAM)
 ollama pull comethrusws/sage-reasoning:14b
 
-# Or try the smaller but still capable version
+# Lightweight for older machines (8GB RAM)
 ollama pull comethrusws/sage-reasoning:8b
 ```
 
@@ -409,7 +412,7 @@ Rune uses Ollama by default. The default configuration connects to Ollama at `ht
 Basic Ollama configuration in `config.toml`:
 
 ```toml
-active_model = "qwen2.5-coder:32b"
+active_model = "sage-reasoning:32b"
 
 [[providers]]
 name = "ollama"
@@ -417,8 +420,9 @@ api_base = "http://localhost:11434"
 backend = "ollama"
 
 [[models]]
-name = "qwen2.5-coder:32b"
+name = "sage-reasoning:32b"
 provider = "ollama"
+alias = "default"
 ```
 
 #### Switching Models
@@ -426,14 +430,14 @@ provider = "ollama"
 You can switch models during a session:
 
 ```
-> /model qwen2.5-coder:14b
+> /model sage-reasoning:14b
 ```
 
 Or configure multiple models:
 
 ```toml
 [[models]]
-name = "qwen2.5-coder:32b"
+name = "sage-reasoning:32b"
 provider = "ollama"
 
 [[models]]
@@ -473,7 +477,7 @@ Example custom agent configuration (`~/.rune/agents/reviewer.toml`):
 
 ```toml
 # Custom agent configuration for code review
-active_model = "qwen2.5-coder:32b"
+active_model = "sage-reasoning:32b"
 system_prompt_id = "reviewer"
 
 # Disable some tools for this agent
